@@ -6,6 +6,8 @@ from typing import Any
 
 import fitz
 
+from preparador_audiencia.ocr import OcrEngine, RapidOcrEngine
+
 DEFAULT_SAMPLE_CHARS = 500
 LOW_TEXT_THRESHOLD = 80
 IMAGE_WITH_SPARSE_TEXT_THRESHOLD = 500
@@ -16,7 +18,11 @@ class PageExtraction:
     page_number: int
     char_count: int
     word_count: int
+    native_char_count: int
     image_count: int
+    ocr_applied: bool
+    ocr_char_count: int
+    extraction_method: str
     text_sample: str
     is_probably_empty: bool
     quality_notes: list[str]
@@ -48,6 +54,9 @@ class PdfExtractionReport:
 def extract_pdf_report(
     pdf_path: str | Path,
     sample_chars: int = DEFAULT_SAMPLE_CHARS,
+    ocr_enabled: bool = True,
+    ocr_zoom: float = 2.0,
+    ocr_engine: OcrEngine | None = None,
 ) -> PdfExtractionReport:
     path = Path(pdf_path)
     if not path.exists():
@@ -56,19 +65,38 @@ def extract_pdf_report(
         raise ValueError(f"Caminho nao e arquivo: {path}")
 
     pages: list[PageExtraction] = []
+    resolved_ocr_engine: OcrEngine | None = ocr_engine
     with fitz.open(path) as document:
         for page_index, page in enumerate(document):
-            text = normalize_text(page.get_text("text"))
+            native_text = normalize_text(page.get_text("text"))
             image_count = len(page.get_images(full=True))
+            should_run_ocr = ocr_enabled and _should_run_ocr(native_text, image_count)
+            ocr_text = ""
+            if should_run_ocr:
+                if resolved_ocr_engine is None:
+                    resolved_ocr_engine = RapidOcrEngine()
+                ocr_text = normalize_text(
+                    resolved_ocr_engine.extract_page_text(page, zoom=ocr_zoom)
+                )
+            text = _merge_native_and_ocr_text(native_text, ocr_text)
             pages.append(
                 PageExtraction(
                     page_number=page_index + 1,
                     char_count=len(text),
                     word_count=len(text.split()),
+                    native_char_count=len(native_text),
                     image_count=image_count,
+                    ocr_applied=should_run_ocr,
+                    ocr_char_count=len(ocr_text),
+                    extraction_method=_extraction_method(native_text, ocr_text),
                     text_sample=text[:sample_chars],
                     is_probably_empty=_is_probably_empty(text),
-                    quality_notes=_quality_notes(text, image_count=image_count),
+                    quality_notes=_quality_notes(
+                        native_text,
+                        image_count=image_count,
+                        ocr_applied=should_run_ocr,
+                        ocr_text=ocr_text,
+                    ),
                 )
             )
 
@@ -94,14 +122,54 @@ def _is_probably_empty(text: str) -> bool:
     return len(text.strip()) == 0
 
 
-def _quality_notes(text: str, image_count: int = 0) -> list[str]:
+def _quality_notes(
+    native_text: str,
+    image_count: int = 0,
+    ocr_applied: bool = False,
+    ocr_text: str = "",
+) -> list[str]:
+    notes: list[str] = []
+    if ocr_applied:
+        notes.append("ocr_aplicado")
+        if ocr_text.strip():
+            notes.append("ocr_com_texto")
+        else:
+            notes.append("ocr_sem_texto")
+
+    text = native_text
     if not text.strip():
-        notes = ["sem_texto_extraido"]
+        notes.append("sem_texto_nativo")
         if image_count:
             notes.append("possivel_pagina_escaneada_ou_imagem")
         return notes
     if image_count and len(text) < IMAGE_WITH_SPARSE_TEXT_THRESHOLD:
-        return ["imagem_com_texto_curto", "provavel_necessidade_de_ocr"]
+        notes.extend(["imagem_com_texto_curto", "provavel_necessidade_de_ocr"])
+        return notes
     if len(text) < LOW_TEXT_THRESHOLD:
-        return ["baixo_texto_extraido"]
-    return ["texto_extraido"]
+        notes.append("baixo_texto_extraido")
+        return notes
+    notes.append("texto_nativo_extraido")
+    return notes
+
+
+def _should_run_ocr(native_text: str, image_count: int) -> bool:
+    if not image_count:
+        return False
+    return not native_text.strip() or len(native_text) < IMAGE_WITH_SPARSE_TEXT_THRESHOLD
+
+
+def _merge_native_and_ocr_text(native_text: str, ocr_text: str) -> str:
+    parts = [part for part in (native_text, ocr_text) if part.strip()]
+    return "\n\n".join(parts)
+
+
+def _extraction_method(native_text: str, ocr_text: str) -> str:
+    has_native = bool(native_text.strip())
+    has_ocr = bool(ocr_text.strip())
+    if has_native and has_ocr:
+        return "native_plus_ocr"
+    if has_ocr:
+        return "ocr"
+    if has_native:
+        return "native"
+    return "empty"

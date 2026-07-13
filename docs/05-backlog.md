@@ -7,7 +7,7 @@
 - Criar script de extração por página.
 - Rodar extração em PDF real difícil.
 - Gerar relatório de qualidade da extração.
-- Decidir se OCR entra no v0.1.
+- Aplicar OCR local quando houver imagem com pouco texto.
 
 ## Prioridade 2: Ingestão
 
@@ -51,4 +51,3 @@
 - Qual modelo de embedding será usado inicialmente?
 - A chave Groq ficará em `.env` local no v0.1?
 - O arquivo PDF será salvo em disco no v0.1 ou apenas seu hash e texto extraído?
-

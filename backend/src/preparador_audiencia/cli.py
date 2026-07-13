@@ -23,9 +23,25 @@ def main() -> None:
         default=500,
         help="Quantidade maxima de caracteres da amostra por pagina.",
     )
+    parser.add_argument(
+        "--no-ocr",
+        action="store_true",
+        help="Desativa OCR em paginas com imagem e pouco texto.",
+    )
+    parser.add_argument(
+        "--ocr-zoom",
+        type=float,
+        default=2.0,
+        help="Fator de renderizacao da pagina antes do OCR.",
+    )
     args = parser.parse_args()
 
-    report = extract_pdf_report(args.pdf, sample_chars=args.sample_chars)
+    report = extract_pdf_report(
+        args.pdf,
+        sample_chars=args.sample_chars,
+        ocr_enabled=not args.no_ocr,
+        ocr_zoom=args.ocr_zoom,
+    )
     content = json.dumps(report.to_dict(), ensure_ascii=False, indent=2)
 
     if args.output:
@@ -40,4 +56,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

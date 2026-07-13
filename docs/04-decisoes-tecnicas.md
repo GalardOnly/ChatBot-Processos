@@ -15,6 +15,7 @@ Começar em monorepo local:
 - Python;
 - FastAPI;
 - PyMuPDF para extração de PDF;
+- RapidOCR/ONNXRuntime como OCR local para páginas escaneadas;
 - SQLite no v0.1;
 - ChromaDB para vetores;
 - processamento assíncrono simples;
@@ -64,4 +65,3 @@ Evitar na UI:
 - ChromaDB;
 - payload;
 - prompt.
-
