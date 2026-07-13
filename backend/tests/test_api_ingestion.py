@@ -16,6 +16,8 @@ def create_pdf_bytes() -> bytes:
 def test_upload_processes_pdf_and_status_returns_completed(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("PREPARADOR_DATABASE_PATH", str(tmp_path / "test.sqlite3"))
     monkeypatch.setenv("PREPARADOR_STORAGE_DIR", str(tmp_path / "storage"))
+    monkeypatch.setenv("PREPARADOR_CHROMA_DIR", str(tmp_path / "chroma"))
+    monkeypatch.setenv("PREPARADOR_EMBEDDING_PROVIDER", "hash")
     client = TestClient(app)
 
     response = client.post(
@@ -30,6 +32,14 @@ def test_upload_processes_pdf_and_status_returns_completed(tmp_path, monkeypatch
     assert status.json()["status"] == "concluido"
     assert status.json()["paginas_extraidas"] == 1
     assert status.json()["chunks"] == 1
+
+    search = client.post(
+        f"/processo/{processo_id}/buscar",
+        json={"pergunta": "Quando sera a audiencia?", "top_k": 1},
+    )
+    assert search.status_code == 200
+    assert search.json()["fontes"][0]["pagina"] == 1
+    assert "Audiencia" in search.json()["fontes"][0]["trecho"]
 
 
 def test_upload_rejects_non_pdf_payload(tmp_path, monkeypatch) -> None:
@@ -55,3 +65,16 @@ def test_status_returns_404_for_unknown_process(tmp_path, monkeypatch) -> None:
     assert response.status_code == 404
     assert response.json()["error"] == "process_not_found"
 
+
+def test_search_returns_404_for_unknown_process(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("PREPARADOR_DATABASE_PATH", str(tmp_path / "test.sqlite3"))
+    monkeypatch.setenv("PREPARADOR_CHROMA_DIR", str(tmp_path / "chroma"))
+    client = TestClient(app)
+
+    response = client.post(
+        "/processo/proc_inexistente/buscar",
+        json={"pergunta": "Existe audiencia?", "top_k": 1},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["error"] == "process_not_found"

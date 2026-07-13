@@ -1,22 +1,24 @@
 # Backend
 
-Fase 1 do v0.1: extração de texto por página com PyMuPDF e relatório de qualidade.
+Backend do Preparador de Audiencia.
 
-## Instalação local
+## Instalacao local
 
 ```powershell
 python -m pip install -e .[dev]
 ```
 
-## Rodar extração em um PDF
+## Rodar extracao em um PDF
 
 ```powershell
 extrair-pdf-processo "C:\caminho\processo.pdf" --output "relatorio-extracao.json"
 ```
 
-O relatório preserva número da página, quantidade de caracteres extraídos, amostra do texto e alertas de qualidade.
+O relatorio preserva numero da pagina, quantidade de caracteres extraidos,
+amostra do texto e alertas de qualidade.
 
-Por padrão, o comando aplica OCR em páginas com imagem e pouco texto nativo extraído. Para comparar apenas a extração do PyMuPDF:
+Por padrao, o comando aplica OCR em paginas com imagem e pouco texto nativo
+extraido. Para comparar apenas a extracao do PyMuPDF:
 
 ```powershell
 extrair-pdf-processo "C:\caminho\processo.pdf" --no-ocr --output "relatorio-sem-ocr.json"
@@ -28,7 +30,31 @@ extrair-pdf-processo "C:\caminho\processo.pdf" --no-ocr --output "relatorio-sem-
 python -m uvicorn preparador_audiencia.main:app --host 127.0.0.1 --port 8910
 ```
 
-Rotas da Fase 2:
+Rotas implementadas:
 
 - `POST /upload`
 - `GET /processo/{id}/status`
+- `POST /processo/{id}/buscar`
+
+## Embeddings e busca vetorial
+
+Por padrao, o backend usa um provider leve (`hash`) para desenvolvimento e
+testes locais:
+
+```powershell
+$env:PREPARADOR_EMBEDDING_PROVIDER="hash"
+```
+
+Para usar o BERTikal:
+
+```powershell
+python -m pip install -e .[bertikal]
+$env:PREPARADOR_EMBEDDING_PROVIDER="bertikal"
+$env:PREPARADOR_EMBEDDING_MODEL="felipemaiapolo/legalnlp-bert"
+```
+
+O ChromaDB fica em `chroma/` por padrao. Para mudar:
+
+```powershell
+$env:PREPARADOR_CHROMA_DIR="C:\caminho\chroma"
+```

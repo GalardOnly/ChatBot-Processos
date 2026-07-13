@@ -21,6 +21,18 @@ class ProcessoRecord:
     updated_at: str
 
 
+@dataclass(frozen=True)
+class ChunkRecord:
+    id: int
+    processo_id: str
+    page_number: int
+    chunk_index: int
+    text: str
+    document_type: str | None
+    vector_id: str | None
+    created_at: str
+
+
 def utc_now_text() -> str:
     return datetime.now(UTC).isoformat()
 
@@ -39,6 +51,19 @@ def _processo_from_row(row: sqlite3.Row | None) -> ProcessoRecord | None:
         error_message=row["error_message"],
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
+    )
+
+
+def _chunk_from_row(row: sqlite3.Row) -> ChunkRecord:
+    return ChunkRecord(
+        id=int(row["id"]),
+        processo_id=str(row["processo_id"]),
+        page_number=int(row["page_number"]),
+        chunk_index=int(row["chunk_index"]),
+        text=str(row["text"]),
+        document_type=row["document_type"],
+        vector_id=row["vector_id"],
+        created_at=str(row["created_at"]),
     )
 
 
@@ -146,3 +171,23 @@ class ChunkRepository:
         ).fetchone()
         return int(row["total"])
 
+    def list_for_processo(self, processo_id: str) -> list[ChunkRecord]:
+        rows = self.connection.execute(
+            """
+            SELECT *
+            FROM chunks
+            WHERE processo_id = ?
+            ORDER BY page_number, chunk_index
+            """,
+            (processo_id,),
+        ).fetchall()
+        return [_chunk_from_row(row) for row in rows]
+
+    def update_vector_ids(self, vector_ids_by_chunk_id: dict[int, str]) -> None:
+        if not vector_ids_by_chunk_id:
+            return
+        self.connection.executemany(
+            "UPDATE chunks SET vector_id = ? WHERE id = ?",
+            [(vector_id, chunk_id) for chunk_id, vector_id in vector_ids_by_chunk_id.items()],
+        )
+        self.connection.commit()
