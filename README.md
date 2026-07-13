@@ -31,3 +31,8 @@ Projeto reiniciado do zero. Esta primeira etapa cria a base documental e o roadm
 - `docs/06-api-v01.md`: endpoints do v0.1.
 - `docs/07-schema-minimo.md`: schema mínimo.
 - `docs/08-teste-extracao-pdf.md`: primeiro teste obrigatório com PDF real difícil.
+- `docs/09-fase-1-extracao.md`: entrega da Fase 1 e comando para testar PDF real.
+
+## Fase Atual
+
+Fase 1 em execução: prova de extração por página com PyMuPDF.

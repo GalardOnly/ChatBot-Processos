@@ -3,11 +3,12 @@
 .venv/
 __pycache__/
 .pytest_cache/
+.pytest-tmp/
 .ruff_cache/
 *.pyc
 *.egg-info/
 dist/
 build/
+reports/
 .audiencia*.sqlite3
 .tmp-*.log*
-
