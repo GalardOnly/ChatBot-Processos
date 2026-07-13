@@ -23,6 +23,7 @@ class PageExtraction:
     ocr_applied: bool
     ocr_char_count: int
     extraction_method: str
+    full_text: str
     text_sample: str
     is_probably_empty: bool
     quality_notes: list[str]
@@ -89,6 +90,7 @@ def extract_pdf_report(
                     ocr_applied=should_run_ocr,
                     ocr_char_count=len(ocr_text),
                     extraction_method=_extraction_method(native_text, ocr_text),
+                    full_text=text,
                     text_sample=text[:sample_chars],
                     is_probably_empty=_is_probably_empty(text),
                     quality_notes=_quality_notes(

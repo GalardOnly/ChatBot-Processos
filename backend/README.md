@@ -21,3 +21,14 @@ Por padrão, o comando aplica OCR em páginas com imagem e pouco texto nativo ex
 ```powershell
 extrair-pdf-processo "C:\caminho\processo.pdf" --no-ocr --output "relatorio-sem-ocr.json"
 ```
+
+## Rodar API local
+
+```powershell
+python -m uvicorn preparador_audiencia.main:app --host 127.0.0.1 --port 8910
+```
+
+Rotas da Fase 2:
+
+- `POST /upload`
+- `GET /processo/{id}/status`

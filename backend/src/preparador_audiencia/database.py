@@ -1,0 +1,62 @@
+from __future__ import annotations
+
+import os
+import sqlite3
+from pathlib import Path
+
+DEFAULT_DATABASE_PATH = ".preparador-audiencia.sqlite3"
+
+
+def database_path_from_environment() -> str:
+    return os.getenv("PREPARADOR_DATABASE_PATH", DEFAULT_DATABASE_PATH)
+
+
+def connect_database(path: str | Path | None = None) -> sqlite3.Connection:
+    database_path = str(path) if path is not None else database_path_from_environment()
+    connection = sqlite3.connect(database_path, check_same_thread=False)
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
+
+
+def initialize_database(connection: sqlite3.Connection) -> None:
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS processos (
+            id TEXT PRIMARY KEY,
+            filename TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            sha256 TEXT NOT NULL,
+            status TEXT NOT NULL,
+            page_count INTEGER NOT NULL DEFAULT 0,
+            chunk_count INTEGER NOT NULL DEFAULT 0,
+            error_message TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS chunks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            processo_id TEXT NOT NULL REFERENCES processos(id) ON DELETE CASCADE,
+            page_number INTEGER NOT NULL,
+            chunk_index INTEGER NOT NULL,
+            text TEXT NOT NULL,
+            document_type TEXT,
+            vector_id TEXT,
+            created_at TEXT NOT NULL,
+            UNIQUE (processo_id, page_number, chunk_index)
+        );
+
+        CREATE TABLE IF NOT EXISTS chat_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            processo_id TEXT NOT NULL REFERENCES processos(id) ON DELETE CASCADE,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            retrieved_pages_json TEXT,
+            retrieved_chunks_json TEXT,
+            created_at TEXT NOT NULL
+        );
+        """
+    )
+    connection.commit()
+
