@@ -10,5 +10,6 @@ __pycache__/
 dist/
 build/
 reports/
+samples/publicos/
 .audiencia*.sqlite3
 .tmp-*.log*
