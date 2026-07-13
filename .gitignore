@@ -1,0 +1,13 @@
+.env
+.env.*
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+*.egg-info/
+dist/
+build/
+.audiencia*.sqlite3
+.tmp-*.log*
+
