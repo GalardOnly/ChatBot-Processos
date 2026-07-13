@@ -33,9 +33,33 @@ def test_extract_pdf_report_preserves_page_numbers_and_quality_notes(tmp_path) -
     assert report.page_count == 3
     assert [page.page_number for page in report.pages] == [1, 2, 3]
     assert "Audiencia designada" in report.pages[0].text_sample
+    assert report.pages[0].image_count == 0
     assert report.pages[1].is_probably_empty is True
-    assert "possivel_pagina_escaneada_ou_imagem" in report.pages[1].quality_notes
+    assert "sem_texto_extraido" in report.pages[1].quality_notes
     assert "baixo_texto_extraido" in report.pages[2].quality_notes
+
+
+def test_extract_pdf_report_flags_image_page_with_sparse_text(tmp_path) -> None:
+    pdf_path = tmp_path / "digitalizado.pdf"
+    image_path = tmp_path / "scan.png"
+
+    pixmap = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 300, 120), 0)
+    pixmap.save(image_path)
+
+    document = fitz.open()
+    page = document.new_page()
+    page.insert_image(fitz.Rect(72, 120, 372, 240), filename=image_path)
+    page.insert_text((72, 72), "Documento digitalizado juntado ao processo")
+    document.save(pdf_path)
+    document.close()
+
+    report = extract_pdf_report(pdf_path)
+
+    assert report.pages[0].image_count == 1
+    assert report.pages[0].quality_notes == [
+        "imagem_com_texto_curto",
+        "provavel_necessidade_de_ocr",
+    ]
 
 
 def test_extract_pdf_report_is_json_serializable(tmp_path) -> None:

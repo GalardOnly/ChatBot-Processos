@@ -8,6 +8,7 @@ import fitz
 
 DEFAULT_SAMPLE_CHARS = 500
 LOW_TEXT_THRESHOLD = 80
+IMAGE_WITH_SPARSE_TEXT_THRESHOLD = 500
 
 
 @dataclass(frozen=True)
@@ -15,6 +16,7 @@ class PageExtraction:
     page_number: int
     char_count: int
     word_count: int
+    image_count: int
     text_sample: str
     is_probably_empty: bool
     quality_notes: list[str]
@@ -57,14 +59,16 @@ def extract_pdf_report(
     with fitz.open(path) as document:
         for page_index, page in enumerate(document):
             text = normalize_text(page.get_text("text"))
+            image_count = len(page.get_images(full=True))
             pages.append(
                 PageExtraction(
                     page_number=page_index + 1,
                     char_count=len(text),
                     word_count=len(text.split()),
+                    image_count=image_count,
                     text_sample=text[:sample_chars],
                     is_probably_empty=_is_probably_empty(text),
-                    quality_notes=_quality_notes(text),
+                    quality_notes=_quality_notes(text, image_count=image_count),
                 )
             )
 
@@ -90,9 +94,14 @@ def _is_probably_empty(text: str) -> bool:
     return len(text.strip()) == 0
 
 
-def _quality_notes(text: str) -> list[str]:
+def _quality_notes(text: str, image_count: int = 0) -> list[str]:
     if not text.strip():
-        return ["sem_texto_extraido", "possivel_pagina_escaneada_ou_imagem"]
+        notes = ["sem_texto_extraido"]
+        if image_count:
+            notes.append("possivel_pagina_escaneada_ou_imagem")
+        return notes
+    if image_count and len(text) < IMAGE_WITH_SPARSE_TEXT_THRESHOLD:
+        return ["imagem_com_texto_curto", "provavel_necessidade_de_ocr"]
     if len(text) < LOW_TEXT_THRESHOLD:
         return ["baixo_texto_extraido"]
     return ["texto_extraido"]

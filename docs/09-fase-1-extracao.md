@@ -34,8 +34,15 @@ Infraestrutura pronta e validada com PDF sintético.
 
 Verificações locais:
 
-- `pytest`: 3 testes passaram;
+- `pytest`: 4 testes passaram;
 - `ruff check .`: sem erros;
 - CLI `extrair-pdf-processo`: gerou relatório JSON preservando páginas e detectando página sem texto.
+
+Teste com PDFs públicos digitalizados do STJ:
+
+- três editais públicos marcados como "Documento digitalizado juntado ao processo" foram baixados para `samples/publicos/digitalizados/`;
+- cada página continha imagem embutida;
+- o PyMuPDF extraiu apenas o cabeçalho textual pesquisável;
+- o relatório agora marca esse cenário como `imagem_com_texto_curto` e `provavel_necessidade_de_ocr`.
 
 Falta rodar em um PDF real difícil fornecido ou aprovado pelo defensor.
