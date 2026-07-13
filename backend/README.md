@@ -48,7 +48,7 @@ $env:PREPARADOR_EMBEDDING_PROVIDER="hash"
 Para usar o BERTikal:
 
 ```powershell
-python -m pip install -e .[bertikal]
+python -m pip install -e .[models]
 $env:PREPARADOR_EMBEDDING_PROVIDER="bertikal"
 $env:PREPARADOR_EMBEDDING_MODEL="felipemaiapolo/legalnlp-bert"
 ```
@@ -58,3 +58,45 @@ O ChromaDB fica em `chroma/` por padrao. Para mudar:
 ```powershell
 $env:PREPARADOR_CHROMA_DIR="C:\caminho\chroma"
 ```
+
+## Avaliar modelos na PoC
+
+Crie um arquivo de casos com perguntas, paginas esperadas e termos esperados.
+Use `eval_cases.example.json` como ponto de partida.
+
+```powershell
+avaliar-poc-modelos `
+  --processo-id proc_xxxxx `
+  --cases eval_cases.example.json `
+  --embedding legal-ensemble `
+  --llm-model groq:modelo `
+  --llm-model gemini:modelo `
+  --llm-model openai:modelo `
+  --llm-model deepseek:modelo `
+  --top-k 5 `
+  --output reports/poc-modelos.json
+```
+
+O comando gera:
+
+- `reports/poc-modelos.json`: dados completos da avaliacao;
+- `reports/poc-modelos.md`: tabela legivel com melhor embedding e melhor LLM.
+
+Para usar LLMs:
+
+```powershell
+$env:GROQ_API_KEY="sua-chave"
+$env:GEMINI_API_KEY="sua-chave"
+$env:OPENAI_API_KEY="sua-chave"
+$env:DEEPSEEK_API_KEY="sua-chave"
+```
+
+Os IDs de modelos mudam com o tempo. Consulte a lista ativa de cada provedor
+antes de rodar uma bateria grande.
+
+Aliases de embedding disponiveis:
+
+- `bertikal`: usa `felipemaiapolo/legalnlp-bert` com mean pooling;
+- `jurisbert`: usa `alfaneo/jurisbert-base-portuguese-uncased` com mean pooling;
+- `legal-bertimbau`: usa `rufimelo/Legal-BERTimbau-sts-base` via sentence-transformers.
+- `legal-ensemble`: usa os tres acima em paralelo e combina os rankings.

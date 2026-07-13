@@ -40,6 +40,40 @@ indexacao vetorial no ChromaDB e busca por pergunta com paginas citadas.
 - `docs/10-fase-2-ingestao.md`: API de upload, status e processamento assincrono.
 - `docs/11-fase-3-embeddings-chromadb.md`: busca vetorial com BERTikal configuravel.
 
+## Avaliacao de Modelos na PoC
+
+A PoC agora tem uma bancada para comparar modelos antes de escolher o padrao do
+produto:
+
+- recuperador `legal-ensemble`: combina BERTikal, JurisBERT e Legal-BERTimbau;
+- modelos LLM: mede resposta, citacao de paginas, termos esperados e latencia;
+- saida em JSON e Markdown para comparar qual modelo foi melhor.
+
+Exemplo:
+
+```powershell
+cd backend
+avaliar-poc-modelos `
+  --processo-id proc_xxxxx `
+  --cases eval_cases.example.json `
+  --embedding legal-ensemble `
+  --llm-model groq:modelo `
+  --llm-model gemini:modelo `
+  --llm-model openai:modelo `
+  --llm-model deepseek:modelo `
+  --output reports/poc-modelos.json
+```
+
+Para avaliar LLMs, defina a chave do provedor desejado: `GROQ_API_KEY`,
+`GEMINI_API_KEY`, `OPENAI_API_KEY` ou `DEEPSEEK_API_KEY`. Sem chave, o comando
+avalia apenas a recuperacao.
+
+Embeddings usados em conjunto no `legal-ensemble`:
+
+- `bertikal`: `felipemaiapolo/legalnlp-bert`;
+- `jurisbert`: `alfaneo/jurisbert-base-portuguese-uncased`;
+- `legal-bertimbau`: `rufimelo/Legal-BERTimbau-sts-base`.
+
 ## Fase Atual
 
 Proxima fase recomendada: Fase 4, chat com Groq usando somente as fontes

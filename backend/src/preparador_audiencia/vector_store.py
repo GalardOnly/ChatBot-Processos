@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -23,7 +24,7 @@ class VectorSearchResult:
 
 
 class ChromaVectorStore:
-    def __init__(self, path: Path | None = None) -> None:
+    def __init__(self, path: Path | None = None, collection_name: str = COLLECTION_NAME) -> None:
         try:
             import chromadb
         except ImportError as exc:
@@ -36,7 +37,7 @@ class ChromaVectorStore:
         os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
         self.client = chromadb.PersistentClient(path=str(resolved_path))
         self.collection = self.client.get_or_create_collection(
-            name=COLLECTION_NAME,
+            name=collection_name,
             metadata={"hnsw:space": "cosine"},
         )
 
@@ -124,3 +125,11 @@ def _metadata_for_chunk(processo_id: str, chunk: ChunkRecord) -> dict[str, Any]:
 def _optional_text(value: object) -> str | None:
     text = str(value or "")
     return text or None
+
+
+def safe_collection_name(prefix: str, value: str) -> str:
+    cleaned = re.sub(r"[^a-zA-Z0-9_-]+", "_", value).strip("_")
+    name = f"{prefix}_{cleaned}"[:63].strip("_")
+    if len(name) < 3:
+        return f"{prefix}_default"
+    return name

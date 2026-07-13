@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "chromadb>=0.5",
     "fastapi",
+    "httpx",
     "python-multipart",
     "pillow",
     "pymupdf>=1.24",
@@ -24,9 +25,15 @@ bertikal = [
     "torch",
     "transformers>=4.43",
 ]
+models = [
+    "sentence-transformers>=3.0",
+    "torch",
+    "transformers>=4.43",
+]
 
 [project.scripts]
 extrair-pdf-processo = "preparador_audiencia.cli:main"
+avaliar-poc-modelos = "preparador_audiencia.eval_cli:main"
 
 [build-system]
 requires = ["setuptools>=69"]

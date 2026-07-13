@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "audiencia",
+      "pergunta": "O que o processo informa sobre audiencia?",
+      "expected_pages": [1],
+      "expected_terms": ["audiencia"]
+    },
+    {
+      "id": "linha_do_tempo",
+      "pergunta": "Quais datas importantes aparecem e a que fatos elas se referem?",
+      "expected_pages": [1],
+      "expected_terms": ["data", "fato", "audiencia"]
+    },
+    {
+      "id": "urgencia",
+      "pergunta": "Existe algum pedido ou sinal de urgencia?",
+      "expected_pages": [1],
+      "expected_terms": ["urgencia", "liminar", "prazo"]
+    }
+  ]
+}
