@@ -10,7 +10,13 @@ blocos.
 
 Na aba `Chat`:
 
-- perguntas sugeridas em botoes;
+- perguntas sugeridas em botoes voltados ao uso real do defensor:
+  - preparar audiencia;
+  - perguntas para a parte assistida;
+  - pontos para contraditar;
+  - documentos que preciso abrir;
+  - riscos e urgencias;
+  - resumo de 2 minutos;
 - cada pergunta usa o endpoint `/processo/{id}/chat`;
 - as respostas continuam trazendo fontes recuperadas.
 

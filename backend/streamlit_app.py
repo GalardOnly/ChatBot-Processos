@@ -9,34 +9,36 @@ import streamlit as st
 DEFAULT_API_URL = "http://127.0.0.1:8910"
 GUIDED_QUESTIONS = [
     (
-        "Resumo para audiencia",
-        "Faça um resumo objetivo do caso para preparacao de audiencia. "
-        "Inclua fatos centrais, partes envolvidas e paginas de apoio.",
+        "Preparar audiencia",
+        "Prepare um roteiro pratico para a audiencia deste processo. "
+        "Inclua resumo do caso, pontos de atencao, fatos a confirmar, provas importantes "
+        "e perguntas sugeridas. Cite as paginas em cada item.",
     ),
     (
-        "Linha do tempo",
-        "Monte uma linha do tempo dos eventos relevantes do processo. "
-        "Para cada data, explique qual fato ocorreu e cite as paginas.",
+        "Perguntas para a parte assistida",
+        "Quais perguntas o defensor deve fazer para a parte assistida antes ou durante "
+        "a audiencia? Separe por tema, explique o objetivo de cada pergunta e cite as paginas.",
     ),
     (
-        "Pontos a confirmar",
-        "Quais pontos o defensor deve confirmar com a pessoa assistida antes da audiencia? "
-        "Separe por tema e cite as paginas que justificam cada ponto.",
+        "Pontos para contraditar",
+        "Quais pontos do processo podem ser contraditados, esclarecidos ou questionados "
+        "em audiencia? Indique o fundamento de cada ponto e cite as paginas.",
     ),
     (
-        "Perguntas para audiencia",
-        "Sugira perguntas que o defensor poderia fazer na audiencia, separadas por objetivo. "
-        "Baseie as perguntas apenas nos fatos do processo e cite as paginas.",
-    ),
-    (
-        "Provas e documentos",
-        "Liste as provas e documentos importantes encontrados no processo. "
-        "Explique por que cada item importa para a audiencia e cite as paginas.",
+        "Documentos que preciso abrir",
+        "Quais documentos, laudos, decisoes, mandados, certidoes ou provas o defensor "
+        "deve abrir e conferir antes da audiencia? "
+        "Explique por que cada um importa e cite paginas.",
     ),
     (
         "Riscos e urgencias",
-        "Identifique prazos, urgencias, riscos processuais ou pontos sensiveis para a defesa. "
-        "Se nao houver base suficiente, diga isso claramente e cite as paginas usadas.",
+        "Identifique riscos, urgencias, prazos, determinacoes judiciais, contradicoes ou "
+        "pontos sensiveis que podem impactar a audiencia. Cite as paginas usadas.",
+    ),
+    (
+        "Resumo de 2 minutos",
+        "Faça um resumo de ate 2 minutos para o defensor lembrar rapidamente do caso "
+        "antes da audiencia. Foque no que e essencial e cite as paginas principais.",
     ),
 ]
 HEARING_SECTIONS = [
