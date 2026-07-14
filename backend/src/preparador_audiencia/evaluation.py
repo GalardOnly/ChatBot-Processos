@@ -109,7 +109,7 @@ def run_poc_model_evaluation(
     best_embedding = _best_embedding_result(embedding_results)
     llm_results: list[LLMEvaluationResult] = []
 
-    if best_embedding is not None and llm_models and _has_any_llm_key():
+    if best_embedding is not None and llm_models and _can_run_any_llm(llm_models):
         llm_results = evaluate_llm_models(llm_models, best_embedding.cases)
 
     best_llm_model = _best_llm_model(llm_results)
@@ -185,7 +185,11 @@ def evaluate_llm_models(
 ) -> list[LLMEvaluationResult]:
     results: list[LLMEvaluationResult] = []
     for model in models:
-        client = clients[model] if clients and model in clients else llm_client_from_spec(model)
+        try:
+            client = clients[model] if clients and model in clients else llm_client_from_spec(model)
+        except Exception as exc:
+            results.extend(_failed_llm_results(model, retrieval_cases, str(exc)))
+            continue
         for case in retrieval_cases:
             answer = client.answer(case.pergunta, case.sources)
             results.append(
@@ -258,8 +262,8 @@ def render_markdown_report(report: POCModelEvaluationReport) -> str:
                 "",
                 "## LLMs",
                 "",
-                "Avaliacao de LLM nao executada. Defina uma das chaves: "
-                "`GROQ_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` ou `DEEPSEEK_API_KEY`.",
+                "Avaliacao de LLM nao executada. Defina uma chave de API ou use "
+                "`ollama:modelo` com Ollama local.",
             ]
         )
     return "\n".join(lines) + "\n"
@@ -299,7 +303,28 @@ def _best_llm_model(results: list[LLMEvaluationResult]) -> str | None:
     return max(by_model, key=by_model.get)
 
 
-def _has_any_llm_key() -> bool:
+def _failed_llm_results(
+    model: str,
+    retrieval_cases: list[RetrievalCaseResult],
+    error: str,
+) -> list[LLMEvaluationResult]:
+    return [
+        LLMEvaluationResult(
+            model=model,
+            case_id=case.case_id,
+            pergunta=case.pergunta,
+            score=0.0,
+            answer="",
+            latency_ms=0,
+            error=error,
+        )
+        for case in retrieval_cases
+    ]
+
+
+def _can_run_any_llm(models: list[str]) -> bool:
+    if any(model.strip().lower().startswith("ollama:") for model in models):
+        return True
     return any(
         os.getenv(name)
         for name in ["GROQ_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "DEEPSEEK_API_KEY"]

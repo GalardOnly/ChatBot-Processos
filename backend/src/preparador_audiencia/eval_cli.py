@@ -31,7 +31,7 @@ def main() -> None:
         default=[],
         help=(
             "Modelo no formato provedor:modelo. "
-            "Exemplos: groq:..., gemini:..., openai:..., deepseek:..."
+            "Exemplos: groq:..., gemini:..., ollama:..., openai:..., deepseek:..."
         ),
     )
     parser.add_argument("--top-k", type=int, default=5)

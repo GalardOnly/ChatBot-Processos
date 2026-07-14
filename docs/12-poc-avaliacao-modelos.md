@@ -37,6 +37,7 @@ avaliar-poc-modelos `
   --embedding legal-ensemble `
   --llm-model groq:modelo `
   --llm-model gemini:gemini-flash-latest `
+  --llm-model ollama:deepseek-r1:latest `
   --llm-model openai:modelo `
   --llm-model deepseek:modelo `
   --output reports/poc-modelos.json
@@ -141,6 +142,7 @@ para o chat da Fase 4.
 
 - `groq:modelo`;
 - `gemini:modelo`;
+- `ollama:modelo`;
 - `openai:modelo`;
 - `deepseek:modelo`.
 
@@ -150,3 +152,10 @@ Chaves de ambiente:
 - `GEMINI_API_KEY`;
 - `OPENAI_API_KEY`;
 - `DEEPSEEK_API_KEY`.
+
+Ollama nao exige chave. O avaliador usa `http://127.0.0.1:11434` por padrao.
+Para mudar:
+
+```powershell
+$env:OLLAMA_BASE_URL="http://127.0.0.1:11434"
+```

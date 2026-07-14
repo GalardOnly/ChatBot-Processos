@@ -18,6 +18,7 @@ OPENAI_COMPATIBLE_ENDPOINTS = {
 GEMINI_ENDPOINT_TEMPLATE = (
     "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 )
+DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,8 @@ def llm_client_from_spec(spec: str) -> LLMClient:
         )
     if provider_key == "gemini":
         return GeminiChatClient(model=model_name)
+    if provider_key == "ollama":
+        return OllamaChatClient(model=model_name)
     raise ValueError(f"Provedor de LLM desconhecido: {provider_key}")
 
 
@@ -142,6 +145,43 @@ class GeminiChatClient:
             return LLMAnswer(self.model, "", _elapsed_ms(started), error=_safe_error(exc))
 
 
+class OllamaChatClient:
+    def __init__(
+        self,
+        model: str,
+        base_url: str | None = None,
+        timeout_seconds: float = 180.0,
+    ) -> None:
+        self.model = f"ollama:{model}"
+        self.model_name = model
+        resolved_base_url = base_url or os.getenv("OLLAMA_BASE_URL") or DEFAULT_OLLAMA_BASE_URL
+        self.base_url = resolved_base_url.rstrip("/")
+        self.timeout_seconds = timeout_seconds
+
+    def answer(self, pergunta: str, sources: list[SearchResult]) -> LLMAnswer:
+        started = time.perf_counter()
+        try:
+            response = httpx.post(
+                f"{self.base_url}/api/chat",
+                json={
+                    "model": self.model_name,
+                    "stream": False,
+                    "messages": [
+                        {"role": "system", "content": _system_prompt()},
+                        {"role": "user", "content": _user_prompt(pergunta, sources)},
+                    ],
+                    "options": {"temperature": 0.1},
+                },
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            answer = _strip_thinking(payload["message"]["content"].strip())
+            return LLMAnswer(self.model, answer, _elapsed_ms(started))
+        except Exception as exc:
+            return LLMAnswer(self.model, "", _elapsed_ms(started), error=_safe_error(exc))
+
+
 GroqChatClient = OpenAICompatibleChatClient
 
 
@@ -178,6 +218,10 @@ def _user_prompt(pergunta: str, sources: list[SearchResult]) -> str:
 
 def _elapsed_ms(started: float) -> int:
     return round((time.perf_counter() - started) * 1000)
+
+
+def _strip_thinking(answer: str) -> str:
+    return re.sub(r"<think>.*?</think>", "", answer, flags=re.DOTALL | re.IGNORECASE).strip()
 
 
 def _safe_error(exc: Exception) -> str:

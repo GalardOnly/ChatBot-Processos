@@ -71,6 +71,7 @@ avaliar-poc-modelos `
   --embedding legal-ensemble `
   --llm-model groq:modelo `
   --llm-model gemini:gemini-flash-latest `
+  --llm-model ollama:deepseek-r1:latest `
   --llm-model openai:modelo `
   --llm-model deepseek:modelo `
   --top-k 5 `
@@ -112,6 +113,18 @@ $env:DEEPSEEK_API_KEY="sua-chave"
 
 Se preferir, coloque as chaves em `backend/.env`; ele e carregado
 automaticamente e esta ignorado pelo Git.
+
+Para usar Ollama local, nao precisa de chave:
+
+```powershell
+ollama list
+avaliar-poc-modelos `
+  --processo-id proc_xxxxx `
+  --cases eval_cases.example.json `
+  --embedding legal-ensemble `
+  --llm-model ollama:deepseek-r1:latest `
+  --output reports/poc-ollama.json
+```
 
 Os IDs de modelos mudam com o tempo. Consulte a lista ativa de cada provedor
 antes de rodar uma bateria grande.
