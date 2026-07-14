@@ -52,11 +52,29 @@ def initialize_database(connection: sqlite3.Connection) -> None:
             processo_id TEXT NOT NULL REFERENCES processos(id) ON DELETE CASCADE,
             role TEXT NOT NULL,
             content TEXT NOT NULL,
+            model TEXT,
+            latency_ms INTEGER,
+            error TEXT,
             retrieved_pages_json TEXT,
             retrieved_chunks_json TEXT,
             created_at TEXT NOT NULL
         );
         """
     )
+    _ensure_chat_message_columns(connection)
     connection.commit()
 
+
+def _ensure_chat_message_columns(connection: sqlite3.Connection) -> None:
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(chat_messages)").fetchall()
+    }
+    migrations = {
+        "model": "ALTER TABLE chat_messages ADD COLUMN model TEXT",
+        "latency_ms": "ALTER TABLE chat_messages ADD COLUMN latency_ms INTEGER",
+        "error": "ALTER TABLE chat_messages ADD COLUMN error TEXT",
+    }
+    for column, statement in migrations.items():
+        if column not in columns:
+            connection.execute(statement)

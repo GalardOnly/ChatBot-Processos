@@ -35,6 +35,32 @@ Rotas implementadas:
 - `POST /upload`
 - `GET /processo/{id}/status`
 - `POST /processo/{id}/buscar`
+- `POST /processo/{id}/chat`
+
+## Chat do processo
+
+O chat usa os trechos recuperados pela busca vetorial e instrui o LLM a
+responder somente com base nessas fontes, citando paginas no formato `[p. N]`.
+
+Modelo padrao:
+
+- principal: `gemini:gemini-flash-latest`;
+- fallback: `groq:llama-3.1-8b-instant`.
+
+Exemplo:
+
+```powershell
+curl -X POST http://127.0.0.1:8910/processo/proc_xxxxx/chat `
+  -H "Content-Type: application/json" `
+  -d "{\"pergunta\":\"Quais fatos preciso confirmar na audiencia?\",\"top_k\":5}"
+```
+
+Variaveis opcionais para trocar os modelos sem mudar codigo:
+
+```powershell
+$env:PREPARADOR_PRIMARY_LLM="gemini:gemini-flash-latest"
+$env:PREPARADOR_FALLBACK_LLM="groq:llama-3.1-8b-instant"
+```
 
 ## Embeddings e busca vetorial
 

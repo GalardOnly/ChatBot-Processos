@@ -39,6 +39,20 @@ class SearchResponse(BaseModel):
     fontes: list[SearchSource]
 
 
+class ChatRequest(BaseModel):
+    pergunta: str
+    top_k: int = 5
+
+
+class ChatResponse(BaseModel):
+    processo_id: str
+    pergunta: str
+    resposta: str
+    modelo: str | None
+    fallback_usado: bool
+    fontes: list[SearchSource]
+
+
 class ErrorResponse(BaseModel):
     error: str
     detail: str

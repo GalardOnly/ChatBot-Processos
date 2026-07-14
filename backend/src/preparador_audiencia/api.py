@@ -5,15 +5,17 @@ from typing import Annotated
 from fastapi import APIRouter, BackgroundTasks, File, UploadFile
 from fastapi.responses import JSONResponse
 
+from preparador_audiencia.chat import answer_process_question, sources_to_schema
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.ingestion import create_processo_from_pdf, process_pdf
-from preparador_audiencia.repositories import ProcessoRepository
+from preparador_audiencia.repositories import ChatMessageRepository, ProcessoRepository
 from preparador_audiencia.schemas import (
+    ChatRequest,
+    ChatResponse,
     ErrorResponse,
     ProcessStatusResponse,
     SearchRequest,
     SearchResponse,
-    SearchSource,
     UploadResponse,
 )
 from preparador_audiencia.search import search_process
@@ -104,14 +106,61 @@ async def search_process_sources(
     return SearchResponse(
         processo_id=processo_id,
         pergunta=pergunta,
-        fontes=[
-            SearchSource(
-                pagina=result.page_number,
-                chunk_index=result.chunk_index,
-                tipo_documento=result.document_type,
-                score=result.score,
-                trecho=result.text,
-            )
-            for result in results
-        ],
+        fontes=sources_to_schema(results),
+    )
+
+
+@router.post(
+    "/processo/{processo_id}/chat",
+    response_model=ChatResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+    },
+)
+async def chat_with_process(
+    processo_id: str,
+    request: ChatRequest,
+) -> ChatResponse | JSONResponse:
+    pergunta = request.pergunta.strip()
+    if not pergunta:
+        return error_response(400, "empty_question", "Informe uma pergunta para o chat.")
+    if request.top_k <= 0 or request.top_k > 20:
+        return error_response(400, "invalid_top_k", "top_k deve ficar entre 1 e 20.")
+
+    connection = connect_database()
+    initialize_database(connection)
+    processo = ProcessoRepository(connection).get(processo_id)
+    if processo is None:
+        return error_response(404, "process_not_found", "Processo nao encontrado.")
+    if processo.status != "concluido":
+        return error_response(
+            409,
+            "process_not_ready",
+            "Aguarde o processamento do processo terminar antes de conversar.",
+        )
+
+    try:
+        result = answer_process_question(
+            processo_id=processo_id,
+            pergunta=pergunta,
+            messages=ChatMessageRepository(connection),
+            top_k=request.top_k,
+        )
+    except RuntimeError as exc:
+        return error_response(
+            503,
+            "llm_unavailable",
+            f"Nao foi possivel gerar resposta com Gemini nem com Groq: {exc}",
+        )
+
+    return ChatResponse(
+        processo_id=processo_id,
+        pergunta=result.pergunta,
+        resposta=result.resposta,
+        modelo=result.modelo,
+        fallback_usado=result.fallback_usado,
+        fontes=sources_to_schema(result.fontes),
     )

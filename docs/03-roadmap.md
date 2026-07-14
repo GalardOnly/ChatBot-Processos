@@ -66,7 +66,7 @@ Critério de pronto:
 - pergunta de teste recupera trechos do processo correto;
 - resultados retornam páginas e textos de origem.
 
-## Fase 4: Chat com Groq e Citações
+## Fase 4: Chat com Gemini, fallback Groq e Citações
 
 Objetivo: permitir conversa com o processo.
 
@@ -75,7 +75,8 @@ Entregas:
 - `POST /processo/{id}/chat`;
 - busca dos trechos relevantes;
 - prompt restrito às fontes recuperadas;
-- chamada ao Groq;
+- chamada ao Gemini como modelo principal;
+- fallback para Groq quando o Gemini falhar;
 - resposta com páginas citadas;
 - persistência em `chat_messages`.
 
@@ -120,4 +121,3 @@ Entregas:
 - auditoria;
 - revisão de provedores externos;
 - validação com defensores.
-

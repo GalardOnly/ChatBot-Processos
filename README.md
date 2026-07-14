@@ -21,8 +21,9 @@ fontes para acelerar a preparacao, mantendo revisao humana obrigatoria.
 
 ## Estado atual
 
-Fase 3 concluida localmente: ingestao de PDF com OCR, persistencia de trechos,
-indexacao vetorial no ChromaDB e busca por pergunta com paginas citadas.
+Fase 4 concluida localmente: ingestao de PDF com OCR, persistencia de trechos,
+indexacao vetorial no ChromaDB, busca por pergunta e chat com Gemini usando
+Groq como fallback.
 
 ## Estrutura
 
@@ -39,6 +40,8 @@ indexacao vetorial no ChromaDB e busca por pergunta com paginas citadas.
 - `docs/09-fase-1-extracao.md`: entrega da Fase 1 e comando para testar PDF real.
 - `docs/10-fase-2-ingestao.md`: API de upload, status e processamento assincrono.
 - `docs/11-fase-3-embeddings-chromadb.md`: busca vetorial com BERTikal configuravel.
+- `docs/12-poc-avaliacao-modelos.md`: avaliacao dos embeddings e LLMs da PoC.
+- `docs/13-fase-4-chat.md`: chat com fontes, Gemini principal e fallback Groq.
 
 ## Avaliacao de Modelos na PoC
 

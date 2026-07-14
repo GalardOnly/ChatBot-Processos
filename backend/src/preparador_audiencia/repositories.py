@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -33,6 +34,20 @@ class ChunkRecord:
     created_at: str
 
 
+@dataclass(frozen=True)
+class ChatMessageRecord:
+    id: int
+    processo_id: str
+    role: str
+    content: str
+    model: str | None
+    latency_ms: int | None
+    error: str | None
+    retrieved_pages: list[int]
+    retrieved_chunks: list[dict[str, object]]
+    created_at: str
+
+
 def utc_now_text() -> str:
     return datetime.now(UTC).isoformat()
 
@@ -63,6 +78,21 @@ def _chunk_from_row(row: sqlite3.Row) -> ChunkRecord:
         text=str(row["text"]),
         document_type=row["document_type"],
         vector_id=row["vector_id"],
+        created_at=str(row["created_at"]),
+    )
+
+
+def _chat_message_from_row(row: sqlite3.Row) -> ChatMessageRecord:
+    return ChatMessageRecord(
+        id=int(row["id"]),
+        processo_id=str(row["processo_id"]),
+        role=str(row["role"]),
+        content=str(row["content"]),
+        model=row["model"],
+        latency_ms=row["latency_ms"],
+        error=row["error"],
+        retrieved_pages=json.loads(row["retrieved_pages_json"] or "[]"),
+        retrieved_chunks=json.loads(row["retrieved_chunks_json"] or "[]"),
         created_at=str(row["created_at"]),
     )
 
@@ -191,3 +221,59 @@ class ChunkRepository:
             [(vector_id, chunk_id) for chunk_id, vector_id in vector_ids_by_chunk_id.items()],
         )
         self.connection.commit()
+
+
+class ChatMessageRepository:
+    def __init__(self, connection: sqlite3.Connection) -> None:
+        self.connection = connection
+
+    def add(
+        self,
+        processo_id: str,
+        role: str,
+        content: str,
+        *,
+        model: str | None = None,
+        latency_ms: int | None = None,
+        error: str | None = None,
+        retrieved_pages: list[int] | None = None,
+        retrieved_chunks: list[dict[str, object]] | None = None,
+    ) -> ChatMessageRecord:
+        now = utc_now_text()
+        self.connection.execute(
+            """
+            INSERT INTO chat_messages (
+                processo_id, role, content, model, latency_ms, error,
+                retrieved_pages_json, retrieved_chunks_json, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                processo_id,
+                role,
+                content,
+                model,
+                latency_ms,
+                error,
+                json.dumps(retrieved_pages or []),
+                json.dumps(retrieved_chunks or []),
+                now,
+            ),
+        )
+        self.connection.commit()
+        row = self.connection.execute(
+            "SELECT * FROM chat_messages WHERE id = last_insert_rowid()"
+        ).fetchone()
+        return _chat_message_from_row(row)
+
+    def list_for_processo(self, processo_id: str) -> list[ChatMessageRecord]:
+        rows = self.connection.execute(
+            """
+            SELECT *
+            FROM chat_messages
+            WHERE processo_id = ?
+            ORDER BY id
+            """,
+            (processo_id,),
+        ).fetchall()
+        return [_chat_message_from_row(row) for row in rows]
