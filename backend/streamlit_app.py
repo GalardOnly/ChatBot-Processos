@@ -19,6 +19,7 @@ def main() -> None:
     api_url = st.sidebar.text_input("API local", value=st.session_state.api_url)
     st.session_state.api_url = api_url.rstrip("/")
     st.sidebar.caption("Padrao: FastAPI em http://127.0.0.1:8910")
+    _render_process_recovery(st.session_state.api_url)
 
     uploaded_file = st.file_uploader("PDF do processo", type=["pdf"])
     col_upload, col_status = st.columns([1, 1])
@@ -84,6 +85,45 @@ def _refresh_status(api_url: str) -> None:
         st.error(f"Nao foi possivel consultar o status: {exc}")
         return
     st.session_state.status = response.json()
+
+
+def _render_process_recovery(api_url: str) -> None:
+    st.sidebar.divider()
+    st.sidebar.subheader("Recuperar processo")
+    typed_id = st.sidebar.text_input("ID do processo", value=st.session_state.processo_id)
+    col_load, col_latest = st.sidebar.columns(2)
+    with col_load:
+        if st.button("Carregar", disabled=not typed_id.strip()):
+            st.session_state.processo_id = typed_id.strip()
+            st.session_state.messages = []
+            _refresh_status(api_url)
+            st.rerun()
+    with col_latest:
+        if st.button("Ultimo"):
+            _load_latest_process(api_url, completed_only=False)
+            st.rerun()
+    if st.sidebar.button("Ultimo concluido"):
+        _load_latest_process(api_url, completed_only=True)
+        st.rerun()
+
+
+def _load_latest_process(api_url: str, *, completed_only: bool) -> None:
+    try:
+        response = httpx.get(f"{api_url}/processos?limit=10", timeout=30)
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        st.sidebar.error(f"Nao foi possivel carregar o ultimo processo: {exc}")
+        return
+
+    processos = response.json()["processos"]
+    if completed_only:
+        processos = [processo for processo in processos if processo["status"] == "concluido"]
+    if not processos:
+        st.sidebar.info("Nenhum processo encontrado.")
+        return
+    st.session_state.processo_id = processos[0]["processo_id"]
+    st.session_state.messages = []
+    _refresh_status(api_url)
 
 
 def _render_process_status() -> None:

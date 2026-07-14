@@ -13,6 +13,8 @@ from preparador_audiencia.schemas import (
     ChatRequest,
     ChatResponse,
     ErrorResponse,
+    ProcessListItem,
+    ProcessListResponse,
     ProcessStatusResponse,
     SearchRequest,
     SearchResponse,
@@ -72,6 +74,30 @@ async def get_process_status(processo_id: str) -> ProcessStatusResponse | JSONRe
         paginas_extraidas=processo.page_count,
         chunks=processo.chunk_count,
         erro=processo.error_message,
+    )
+
+
+@router.get("/processos", response_model=ProcessListResponse)
+async def list_recent_processes(limit: int = 10) -> ProcessListResponse | JSONResponse:
+    if limit <= 0 or limit > 50:
+        return error_response(400, "invalid_limit", "limit deve ficar entre 1 e 50.")
+
+    connection = connect_database()
+    initialize_database(connection)
+    processos = ProcessoRepository(connection).list_recent(limit)
+    return ProcessListResponse(
+        processos=[
+            ProcessListItem(
+                processo_id=processo.id,
+                filename=processo.filename,
+                status=processo.status,
+                paginas_extraidas=processo.page_count,
+                chunks=processo.chunk_count,
+                criado_em=processo.created_at,
+                atualizado_em=processo.updated_at,
+            )
+            for processo in processos
+        ]
     )
 
 

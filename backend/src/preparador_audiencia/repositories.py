@@ -132,6 +132,22 @@ class ProcessoRepository:
         ).fetchone()
         return _processo_from_row(row)
 
+    def list_recent(self, limit: int = 10) -> list[ProcessoRecord]:
+        rows = self.connection.execute(
+            """
+            SELECT *
+            FROM processos
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return [
+            processo
+            for row in rows
+            if (processo := _processo_from_row(row)) is not None
+        ]
+
     def mark_processing(self, processo_id: str) -> None:
         self.connection.execute(
             """

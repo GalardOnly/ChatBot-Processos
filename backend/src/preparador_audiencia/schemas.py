@@ -20,6 +20,20 @@ class ProcessStatusResponse(BaseModel):
     erro: str | None
 
 
+class ProcessListItem(BaseModel):
+    processo_id: str
+    filename: str
+    status: ProcessStatus
+    paginas_extraidas: int
+    chunks: int
+    criado_em: str
+    atualizado_em: str
+
+
+class ProcessListResponse(BaseModel):
+    processos: list[ProcessListItem]
+
+
 class SearchRequest(BaseModel):
     pergunta: str
     top_k: int = 5
