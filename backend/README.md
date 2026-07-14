@@ -77,6 +77,25 @@ avaliar-poc-modelos `
   --output reports/poc-modelos.json
 ```
 
+Por seguranca, o avaliador limita chamadas de LLM a 4 por execucao. Antes de
+rodar valendo, confira o plano:
+
+```powershell
+avaliar-poc-modelos `
+  --processo-id proc_xxxxx `
+  --cases eval_cases.example.json `
+  --embedding legal-ensemble `
+  --llm-model groq:modelo `
+  --llm-model gemini:modelo `
+  --dry-run
+```
+
+Para uma bateria maior, aumente explicitamente:
+
+```powershell
+avaliar-poc-modelos ... --max-llm-calls 8
+```
+
 O comando gera:
 
 - `reports/poc-modelos.json`: dados completos da avaliacao;
@@ -90,6 +109,9 @@ $env:GEMINI_API_KEY="sua-chave"
 $env:OPENAI_API_KEY="sua-chave"
 $env:DEEPSEEK_API_KEY="sua-chave"
 ```
+
+Se preferir, coloque as chaves em `backend/.env`; ele e carregado
+automaticamente e esta ignorado pelo Git.
 
 Os IDs de modelos mudam com o tempo. Consulte a lista ativa de cada provedor
 antes de rodar uma bateria grande.

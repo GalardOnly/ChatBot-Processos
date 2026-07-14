@@ -9,6 +9,7 @@ dependencies = [
     "fastapi",
     "httpx",
     "python-multipart",
+    "python-dotenv",
     "pillow",
     "pymupdf>=1.24",
     "rapidocr-onnxruntime>=1.4",

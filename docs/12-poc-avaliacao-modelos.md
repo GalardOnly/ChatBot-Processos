@@ -42,6 +42,32 @@ avaliar-poc-modelos `
   --output reports/poc-modelos.json
 ```
 
+## Controle de custo
+
+Por padrao, o avaliador limita a execucao a 4 chamadas de LLM. Isso evita
+rodar uma bateria grande sem perceber.
+
+Para ver o plano sem gastar chamadas:
+
+```powershell
+avaliar-poc-modelos `
+  --processo-id proc_xxxxx `
+  --cases eval_cases.example.json `
+  --embedding legal-ensemble `
+  --llm-model groq:modelo `
+  --llm-model gemini:modelo `
+  --dry-run
+```
+
+Para liberar uma bateria maior:
+
+```powershell
+avaliar-poc-modelos ... --max-llm-calls 8
+```
+
+Se ainda passar do limite, o comando para antes de chamar qualquer API. Para
+forcar conscientemente, existe `--allow-paid-over-limit`.
+
 ## Formato dos casos
 
 ```json
