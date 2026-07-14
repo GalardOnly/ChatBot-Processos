@@ -7,6 +7,84 @@ import httpx
 import streamlit as st
 
 DEFAULT_API_URL = "http://127.0.0.1:8910"
+GUIDED_QUESTIONS = [
+    (
+        "Resumo para audiencia",
+        "Faça um resumo objetivo do caso para preparacao de audiencia. "
+        "Inclua fatos centrais, partes envolvidas e paginas de apoio.",
+    ),
+    (
+        "Linha do tempo",
+        "Monte uma linha do tempo dos eventos relevantes do processo. "
+        "Para cada data, explique qual fato ocorreu e cite as paginas.",
+    ),
+    (
+        "Pontos a confirmar",
+        "Quais pontos o defensor deve confirmar com a pessoa assistida antes da audiencia? "
+        "Separe por tema e cite as paginas que justificam cada ponto.",
+    ),
+    (
+        "Perguntas para audiencia",
+        "Sugira perguntas que o defensor poderia fazer na audiencia, separadas por objetivo. "
+        "Baseie as perguntas apenas nos fatos do processo e cite as paginas.",
+    ),
+    (
+        "Provas e documentos",
+        "Liste as provas e documentos importantes encontrados no processo. "
+        "Explique por que cada item importa para a audiencia e cite as paginas.",
+    ),
+    (
+        "Riscos e urgencias",
+        "Identifique prazos, urgencias, riscos processuais ou pontos sensiveis para a defesa. "
+        "Se nao houver base suficiente, diga isso claramente e cite as paginas usadas.",
+    ),
+]
+HEARING_SECTIONS = [
+    {
+        "title": "Resumo do caso",
+        "prompt": (
+            "Prepare um resumo do caso para audiencia. Traga fatos centrais, partes, "
+            "pedido ou acusacao principal e pontos que exigem atencao. "
+            "Use topicos e cite paginas em cada item."
+        ),
+    },
+    {
+        "title": "Linha do tempo",
+        "prompt": (
+            "Monte uma linha do tempo explicada dos eventos processuais e factuais relevantes. "
+            "Para cada evento, informe data quando houver, fato associado e pagina."
+        ),
+    },
+    {
+        "title": "Provas e documentos",
+        "prompt": (
+            "Liste provas, documentos, laudos, mandados, decisoes e certidoes importantes. "
+            "Explique a relevancia pratica de cada um para a audiencia e cite paginas."
+        ),
+    },
+    {
+        "title": "Pontos controvertidos",
+        "prompt": (
+            "Identifique contradicoes, lacunas, pontos confusos ou fatos que precisam "
+            "ser validados pelo defensor antes ou durante a audiencia. Cite paginas."
+        ),
+    },
+    {
+        "title": "Perguntas sugeridas",
+        "prompt": (
+            "Sugira perguntas para a audiencia, separadas por pessoa ou tema quando possivel. "
+            "Explique o objetivo de cada grupo de perguntas e cite paginas de apoio."
+        ),
+    },
+    {
+        "title": "Checklist final",
+        "prompt": (
+            "Crie um checklist final de preparacao para audiencia. Inclua providencias, "
+            "documentos a conferir, pontos a explicar para a pessoa assistida e riscos. "
+            "Cite paginas sempre que houver base no processo."
+        ),
+    },
+]
 
 
 def main() -> None:
@@ -35,7 +113,11 @@ def main() -> None:
 
     _render_process_status()
     st.divider()
-    _render_chat(st.session_state.api_url)
+    chat_tab, preparation_tab = st.tabs(["Chat", "Preparacao de audiencia"])
+    with chat_tab:
+        _render_chat(st.session_state.api_url)
+    with preparation_tab:
+        _render_hearing_preparation(st.session_state.api_url)
 
 
 def _init_state() -> None:
@@ -44,6 +126,7 @@ def _init_state() -> None:
         "processo_id": "",
         "status": None,
         "messages": [],
+        "hearing_report": [],
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
@@ -70,6 +153,7 @@ def _upload_pdf(api_url: str, uploaded_file: Any) -> None:
     payload = response.json()
     st.session_state.processo_id = payload["processo_id"]
     st.session_state.messages = []
+    st.session_state.hearing_report = []
     _refresh_status(api_url)
     st.success("PDF enviado. Aguarde o processamento terminar.")
 
@@ -96,6 +180,7 @@ def _render_process_recovery(api_url: str) -> None:
         if st.button("Carregar", disabled=not typed_id.strip()):
             st.session_state.processo_id = typed_id.strip()
             st.session_state.messages = []
+            st.session_state.hearing_report = []
             _refresh_status(api_url)
             st.rerun()
     with col_latest:
@@ -123,6 +208,7 @@ def _load_latest_process(api_url: str, *, completed_only: bool) -> None:
         return
     st.session_state.processo_id = processos[0]["processo_id"]
     st.session_state.messages = []
+    st.session_state.hearing_report = []
     _refresh_status(api_url)
 
 
@@ -160,6 +246,8 @@ def _render_chat(api_url: str) -> None:
         st.caption("O chat fica disponivel quando o processamento estiver concluido.")
         return
 
+    _render_guided_questions(api_url)
+
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -168,23 +256,84 @@ def _render_chat(api_url: str) -> None:
 
     pergunta = st.chat_input("Pergunte sobre o processo")
     if pergunta:
-        st.session_state.messages.append({"role": "user", "content": pergunta})
-        with st.chat_message("user"):
-            st.markdown(pergunta)
-        with st.chat_message("assistant"):
-            with st.spinner("Consultando o processo..."):
-                answer = _ask_question(api_url, pergunta)
-            st.markdown(answer["content"])
-            _render_sources(answer.get("fontes", []))
-        st.session_state.messages.append(answer)
+        _submit_chat_question(api_url, pergunta)
 
 
-def _ask_question(api_url: str, pergunta: str) -> dict[str, Any]:
+def _render_guided_questions(api_url: str) -> None:
+    with st.expander("Perguntas sugeridas", expanded=True):
+        columns = st.columns(3)
+        for index, (label, prompt) in enumerate(GUIDED_QUESTIONS):
+            with columns[index % len(columns)]:
+                if st.button(label, use_container_width=True):
+                    _submit_chat_question(api_url, prompt)
+                    st.rerun()
+
+
+def _submit_chat_question(api_url: str, pergunta: str) -> None:
+    st.session_state.messages.append({"role": "user", "content": pergunta})
+    with st.chat_message("user"):
+        st.markdown(pergunta)
+    with st.chat_message("assistant"):
+        with st.spinner("Consultando o processo..."):
+            answer = _ask_question(api_url, pergunta)
+        st.markdown(answer["content"])
+        _render_sources(answer.get("fontes", []))
+    st.session_state.messages.append(answer)
+
+
+def _render_hearing_preparation(api_url: str) -> None:
+    st.subheader("Preparacao de audiencia")
+    status = st.session_state.status or {}
+    ready = status.get("status") == "concluido"
+
+    if not ready:
+        st.caption("A preparacao fica disponivel quando o processamento estiver concluido.")
+        return
+
+    col_generate, col_clear = st.columns([1, 1])
+    with col_generate:
+        if st.button("Gerar roteiro de audiencia", type="primary"):
+            _generate_hearing_report(api_url)
+    with col_clear:
+        if st.button("Limpar roteiro", disabled=not st.session_state.hearing_report):
+            st.session_state.hearing_report = []
+            st.rerun()
+
+    if not st.session_state.hearing_report:
+        st.info("Use o botao acima para gerar uma preparacao guiada com fontes.")
+        return
+
+    for section in st.session_state.hearing_report:
+        with st.expander(section["title"], expanded=True):
+            st.markdown(section["content"])
+            _render_sources(section.get("fontes", []))
+
+
+def _generate_hearing_report(api_url: str) -> None:
+    report = []
+    progress = st.progress(0)
+    status_text = st.empty()
+    for index, section in enumerate(HEARING_SECTIONS, start=1):
+        status_text.write(f"Gerando: {section['title']}")
+        answer = _ask_question(api_url, section["prompt"], top_k=8)
+        report.append(
+            {
+                "title": section["title"],
+                "content": answer["content"],
+                "fontes": answer.get("fontes", []),
+            }
+        )
+        progress.progress(index / len(HEARING_SECTIONS))
+    status_text.empty()
+    st.session_state.hearing_report = report
+
+
+def _ask_question(api_url: str, pergunta: str, top_k: int = 5) -> dict[str, Any]:
     processo_id = st.session_state.processo_id
     try:
         response = httpx.post(
             f"{api_url}/processo/{processo_id}/chat",
-            json={"pergunta": pergunta, "top_k": 5},
+            json={"pergunta": pergunta, "top_k": top_k},
             timeout=120,
         )
         response.raise_for_status()

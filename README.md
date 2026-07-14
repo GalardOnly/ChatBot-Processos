@@ -21,8 +21,8 @@ fontes para acelerar a preparacao, mantendo revisao humana obrigatoria.
 
 ## Estado atual
 
-Fase 5 iniciada localmente: alem da ingestao, busca e chat com fontes, existe
-uma interface simples em Streamlit para validar o fluxo com o defensor.
+Fase 6 iniciada localmente: alem da ingestao, busca e chat com fontes, a
+interface tem perguntas sugeridas e um roteiro guiado de preparacao de audiencia.
 
 ## Estrutura
 
@@ -42,6 +42,7 @@ uma interface simples em Streamlit para validar o fluxo com o defensor.
 - `docs/12-poc-avaliacao-modelos.md`: avaliacao dos embeddings e LLMs da PoC.
 - `docs/13-fase-4-chat.md`: chat com fontes, Gemini principal e fallback Groq.
 - `docs/14-fase-5-interface-streamlit.md`: interface simples em Streamlit.
+- `docs/15-fase-6-preparacao-audiencia.md`: perguntas sugeridas e roteiro guiado.
 
 ## Interface local
 

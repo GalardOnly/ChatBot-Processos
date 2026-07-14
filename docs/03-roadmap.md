@@ -109,7 +109,8 @@ Entregas:
 - linha do tempo explicada;
 - provas e pendências;
 - resumo orientado à audiência;
-- fontes por item.
+- fontes por item;
+- roteiro guiado em Streamlit para gerar a preparacao completa.
 
 ## Fase 7: Segurança, LGPD e Validação
 
