@@ -31,7 +31,7 @@ def main() -> None:
         default=[],
         help=(
             "Modelo no formato provedor:modelo. "
-            "Padrao da PoC: gemini:gemini-flash-latest; fallback: groq:llama-3.1-8b-instant."
+            "Padrao da PoC: gemini:gemini-3-flash-preview; fallback: groq:llama-3.1-8b-instant."
         ),
     )
     parser.add_argument("--top-k", type=int, default=5)

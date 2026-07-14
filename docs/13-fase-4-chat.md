@@ -17,7 +17,7 @@ Fluxo:
 2. registra a pergunta em `chat_messages`;
 3. busca os trechos relevantes no ChromaDB;
 4. se nao houver fonte, responde sem chamar LLM;
-5. tenta responder com `gemini:gemini-flash-latest`;
+5. tenta responder com `gemini:gemini-3-flash-preview`;
 6. se o Gemini falhar, tenta `groq:llama-3.1-8b-instant`;
 7. registra resposta, modelo usado, latencia e fontes recuperadas.
 
@@ -39,7 +39,7 @@ Saida:
   "processo_id": "proc_xxxxx",
   "pergunta": "Quais fatos preciso confirmar na audiencia?",
   "resposta": "A resposta vem com citacoes como [p. 3].",
-  "modelo": "gemini:gemini-flash-latest",
+  "modelo": "gemini:gemini-3-flash-preview",
   "fallback_usado": false,
   "fontes": [
     {
@@ -64,13 +64,13 @@ Saida:
 
 Modelos padrao:
 
-- principal: `gemini:gemini-flash-latest`;
+- principal: `gemini:gemini-3-flash-preview`;
 - fallback: `groq:llama-3.1-8b-instant`.
 
 Variaveis opcionais:
 
 ```powershell
-$env:PREPARADOR_PRIMARY_LLM="gemini:gemini-flash-latest"
+$env:PREPARADOR_PRIMARY_LLM="gemini:gemini-3-flash-preview"
 $env:PREPARADOR_FALLBACK_LLM="groq:llama-3.1-8b-instant"
 ```
 

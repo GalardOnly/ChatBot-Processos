@@ -5,7 +5,7 @@ from pathlib import Path
 
 DEFAULT_STORAGE_DIR = "storage"
 DEFAULT_CHROMA_DIR = "chroma"
-DEFAULT_PRIMARY_LLM = "gemini:gemini-flash-latest"
+DEFAULT_PRIMARY_LLM = "gemini:gemini-3-flash-preview"
 DEFAULT_FALLBACK_LLM = "groq:llama-3.1-8b-instant"
 
 

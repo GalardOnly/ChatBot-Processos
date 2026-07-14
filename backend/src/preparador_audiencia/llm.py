@@ -94,6 +94,13 @@ class OpenAICompatibleChatClient:
             payload = response.json()
             answer = payload["choices"][0]["message"]["content"].strip()
             return LLMAnswer(self.model, answer, _elapsed_ms(started))
+        except httpx.HTTPStatusError as exc:
+            return LLMAnswer(
+                self.model,
+                "",
+                _elapsed_ms(started),
+                error=_safe_http_error(exc),
+            )
         except Exception as exc:
             return LLMAnswer(self.model, "", _elapsed_ms(started), error=_safe_error(exc))
 
@@ -136,6 +143,13 @@ class GeminiChatClient:
             payload = response.json()
             answer = payload["candidates"][0]["content"]["parts"][0]["text"].strip()
             return LLMAnswer(self.model, answer, _elapsed_ms(started))
+        except httpx.HTTPStatusError as exc:
+            return LLMAnswer(
+                self.model,
+                "",
+                _elapsed_ms(started),
+                error=_safe_http_error(exc),
+            )
         except Exception as exc:
             return LLMAnswer(self.model, "", _elapsed_ms(started), error=_safe_error(exc))
 
@@ -186,3 +200,8 @@ def _safe_error(exc: Exception) -> str:
         if secret:
             message = message.replace(secret, "[REDACTED]")
     return message
+
+
+def _safe_http_error(exc: httpx.HTTPStatusError) -> str:
+    body = exc.response.text[:500]
+    return _safe_error(RuntimeError(f"{exc}; body={body}"))

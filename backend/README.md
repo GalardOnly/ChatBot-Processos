@@ -54,7 +54,7 @@ responder somente com base nessas fontes, citando paginas no formato `[p. N]`.
 
 Modelo padrao:
 
-- principal: `gemini:gemini-flash-latest`;
+- principal: `gemini:gemini-3-flash-preview`;
 - fallback: `groq:llama-3.1-8b-instant`.
 
 Exemplo:
@@ -68,7 +68,7 @@ curl -X POST http://127.0.0.1:8910/processo/proc_xxxxx/chat `
 Variaveis opcionais para trocar os modelos sem mudar codigo:
 
 ```powershell
-$env:PREPARADOR_PRIMARY_LLM="gemini:gemini-flash-latest"
+$env:PREPARADOR_PRIMARY_LLM="gemini:gemini-3-flash-preview"
 $env:PREPARADOR_FALLBACK_LLM="groq:llama-3.1-8b-instant"
 ```
 
@@ -105,7 +105,7 @@ avaliar-poc-modelos `
   --processo-id proc_xxxxx `
   --cases eval_cases.example.json `
   --embedding legal-ensemble `
-  --llm-model gemini:gemini-flash-latest `
+  --llm-model gemini:gemini-3-flash-preview `
   --llm-model groq:llama-3.1-8b-instant `
   --top-k 5 `
   --output reports/poc-modelos.json
@@ -119,7 +119,7 @@ avaliar-poc-modelos `
   --processo-id proc_xxxxx `
   --cases eval_cases.example.json `
   --embedding legal-ensemble `
-  --llm-model gemini:gemini-flash-latest `
+  --llm-model gemini:gemini-3-flash-preview `
   --llm-model groq:llama-3.1-8b-instant `
   --dry-run
 ```
@@ -147,7 +147,7 @@ automaticamente e esta ignorado pelo Git.
 
 Decisao atual da PoC:
 
-- principal: `gemini:gemini-flash-latest`;
+- principal: `gemini:gemini-3-flash-preview`;
 - fallback: `groq:llama-3.1-8b-instant`.
 
 Os IDs de modelos mudam com o tempo. Consulte a lista ativa dos provedores antes

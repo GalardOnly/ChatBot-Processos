@@ -95,6 +95,6 @@ Embeddings usados em conjunto no `legal-ensemble`:
 
 ## Decisao atual de LLM
 
-O modelo principal da PoC e `gemini:gemini-flash-latest`, escolhido pela
+O modelo principal da PoC e `gemini:gemini-3-flash-preview`, escolhido pela
 resposta mais organizada para leitura. O unico fallback mantido e
 `groq:llama-3.1-8b-instant`.

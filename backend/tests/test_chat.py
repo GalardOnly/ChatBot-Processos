@@ -49,7 +49,7 @@ def test_answer_process_question_uses_primary_model_and_records_history(
         lambda spec: FakeLLMClient(
             spec,
             LLMAnswer(
-                model="gemini:gemini-flash-latest",
+                model="gemini:gemini-3-flash-preview",
                 answer="A audiencia foi designada para 20/08/2026 [p. 2].",
                 latency_ms=123,
             ),
@@ -60,17 +60,17 @@ def test_answer_process_question_uses_primary_model_and_records_history(
         "proc_123",
         "Quando sera a audiencia?",
         messages,
-        primary_model="gemini:gemini-flash-latest",
+        primary_model="gemini:gemini-3-flash-preview",
         fallback_model="groq:llama-3.1-8b-instant",
     )
 
     history = messages.list_for_processo("proc_123")
-    assert result.modelo == "gemini:gemini-flash-latest"
+    assert result.modelo == "gemini:gemini-3-flash-preview"
     assert result.fallback_usado is False
     assert result.fontes[0].page_number == 2
     assert history[0].role == "user"
     assert history[1].role == "assistant"
-    assert history[1].model == "gemini:gemini-flash-latest"
+    assert history[1].model == "gemini:gemini-3-flash-preview"
     assert history[1].retrieved_pages == [2]
     assert history[1].retrieved_chunks[0]["chunk_index"] == 0
 
@@ -105,12 +105,12 @@ def test_answer_process_question_uses_groq_fallback_when_primary_fails(
         "proc_123",
         "Existe audiencia?",
         messages,
-        primary_model="gemini:gemini-flash-latest",
+        primary_model="gemini:gemini-3-flash-preview",
         fallback_model="groq:llama-3.1-8b-instant",
     )
 
     history = messages.list_for_processo("proc_123")
-    assert calls == ["gemini:gemini-flash-latest", "groq:llama-3.1-8b-instant"]
+    assert calls == ["gemini:gemini-3-flash-preview", "groq:llama-3.1-8b-instant"]
     assert result.modelo == "groq:llama-3.1-8b-instant"
     assert result.fallback_usado is True
     assert history[1].model == "groq:llama-3.1-8b-instant"

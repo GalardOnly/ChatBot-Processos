@@ -128,7 +128,7 @@ def test_chat_endpoint_returns_answer_with_sources(tmp_path, monkeypatch) -> Non
         return ChatResult(
             pergunta=kwargs["pergunta"],
             resposta="A audiencia esta marcada para 20/08/2026 [p. 1].",
-            modelo="gemini:gemini-flash-latest",
+            modelo="gemini:gemini-3-flash-preview",
             fallback_usado=False,
             fontes=[source],
         )
@@ -145,7 +145,7 @@ def test_chat_endpoint_returns_answer_with_sources(tmp_path, monkeypatch) -> Non
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["modelo"] == "gemini:gemini-flash-latest"
+    assert payload["modelo"] == "gemini:gemini-3-flash-preview"
     assert payload["fallback_usado"] is False
     assert payload["fontes"][0]["pagina"] == 1
 

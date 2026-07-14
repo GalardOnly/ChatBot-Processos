@@ -35,7 +35,7 @@ avaliar-poc-modelos `
   --processo-id proc_xxxxx `
   --cases eval_cases.example.json `
   --embedding legal-ensemble `
-  --llm-model gemini:gemini-flash-latest `
+  --llm-model gemini:gemini-3-flash-preview `
   --llm-model groq:llama-3.1-8b-instant `
   --output reports/poc-modelos.json
 ```
@@ -52,7 +52,7 @@ avaliar-poc-modelos `
   --processo-id proc_xxxxx `
   --cases eval_cases.example.json `
   --embedding legal-ensemble `
-  --llm-model gemini:gemini-flash-latest `
+  --llm-model gemini:gemini-3-flash-preview `
   --llm-model groq:llama-3.1-8b-instant `
   --dry-run
 ```
