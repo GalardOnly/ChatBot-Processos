@@ -92,11 +92,12 @@ Objetivo: entregar uma experiência mínima utilizável pelo defensor.
 
 Entregas:
 
+- interface simples em Streamlit;
 - upload do PDF;
 - status do processamento;
 - chat do processo;
 - exibição das páginas citadas;
-- histórico da conversa.
+- fontes recuperadas em painel expansível.
 
 ## Fase 6: Preparação de Audiência
 

@@ -21,9 +21,8 @@ fontes para acelerar a preparacao, mantendo revisao humana obrigatoria.
 
 ## Estado atual
 
-Fase 4 concluida localmente: ingestao de PDF com OCR, persistencia de trechos,
-indexacao vetorial no ChromaDB, busca por pergunta e chat com Gemini usando
-Groq como fallback.
+Fase 5 iniciada localmente: alem da ingestao, busca e chat com fontes, existe
+uma interface simples em Streamlit para validar o fluxo com o defensor.
 
 ## Estrutura
 
@@ -42,6 +41,25 @@ Groq como fallback.
 - `docs/11-fase-3-embeddings-chromadb.md`: busca vetorial com BERTikal configuravel.
 - `docs/12-poc-avaliacao-modelos.md`: avaliacao dos embeddings e LLMs da PoC.
 - `docs/13-fase-4-chat.md`: chat com fontes, Gemini principal e fallback Groq.
+- `docs/14-fase-5-interface-streamlit.md`: interface simples em Streamlit.
+
+## Interface local
+
+Terminal 1:
+
+```powershell
+cd backend
+python -m uvicorn preparador_audiencia.main:app --host 127.0.0.1 --port 8910
+```
+
+Terminal 2:
+
+```powershell
+cd backend
+python -m streamlit run streamlit_app.py --server.address 127.0.0.1 --server.port 8501
+```
+
+Acesse `http://127.0.0.1:8501`.
 
 ## Avaliacao de Modelos na PoC
 

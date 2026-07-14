@@ -37,6 +37,16 @@ Rotas implementadas:
 - `POST /processo/{id}/buscar`
 - `POST /processo/{id}/chat`
 
+## Rodar interface Streamlit
+
+Com a API rodando em outro terminal:
+
+```powershell
+python -m streamlit run streamlit_app.py --server.address 127.0.0.1 --server.port 8501
+```
+
+Acesse `http://127.0.0.1:8501`.
+
 ## Chat do processo
 
 O chat usa os trechos recuperados pela busca vetorial e instrui o LLM a
