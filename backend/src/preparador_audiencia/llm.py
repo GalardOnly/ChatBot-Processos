@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import time
 from dataclasses import dataclass
 from typing import Protocol
@@ -96,7 +97,7 @@ class OpenAICompatibleChatClient:
             answer = payload["choices"][0]["message"]["content"].strip()
             return LLMAnswer(self.model, answer, _elapsed_ms(started))
         except Exception as exc:
-            return LLMAnswer(self.model, "", _elapsed_ms(started), error=str(exc))
+            return LLMAnswer(self.model, "", _elapsed_ms(started), error=_safe_error(exc))
 
 
 class GeminiChatClient:
@@ -138,7 +139,7 @@ class GeminiChatClient:
             answer = payload["candidates"][0]["content"]["parts"][0]["text"].strip()
             return LLMAnswer(self.model, answer, _elapsed_ms(started))
         except Exception as exc:
-            return LLMAnswer(self.model, "", _elapsed_ms(started), error=str(exc))
+            return LLMAnswer(self.model, "", _elapsed_ms(started), error=_safe_error(exc))
 
 
 GroqChatClient = OpenAICompatibleChatClient
@@ -177,3 +178,13 @@ def _user_prompt(pergunta: str, sources: list[SearchResult]) -> str:
 
 def _elapsed_ms(started: float) -> int:
     return round((time.perf_counter() - started) * 1000)
+
+
+def _safe_error(exc: Exception) -> str:
+    message = str(exc)
+    message = re.sub(r"([?&]key=)[^&\\s]+", r"\1[REDACTED]", message)
+    for env_name in ["GROQ_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "DEEPSEEK_API_KEY"]:
+        secret = os.getenv(env_name)
+        if secret:
+            message = message.replace(secret, "[REDACTED]")
+    return message

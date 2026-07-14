@@ -70,7 +70,7 @@ avaliar-poc-modelos `
   --cases eval_cases.example.json `
   --embedding legal-ensemble `
   --llm-model groq:modelo `
-  --llm-model gemini:modelo `
+  --llm-model gemini:gemini-flash-latest `
   --llm-model openai:modelo `
   --llm-model deepseek:modelo `
   --top-k 5 `
@@ -86,7 +86,7 @@ avaliar-poc-modelos `
   --cases eval_cases.example.json `
   --embedding legal-ensemble `
   --llm-model groq:modelo `
-  --llm-model gemini:modelo `
+  --llm-model gemini:gemini-flash-latest `
   --dry-run
 ```
 

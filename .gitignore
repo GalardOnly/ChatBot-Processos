@@ -14,3 +14,6 @@ reports/
 samples/publicos/
 .audiencia*.sqlite3
 .tmp-*.log*
+.preparador-audiencia.sqlite3
+backend/.preparador-audiencia.sqlite3
+backend/storage/
