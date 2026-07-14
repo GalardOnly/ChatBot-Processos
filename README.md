@@ -59,14 +59,12 @@ avaliar-poc-modelos `
   --embedding legal-ensemble `
   --llm-model groq:modelo `
   --llm-model gemini:modelo `
-  --llm-model openai:modelo `
-  --llm-model deepseek:modelo `
   --output reports/poc-modelos.json
 ```
 
-Para avaliar LLMs, defina a chave do provedor desejado: `GROQ_API_KEY`,
-`GEMINI_API_KEY`, `OPENAI_API_KEY` ou `DEEPSEEK_API_KEY`. Sem chave, o comando
-avalia apenas a recuperacao.
+Para avaliar LLMs, defina `GEMINI_API_KEY` para o modelo principal ou
+`GROQ_API_KEY` para o fallback. Sem chave, o comando avalia apenas a
+recuperacao.
 
 Embeddings usados em conjunto no `legal-ensemble`:
 
@@ -74,7 +72,8 @@ Embeddings usados em conjunto no `legal-ensemble`:
 - `jurisbert`: `alfaneo/jurisbert-base-portuguese-uncased`;
 - `legal-bertimbau`: `rufimelo/Legal-BERTimbau-sts-base`.
 
-## Fase Atual
+## Decisao atual de LLM
 
-Proxima fase recomendada: Fase 4, chat com Groq usando somente as fontes
-recuperadas pela busca vetorial.
+O modelo principal da PoC e `gemini:gemini-flash-latest`, escolhido pela
+resposta mais organizada para leitura. O unico fallback mantido e
+`groq:llama-3.1-8b-instant`.

@@ -262,8 +262,8 @@ def render_markdown_report(report: POCModelEvaluationReport) -> str:
                 "",
                 "## LLMs",
                 "",
-                "Avaliacao de LLM nao executada. Defina uma chave de API ou use "
-                "`ollama:modelo` com Ollama local.",
+                "Avaliacao de LLM nao executada. Defina `GEMINI_API_KEY` "
+                "ou `GROQ_API_KEY`.",
             ]
         )
     return "\n".join(lines) + "\n"
@@ -323,11 +323,9 @@ def _failed_llm_results(
 
 
 def _can_run_any_llm(models: list[str]) -> bool:
-    if any(model.strip().lower().startswith("ollama:") for model in models):
-        return True
     return any(
         os.getenv(name)
-        for name in ["GROQ_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "DEEPSEEK_API_KEY"]
+        for name in ["GROQ_API_KEY", "GEMINI_API_KEY"]
     )
 
 

@@ -35,11 +35,8 @@ avaliar-poc-modelos `
   --processo-id proc_xxxxx `
   --cases eval_cases.example.json `
   --embedding legal-ensemble `
-  --llm-model groq:modelo `
   --llm-model gemini:gemini-flash-latest `
-  --llm-model ollama:deepseek-r1:latest `
-  --llm-model openai:modelo `
-  --llm-model deepseek:modelo `
+  --llm-model groq:llama-3.1-8b-instant `
   --output reports/poc-modelos.json
 ```
 
@@ -55,8 +52,8 @@ avaliar-poc-modelos `
   --processo-id proc_xxxxx `
   --cases eval_cases.example.json `
   --embedding legal-ensemble `
-  --llm-model groq:modelo `
   --llm-model gemini:gemini-flash-latest `
+  --llm-model groq:llama-3.1-8b-instant `
   --dry-run
 ```
 
@@ -135,27 +132,15 @@ cada tipo de pergunta.
 Se um deles for consistentemente ruim em PDFs reais, removemos ou reduzimos seu
 peso no ensemble.
 
-Se um provedor LLM ganhar usando as mesmas fontes, ele vira candidato principal
-para o chat da Fase 4.
+Decisao atual: Gemini e o LLM principal por qualidade de leitura. Groq fica como
+fallback por velocidade e baixo tempo de resposta observado.
 
 ## Provedores de LLM aceitos
 
 - `groq:modelo`;
 - `gemini:modelo`;
-- `ollama:modelo`;
-- `openai:modelo`;
-- `deepseek:modelo`.
 
-Chaves de ambiente:
+Chaves de ambiente usadas na PoC atual:
 
 - `GROQ_API_KEY`;
-- `GEMINI_API_KEY`;
-- `OPENAI_API_KEY`;
-- `DEEPSEEK_API_KEY`.
-
-Ollama nao exige chave. O avaliador usa `http://127.0.0.1:11434` por padrao.
-Para mudar:
-
-```powershell
-$env:OLLAMA_BASE_URL="http://127.0.0.1:11434"
-```
+- `GEMINI_API_KEY`.

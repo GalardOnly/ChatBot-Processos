@@ -69,11 +69,8 @@ avaliar-poc-modelos `
   --processo-id proc_xxxxx `
   --cases eval_cases.example.json `
   --embedding legal-ensemble `
-  --llm-model groq:modelo `
   --llm-model gemini:gemini-flash-latest `
-  --llm-model ollama:deepseek-r1:latest `
-  --llm-model openai:modelo `
-  --llm-model deepseek:modelo `
+  --llm-model groq:llama-3.1-8b-instant `
   --top-k 5 `
   --output reports/poc-modelos.json
 ```
@@ -86,8 +83,8 @@ avaliar-poc-modelos `
   --processo-id proc_xxxxx `
   --cases eval_cases.example.json `
   --embedding legal-ensemble `
-  --llm-model groq:modelo `
   --llm-model gemini:gemini-flash-latest `
+  --llm-model groq:llama-3.1-8b-instant `
   --dry-run
 ```
 
@@ -102,32 +99,23 @@ O comando gera:
 - `reports/poc-modelos.json`: dados completos da avaliacao;
 - `reports/poc-modelos.md`: tabela legivel com melhor embedding e melhor LLM.
 
-Para usar LLMs:
+Para usar LLMs na PoC:
 
 ```powershell
-$env:GROQ_API_KEY="sua-chave"
 $env:GEMINI_API_KEY="sua-chave"
-$env:OPENAI_API_KEY="sua-chave"
-$env:DEEPSEEK_API_KEY="sua-chave"
+$env:GROQ_API_KEY="sua-chave"
 ```
 
 Se preferir, coloque as chaves em `backend/.env`; ele e carregado
 automaticamente e esta ignorado pelo Git.
 
-Para usar Ollama local, nao precisa de chave:
+Decisao atual da PoC:
 
-```powershell
-ollama list
-avaliar-poc-modelos `
-  --processo-id proc_xxxxx `
-  --cases eval_cases.example.json `
-  --embedding legal-ensemble `
-  --llm-model ollama:deepseek-r1:latest `
-  --output reports/poc-ollama.json
-```
+- principal: `gemini:gemini-flash-latest`;
+- fallback: `groq:llama-3.1-8b-instant`.
 
-Os IDs de modelos mudam com o tempo. Consulte a lista ativa de cada provedor
-antes de rodar uma bateria grande.
+Os IDs de modelos mudam com o tempo. Consulte a lista ativa dos provedores antes
+de rodar uma bateria grande.
 
 Aliases de embedding disponiveis:
 

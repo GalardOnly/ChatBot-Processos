@@ -6,7 +6,7 @@ from preparador_audiencia.eval_cli import estimate_llm_calls, validate_llm_budge
 
 
 def test_estimate_llm_calls_multiplies_cases_by_models() -> None:
-    assert estimate_llm_calls(cases_count=3, llm_models=["groq:a", "openai:b"]) == 6
+    assert estimate_llm_calls(cases_count=3, llm_models=["gemini:a", "groq:b"]) == 6
 
 
 def test_validate_llm_budget_blocks_over_limit() -> None:
