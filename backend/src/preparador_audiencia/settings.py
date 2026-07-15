@@ -5,6 +5,7 @@ from pathlib import Path
 
 DEFAULT_STORAGE_DIR = "storage"
 DEFAULT_CHROMA_DIR = "chroma"
+DEFAULT_EMBEDDING_PROVIDER = "legal-ensemble"
 DEFAULT_PRIMARY_LLM = "gemini:gemini-3-flash-preview"
 DEFAULT_FALLBACK_LLM = "groq:llama-3.1-8b-instant"
 
@@ -23,3 +24,7 @@ def primary_llm_from_environment() -> str:
 
 def fallback_llm_from_environment() -> str:
     return os.getenv("PREPARADOR_FALLBACK_LLM", DEFAULT_FALLBACK_LLM)
+
+
+def embedding_provider_from_environment() -> str:
+    return os.getenv("PREPARADOR_EMBEDDING_PROVIDER", DEFAULT_EMBEDDING_PROVIDER)

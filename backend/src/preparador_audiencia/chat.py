@@ -4,8 +4,9 @@ from dataclasses import dataclass
 
 from preparador_audiencia.llm import LLMAnswer, llm_client_from_spec
 from preparador_audiencia.repositories import ChatMessageRepository
+from preparador_audiencia.retrieval import search_process_configured
 from preparador_audiencia.schemas import SearchSource
-from preparador_audiencia.search import SearchResult, search_process
+from preparador_audiencia.search import SearchResult
 from preparador_audiencia.settings import (
     fallback_llm_from_environment,
     primary_llm_from_environment,
@@ -37,7 +38,7 @@ def answer_process_question(
     fallback_model: str | None = None,
 ) -> ChatResult:
     messages.add(processo_id, "user", pergunta)
-    sources = search_process(processo_id=processo_id, pergunta=pergunta, top_k=top_k)
+    sources = search_process_configured(processo_id=processo_id, pergunta=pergunta, top_k=top_k)
 
     if not sources:
         messages.add(

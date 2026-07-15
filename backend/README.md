@@ -5,7 +5,7 @@ Backend do Preparador de Audiencia.
 ## Instalacao local
 
 ```powershell
-python -m pip install -e .[dev]
+python -m pip install -e .[dev,models]
 ```
 
 ## Rodar extracao em um PDF
@@ -74,14 +74,23 @@ $env:PREPARADOR_FALLBACK_LLM="groq:llama-3.1-8b-instant"
 
 ## Embeddings e busca vetorial
 
-Por padrao, o backend usa um provider leve (`hash`) para desenvolvimento e
-testes locais:
+Por padrao, o fluxo principal usa o recuperador `legal-ensemble`, que indexa e
+consulta os trechos com BERTikal, JurisBERT e Legal-BERTimbau, combinando os
+resultados antes de enviar fontes ao Gemini.
+
+Para usar o modo leve de desenvolvimento e testes locais:
 
 ```powershell
 $env:PREPARADOR_EMBEDDING_PROVIDER="hash"
 ```
 
-Para usar o BERTikal:
+Para forcar o ensemble juridico:
+
+```powershell
+$env:PREPARADOR_EMBEDDING_PROVIDER="legal-ensemble"
+```
+
+Para testar um modelo isolado, por exemplo BERTikal:
 
 ```powershell
 python -m pip install -e .[models]

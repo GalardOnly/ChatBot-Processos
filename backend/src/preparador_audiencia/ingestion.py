@@ -8,7 +8,7 @@ from preparador_audiencia.chunking import chunk_extracted_pages
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.pdf_extraction import extract_pdf_report
 from preparador_audiencia.repositories import ChunkRepository, ProcessoRepository
-from preparador_audiencia.search import index_process_chunks
+from preparador_audiencia.retrieval import index_process_chunks_configured
 from preparador_audiencia.settings import storage_dir_from_environment
 
 
@@ -50,7 +50,7 @@ def process_pdf(processo_id: str) -> None:
         report = extract_pdf_report(processo.file_path)
         extracted_chunks = chunk_extracted_pages(report.pages)
         chunks.replace_for_processo(processo_id, extracted_chunks)
-        index_process_chunks(processo_id, chunks)
+        index_process_chunks_configured(processo_id, chunks)
         processos.mark_completed(
             processo_id,
             page_count=report.page_count,

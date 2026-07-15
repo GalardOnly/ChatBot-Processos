@@ -9,6 +9,8 @@ pergunta, preservando pagina, indice do trecho e tipo de documento.
 
 - interface `EmbeddingProvider`;
 - provider real `BertikalEmbeddingProvider` usando mean pooling;
+- aliases para JurisBERT e Legal-BERTimbau;
+- recuperador `legal-ensemble` combinando BERTikal, JurisBERT e Legal-BERTimbau;
 - provider local `HashEmbeddingProvider` para testes e desenvolvimento;
 - armazenamento vetorial persistente em ChromaDB;
 - indexacao automatica ao final da ingestao;
@@ -16,13 +18,19 @@ pergunta, preservando pagina, indice do trecho e tipo de documento.
 
 ## Configuracao
 
-Desenvolvimento:
+Padrao do fluxo principal:
+
+```powershell
+$env:PREPARADOR_EMBEDDING_PROVIDER="legal-ensemble"
+```
+
+Modo leve para desenvolvimento:
 
 ```powershell
 $env:PREPARADOR_EMBEDDING_PROVIDER="hash"
 ```
 
-BERTikal:
+Modelo isolado, exemplo BERTikal:
 
 ```powershell
 python -m pip install -e .[bertikal]
@@ -42,7 +50,8 @@ Ao perguntar por audiencia, prazo, decisao ou medida protetiva, a rota de busca
 deve devolver trechos do processo que mencionem diretamente o assunto e sempre
 informar a pagina de origem.
 
-## Proximo passo
+## Estado atual
 
-A Fase 4 deve ligar essa recuperacao ao Groq, criando `POST /processo/{id}/chat`
-com resposta baseada apenas nas fontes recuperadas.
+A Fase 4 e a interface Streamlit usam essa recuperacao configurada. Quando
+`PREPARADOR_EMBEDDING_PROVIDER=legal-ensemble`, upload, busca e chat passam pelo
+ensemble juridico.

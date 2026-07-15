@@ -9,6 +9,7 @@ from preparador_audiencia.chat import answer_process_question, sources_to_schema
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.ingestion import create_processo_from_pdf, process_pdf
 from preparador_audiencia.repositories import ChatMessageRepository, ProcessoRepository
+from preparador_audiencia.retrieval import search_process_configured
 from preparador_audiencia.schemas import (
     ChatRequest,
     ChatResponse,
@@ -20,7 +21,6 @@ from preparador_audiencia.schemas import (
     SearchResponse,
     UploadResponse,
 )
-from preparador_audiencia.search import search_process
 
 router = APIRouter()
 
@@ -128,7 +128,11 @@ async def search_process_sources(
             "Aguarde o processamento do processo terminar antes de buscar.",
         )
 
-    results = search_process(processo_id=processo_id, pergunta=pergunta, top_k=request.top_k)
+    results = search_process_configured(
+        processo_id=processo_id,
+        pergunta=pergunta,
+        top_k=request.top_k,
+    )
     return SearchResponse(
         processo_id=processo_id,
         pergunta=pergunta,

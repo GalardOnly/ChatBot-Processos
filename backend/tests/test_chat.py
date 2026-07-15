@@ -43,7 +43,10 @@ def test_answer_process_question_uses_primary_model_and_records_history(
     monkeypatch,
 ) -> None:
     messages = create_chat_repository(tmp_path)
-    monkeypatch.setattr("preparador_audiencia.chat.search_process", lambda **kwargs: fake_sources())
+    monkeypatch.setattr(
+        "preparador_audiencia.chat.search_process_configured",
+        lambda **kwargs: fake_sources(),
+    )
     monkeypatch.setattr(
         "preparador_audiencia.chat.llm_client_from_spec",
         lambda spec: FakeLLMClient(
@@ -98,7 +101,10 @@ def test_answer_process_question_uses_groq_fallback_when_primary_fails(
             ),
         )
 
-    monkeypatch.setattr("preparador_audiencia.chat.search_process", lambda **kwargs: fake_sources())
+    monkeypatch.setattr(
+        "preparador_audiencia.chat.search_process_configured",
+        lambda **kwargs: fake_sources(),
+    )
     monkeypatch.setattr("preparador_audiencia.chat.llm_client_from_spec", fake_client)
 
     result = answer_process_question(
@@ -118,7 +124,7 @@ def test_answer_process_question_uses_groq_fallback_when_primary_fails(
 
 def test_answer_process_question_does_not_call_llm_without_sources(tmp_path, monkeypatch) -> None:
     messages = create_chat_repository(tmp_path)
-    monkeypatch.setattr("preparador_audiencia.chat.search_process", lambda **kwargs: [])
+    monkeypatch.setattr("preparador_audiencia.chat.search_process_configured", lambda **kwargs: [])
 
     def fail_if_called(spec: str) -> FakeLLMClient:
         raise AssertionError(f"LLM nao deveria ser chamado: {spec}")

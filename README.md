@@ -38,7 +38,7 @@ interface tem perguntas sugeridas e um roteiro guiado de preparacao de audiencia
 - `docs/08-teste-extracao-pdf.md`: primeiro teste obrigatorio com PDF real dificil.
 - `docs/09-fase-1-extracao.md`: entrega da Fase 1 e comando para testar PDF real.
 - `docs/10-fase-2-ingestao.md`: API de upload, status e processamento assincrono.
-- `docs/11-fase-3-embeddings-chromadb.md`: busca vetorial com BERTikal configuravel.
+- `docs/11-fase-3-embeddings-chromadb.md`: busca vetorial com ensemble juridico.
 - `docs/12-poc-avaliacao-modelos.md`: avaliacao dos embeddings e LLMs da PoC.
 - `docs/13-fase-4-chat.md`: chat com fontes, Gemini principal e fallback Groq.
 - `docs/14-fase-5-interface-streamlit.md`: interface simples em Streamlit.
