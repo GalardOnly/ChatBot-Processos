@@ -24,7 +24,7 @@ def test_index_process_chunks_configured_uses_ensemble(monkeypatch) -> None:
     assert result == 7
     assert calls[0][0] == "proc_123"
     assert calls[0][1] is chunk_repository
-    assert calls[0][2] == ["bertikal", "jurisbert", "legal-bertimbau"]
+    assert calls[0][2] == ["jurisbert", "legal-bertimbau"]
 
 
 def test_search_process_configured_uses_ensemble(monkeypatch) -> None:
@@ -50,6 +50,6 @@ def test_search_process_configured_uses_ensemble(monkeypatch) -> None:
             "proc_123",
             "qual audiencia?",
             3,
-            ["bertikal", "jurisbert", "legal-bertimbau"],
+            ["jurisbert", "legal-bertimbau"],
         )
     ]

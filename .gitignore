@@ -12,6 +12,8 @@ build/
 chroma/
 reports/
 samples/publicos/
+samples/benchmark/
+samples/anonimizados/
 .audiencia*.sqlite3
 .tmp-*.log*
 .preparador-audiencia.sqlite3

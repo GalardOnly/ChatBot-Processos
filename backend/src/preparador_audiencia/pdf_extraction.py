@@ -58,6 +58,7 @@ def extract_pdf_report(
     ocr_enabled: bool = True,
     ocr_zoom: float = 2.0,
     ocr_engine: OcrEngine | None = None,
+    max_pages: int | None = None,
 ) -> PdfExtractionReport:
     path = Path(pdf_path)
     if not path.exists():
@@ -69,6 +70,8 @@ def extract_pdf_report(
     resolved_ocr_engine: OcrEngine | None = ocr_engine
     with fitz.open(path) as document:
         for page_index, page in enumerate(document):
+            if max_pages is not None and page_index >= max_pages:
+                break
             native_text = normalize_text(page.get_text("text"))
             image_count = len(page.get_images(full=True))
             should_run_ocr = ocr_enabled and _should_run_ocr(native_text, image_count)

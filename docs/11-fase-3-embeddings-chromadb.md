@@ -10,7 +10,7 @@ pergunta, preservando pagina, indice do trecho e tipo de documento.
 - interface `EmbeddingProvider`;
 - provider real `BertikalEmbeddingProvider` usando mean pooling;
 - aliases para JurisBERT e Legal-BERTimbau;
-- recuperador `legal-ensemble` combinando BERTikal, JurisBERT e Legal-BERTimbau;
+- recuperador `legal-ensemble` combinando JurisBERT e Legal-BERTimbau;
 - provider local `HashEmbeddingProvider` para testes e desenvolvimento;
 - armazenamento vetorial persistente em ChromaDB;
 - indexacao automatica ao final da ingestao;

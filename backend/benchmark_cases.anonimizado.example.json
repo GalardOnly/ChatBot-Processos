@@ -1,0 +1,37 @@
+{
+  "document": "samples/anonimizados/processo-anonimizado.pdf",
+  "tipo_caso": "preencher_tipo_do_caso",
+  "observacao": "Use apenas PDFs anonimizados e autorizados. Nao versionar o PDF real.",
+  "cases": [
+    {
+      "id": "resumo_do_caso",
+      "pergunta": "Qual e o resumo do caso para preparacao de audiencia?",
+      "expected_pages": [],
+      "expected_terms": []
+    },
+    {
+      "id": "linha_do_tempo",
+      "pergunta": "Quais datas relevantes aparecem e a que fatos cada data se refere?",
+      "expected_pages": [],
+      "expected_terms": []
+    },
+    {
+      "id": "pontos_para_confirmar",
+      "pergunta": "Quais pontos o defensor deve confirmar antes ou durante a audiencia?",
+      "expected_pages": [],
+      "expected_terms": []
+    },
+    {
+      "id": "provas_documentos",
+      "pergunta": "Quais provas, documentos ou decisoes precisam ser conferidos?",
+      "expected_pages": [],
+      "expected_terms": []
+    },
+    {
+      "id": "riscos_urgencias",
+      "pergunta": "Existe algum risco, urgencia, prazo ou contradicao relevante?",
+      "expected_pages": [],
+      "expected_terms": []
+    }
+  ]
+}

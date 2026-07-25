@@ -36,6 +36,7 @@ models = [
 [project.scripts]
 extrair-pdf-processo = "preparador_audiencia.cli:main"
 avaliar-poc-modelos = "preparador_audiencia.eval_cli:main"
+benchmark-fontes = "preparador_audiencia.benchmark_cli:main"
 
 [build-system]
 requires = ["setuptools>=69"]

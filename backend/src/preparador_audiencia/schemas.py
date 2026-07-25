@@ -56,6 +56,21 @@ class SearchResponse(BaseModel):
 class ChatRequest(BaseModel):
     pergunta: str
     top_k: int = 5
+    avaliar: bool = False
+    avaliador_modelo: str | None = None
+
+
+class QualityEvaluationResponse(BaseModel):
+    modelo_avaliador: str
+    fidelidade_fontes: int
+    completude_juridica: int
+    utilidade_audiencia: int
+    risco_alucinacao: str
+    pontos_fortes: list[str]
+    problemas: list[str]
+    faltou: list[str]
+    veredito: str
+    erro: str | None
 
 
 class ChatResponse(BaseModel):
@@ -65,6 +80,7 @@ class ChatResponse(BaseModel):
     modelo: str | None
     fallback_usado: bool
     fontes: list[SearchSource]
+    avaliacao: QualityEvaluationResponse | None = None
 
 
 class ErrorResponse(BaseModel):

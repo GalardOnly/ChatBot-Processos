@@ -24,7 +24,7 @@ Quando o defensor faz uma pergunta, a aplicacao busca os trechos mais relevantes
 
 ## Recuperacao juridica
 
-O projeto usa um recuperador chamado `legal-ensemble`, pensado para combinar sinais de tres modelos juridicos em portugues: BERTikal, JurisBERT e Legal-BERTimbau. Esses modelos nao respondem diretamente ao usuario. A funcao deles e ajudar a encontrar quais trechos do processo parecem mais relevantes para uma pergunta.
+O projeto usa um recuperador chamado `legal-ensemble`, pensado para combinar sinais dos modelos juridicos JurisBERT e Legal-BERTimbau. O BERTikal continua disponivel para testes isolados, mas saiu do ensemble padrao depois dos primeiros benchmarks. Esses modelos nao respondem diretamente ao usuario. A funcao deles e ajudar a encontrar quais trechos do processo parecem mais relevantes para uma pergunta.
 
 Na pratica, eles atuam antes da LLM. Primeiro, a pergunta do defensor e comparada com os chunks do processo. Depois, os trechos mais promissores sao selecionados e enviados para o modelo gerador. Assim, Gemini e Groq ficam responsaveis pela resposta final, enquanto os modelos juridicos ajudam na recuperacao do contexto correto.
 
@@ -45,6 +45,8 @@ backend/
   streamlit_app.py
   src/preparador_audiencia/
     api.py
+    benchmark.py
+    benchmark_cli.py
     chat.py
     chunking.py
     database.py
@@ -54,6 +56,7 @@ backend/
     llm.py
     ocr.py
     pdf_extraction.py
+    quality.py
     repositories.py
     retrieval.py
     search.py

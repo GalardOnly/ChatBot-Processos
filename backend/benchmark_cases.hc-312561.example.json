@@ -1,0 +1,24 @@
+{
+  "source_id": "cnj-stj-hc-312561",
+  "document": "hc-312561.pdf",
+  "cases": [
+    {
+      "id": "identificacao_do_julgado",
+      "pergunta": "Qual e o processo, quem foi o relator e qual orgao julgou o caso?",
+      "expected_pages": [1],
+      "expected_terms": ["HC 312561", "ANTONIO SALDANHA PALHEIRO", "SEXTA TURMA"]
+    },
+    {
+      "id": "resultado_do_habeas_corpus",
+      "pergunta": "Qual foi o resultado do habeas corpus e qual providencia foi determinada?",
+      "expected_pages": [2],
+      "expected_terms": ["ordem concedida", "guia de recolhimento", "detra"]
+    },
+    {
+      "id": "referencias_legislativas",
+      "pergunta": "Quais referencias legislativas aparecem no julgado?",
+      "expected_pages": [3],
+      "expected_terms": ["LEP", "CPP", "ART:00105"]
+    }
+  ]
+}

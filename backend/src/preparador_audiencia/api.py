@@ -8,7 +8,11 @@ from fastapi.responses import JSONResponse
 from preparador_audiencia.chat import answer_process_question, sources_to_schema
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.ingestion import create_processo_from_pdf, process_pdf
-from preparador_audiencia.repositories import ChatMessageRepository, ProcessoRepository
+from preparador_audiencia.repositories import (
+    ChatMessageRepository,
+    ProcessoRepository,
+    QualityEvaluationRepository,
+)
 from preparador_audiencia.retrieval import search_process_configured
 from preparador_audiencia.schemas import (
     ChatRequest,
@@ -17,6 +21,7 @@ from preparador_audiencia.schemas import (
     ProcessListItem,
     ProcessListResponse,
     ProcessStatusResponse,
+    QualityEvaluationResponse,
     SearchRequest,
     SearchResponse,
     UploadResponse,
@@ -178,6 +183,11 @@ async def chat_with_process(
             pergunta=pergunta,
             messages=ChatMessageRepository(connection),
             top_k=request.top_k,
+            evaluate_quality=request.avaliar,
+            evaluator_model=request.avaliador_modelo,
+            quality_evaluations=QualityEvaluationRepository(connection)
+            if request.avaliar
+            else None,
         )
     except RuntimeError as exc:
         return error_response(
@@ -193,4 +203,22 @@ async def chat_with_process(
         modelo=result.modelo,
         fallback_usado=result.fallback_usado,
         fontes=sources_to_schema(result.fontes),
+        avaliacao=_quality_to_schema(result.avaliacao),
+    )
+
+
+def _quality_to_schema(evaluation) -> QualityEvaluationResponse | None:
+    if evaluation is None:
+        return None
+    return QualityEvaluationResponse(
+        modelo_avaliador=evaluation.evaluator_model,
+        fidelidade_fontes=evaluation.fidelidade_fontes,
+        completude_juridica=evaluation.completude_juridica,
+        utilidade_audiencia=evaluation.utilidade_audiencia,
+        risco_alucinacao=evaluation.risco_alucinacao,
+        pontos_fortes=evaluation.pontos_fortes,
+        problemas=evaluation.problemas,
+        faltou=evaluation.faltou,
+        veredito=evaluation.veredito,
+        erro=evaluation.error,
     )

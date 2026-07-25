@@ -6,7 +6,7 @@ Continuar como PoC e testar modelos antes de escolher a pilha definitiva.
 
 Queremos responder tres perguntas:
 
-- como os tres embeddings juridicos trabalham juntos para recuperar os trechos certos;
+- como os embeddings juridicos trabalham juntos para recuperar os trechos certos;
 - qual LLM responde melhor usando as mesmas fontes combinadas;
 - qual modelo oferece melhor equilibrio entre qualidade, citacao de paginas e latencia.
 
@@ -20,8 +20,8 @@ O arquivo de casos informa:
 
 O avaliador:
 
-1. indexa os chunks separadamente em BERTikal, JurisBERT e Legal-BERTimbau;
-2. executa as perguntas nos tres modelos;
+1. indexa os chunks separadamente nos modelos configurados;
+2. executa as perguntas nos modelos configurados;
 3. combina os rankings por voto, score e posicao;
 4. mede se as paginas esperadas apareceram no `top_k` combinado;
 5. envia as mesmas fontes combinadas para cada LLM informado;
@@ -94,7 +94,7 @@ forcar conscientemente, existe `--allow-paid-over-limit`.
 A pontuacao automatica e uma triagem, nao uma sentenca final. Para o produto
 juridico, a decisao deve combinar metricas com revisao humana das respostas.
 
-## Os 3 embeddings trabalham juntos
+## Embeddings juridicos avaliados
 
 ### BERTikal
 
@@ -103,7 +103,8 @@ Alias: `bertikal`
 Modelo: `felipemaiapolo/legalnlp-bert`
 
 Papel no conjunto: capturar vocabulario juridico brasileiro e termos tipicos de
-processo. Como e um BERT juridico geral, ele entra como voto de dominio.
+processo. Depois dos primeiros benchmarks, saiu do ensemble padrao, mas continua
+disponivel para comparacao isolada.
 
 ### JurisBERT
 
@@ -126,11 +127,12 @@ por ser adaptado ao dominio juridico e treinado para STS.
 ## Como interpretar o resultado
 
 O `legal-ensemble` deve ser o recuperador principal da PoC. A comparacao isolada
-dos tres embeddings continua util para entender qual deles esta puxando melhor
+dos embeddings continua util para entender qual deles esta puxando melhor
 cada tipo de pergunta.
 
-Se um deles for consistentemente ruim em PDFs reais, removemos ou reduzimos seu
-peso no ensemble.
+Decisao atual: o `legal-ensemble` usa JurisBERT e Legal-BERTimbau. O BERTikal
+fica fora do ensemble padrao por desempenho inferior no primeiro benchmark maior
+com JurisTCU.
 
 Decisao atual: Gemini e o LLM principal por qualidade de leitura. Groq fica como
 fallback por velocidade e baixo tempo de resposta observado.

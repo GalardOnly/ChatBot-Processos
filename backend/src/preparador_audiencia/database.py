@@ -59,6 +59,26 @@ def initialize_database(connection: sqlite3.Connection) -> None:
             retrieved_chunks_json TEXT,
             created_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS quality_evaluations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            processo_id TEXT NOT NULL REFERENCES processos(id) ON DELETE CASCADE,
+            pergunta TEXT NOT NULL,
+            resposta TEXT NOT NULL,
+            evaluator_model TEXT NOT NULL,
+            generator_model TEXT,
+            fidelidade_fontes INTEGER NOT NULL,
+            completude_juridica INTEGER NOT NULL,
+            utilidade_audiencia INTEGER NOT NULL,
+            risco_alucinacao TEXT NOT NULL,
+            pontos_fortes_json TEXT NOT NULL,
+            problemas_json TEXT NOT NULL,
+            faltou_json TEXT NOT NULL,
+            veredito TEXT NOT NULL,
+            raw_response TEXT NOT NULL,
+            error TEXT,
+            created_at TEXT NOT NULL
+        );
         """
     )
     _ensure_chat_message_columns(connection)

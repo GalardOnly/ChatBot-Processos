@@ -1,7 +1,12 @@
 from preparador_audiencia.chat import NO_SOURCES_ANSWER, answer_process_question
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.llm import LLMAnswer
-from preparador_audiencia.repositories import ChatMessageRepository, ProcessoRepository
+from preparador_audiencia.quality import LegalQualityEvaluation
+from preparador_audiencia.repositories import (
+    ChatMessageRepository,
+    ProcessoRepository,
+    QualityEvaluationRepository,
+)
 from preparador_audiencia.search import SearchResult
 
 
@@ -139,3 +144,62 @@ def test_answer_process_question_does_not_call_llm_without_sources(tmp_path, mon
     assert result.fontes == []
     assert history[1].content == NO_SOURCES_ANSWER
     assert history[1].model == "sistema"
+
+
+def test_answer_process_question_can_evaluate_legal_quality(tmp_path, monkeypatch) -> None:
+    connection = connect_database(tmp_path / "test.sqlite3")
+    initialize_database(connection)
+    ProcessoRepository(connection).create_pending(
+        processo_id="proc_123",
+        filename="processo.pdf",
+        file_path="storage/processo.pdf",
+        sha256_digest="abc",
+    )
+    messages = ChatMessageRepository(connection)
+    quality_evaluations = QualityEvaluationRepository(connection)
+    monkeypatch.setattr(
+        "preparador_audiencia.chat.search_process_configured",
+        lambda **kwargs: fake_sources(),
+    )
+    monkeypatch.setattr(
+        "preparador_audiencia.chat.llm_client_from_spec",
+        lambda spec: FakeLLMClient(
+            spec,
+            LLMAnswer(
+                model="gemini:gemini-3-flash-preview",
+                answer="A audiencia foi designada para 20/08/2026 [p. 2].",
+                latency_ms=123,
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        "preparador_audiencia.chat.evaluate_legal_quality",
+        lambda **kwargs: LegalQualityEvaluation(
+            evaluator_model="groq:judge",
+            fidelidade_fontes=5,
+            completude_juridica=4,
+            utilidade_audiencia=4,
+            risco_alucinacao="baixo",
+            pontos_fortes=["cita pagina"],
+            problemas=[],
+            faltou=[],
+            veredito="Boa resposta para triagem.",
+            raw_response="{}",
+        ),
+    )
+
+    result = answer_process_question(
+        "proc_123",
+        "Quando sera a audiencia?",
+        messages,
+        primary_model="gemini:gemini-3-flash-preview",
+        fallback_model="groq:llama-3.1-8b-instant",
+        evaluate_quality=True,
+        evaluator_model="groq:judge",
+        quality_evaluations=quality_evaluations,
+    )
+
+    row = connection.execute("SELECT * FROM quality_evaluations").fetchone()
+    assert result.avaliacao is not None
+    assert result.avaliacao.fidelidade_fontes == 5
+    assert row["evaluator_model"] == "groq:judge"

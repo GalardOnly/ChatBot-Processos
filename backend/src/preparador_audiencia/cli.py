@@ -34,6 +34,12 @@ def main() -> None:
         default=2.0,
         help="Fator de renderizacao da pagina antes do OCR.",
     )
+    parser.add_argument(
+        "--max-pages",
+        type=int,
+        default=None,
+        help="Limita a quantidade de paginas processadas, util para smoke tests.",
+    )
     args = parser.parse_args()
 
     report = extract_pdf_report(
@@ -41,6 +47,7 @@ def main() -> None:
         sample_chars=args.sample_chars,
         ocr_enabled=not args.no_ocr,
         ocr_zoom=args.ocr_zoom,
+        max_pages=args.max_pages,
     )
     content = json.dumps(report.to_dict(), ensure_ascii=False, indent=2)
 

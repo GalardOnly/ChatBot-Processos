@@ -7,7 +7,7 @@ from preparador_audiencia.search import SearchResult
 
 
 def test_parse_legal_ensemble_spec() -> None:
-    assert parse_ensemble_spec("legal-ensemble") == ["bertikal", "jurisbert", "legal-bertimbau"]
+    assert parse_ensemble_spec("legal-ensemble") == ["jurisbert", "legal-bertimbau"]
     assert parse_ensemble_spec("ensemble:hash+bertikal") == ["hash", "bertikal"]
     assert is_ensemble_spec("legal-ensemble") is True
     assert is_ensemble_spec("hash") is False

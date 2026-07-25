@@ -1,0 +1,88 @@
+{
+  "sources": [
+    {
+      "id": "juristcu-huggingface",
+      "title": "JurisTCU: dataset brasileiro de recuperacao de informacao juridica",
+      "kind": "dataset",
+      "origin": "nao oficial",
+      "url": "https://huggingface.co/datasets/LeandroRibeiro/JurisTCU",
+      "license": "CC-BY 4.0",
+      "notes": "Dataset com documentos de jurisprudencia do TCU, consultas e julgamentos de relevancia. Bom para medir recuperacao sem depender de PDFs."
+    },
+    {
+      "id": "awesome-legal-data",
+      "title": "Awesome Legal Data",
+      "kind": "dataset",
+      "origin": "nao oficial",
+      "url": "https://github.com/openlegaldata/awesome-legal-data",
+      "license": "verificar por fonte",
+      "notes": "Catalogo comunitario de datasets juridicos. Serve para descobrir novas bases de benchmark, inclusive fora do Brasil."
+    },
+    {
+      "id": "jusbrasil-stj-medida-protetiva-1",
+      "title": "Decisao STJ sobre medida protetiva encontrada no Jusbrasil",
+      "kind": "html",
+      "origin": "nao oficial",
+      "url": "https://www.jusbrasil.com.br/jurisprudencia/stj/1655244490/inteiro-teor-1655244494",
+      "license": "verificar termos do site",
+      "notes": "Candidato para criar perguntas de benchmark sobre medida protetiva. Usar somente conteudo acessivel publicamente e respeitar termos do provedor."
+    },
+    {
+      "id": "jusbrasil-stj-medida-protetiva-2",
+      "title": "Decisao STJ sobre ameaca, descumprimento e medida protetiva no Jusbrasil",
+      "kind": "html",
+      "origin": "nao oficial",
+      "url": "https://www.jusbrasil.com.br/jurisprudencia/stj/2867871729/inteiro-teor-2867871740",
+      "license": "verificar termos do site",
+      "notes": "Candidato para perguntas de audiencia envolvendo fatos, urgencia e medida protetiva."
+    },
+    {
+      "id": "columbia-globalfreedom-stj-silveira",
+      "title": "PDF digitalizado de processo do STJ hospedado pela Global Freedom of Expression",
+      "kind": "pdf",
+      "origin": "nao oficial",
+      "url": "https://globalfreedomofexpression.columbia.edu/wp-content/uploads/2023/03/Silviera-Complaint.pdf",
+      "download_url": "https://globalfreedomofexpression.columbia.edu/wp-content/uploads/2023/03/Silviera-Complaint.pdf",
+      "license": "verificar termos do site",
+      "notes": "Documento com paginas digitalizadas e marcadores e-STJ. Bom para testar OCR, pagina de origem e recuperacao em PDF ruim."
+    },
+    {
+      "id": "poder360-stj-direito-ao-esquecimento",
+      "title": "PDF digitalizado de processo sobre direito ao esquecimento hospedado pelo Poder360",
+      "kind": "pdf",
+      "origin": "nao oficial",
+      "url": "https://static.poder360.com.br/2020/09/processo-direito-ao-esquecimento.pdf",
+      "download_url": "https://static.poder360.com.br/2020/09/processo-direito-ao-esquecimento.pdf",
+      "license": "verificar termos do site",
+      "notes": "Documento digitalizado com muitas paginas. Bom para teste de estresse, OCR e latencia."
+    },
+    {
+      "id": "cnj-stj-hc-312561",
+      "title": "PDF de jurisprudencia do STJ disponibilizado pelo CNJ",
+      "kind": "pdf",
+      "origin": "oficial",
+      "url": "https://www.cnj.jus.br/wp-content/uploads/2022/09/hc-312561.pdf",
+      "download_url": "https://www.cnj.jus.br/wp-content/uploads/2022/09/hc-312561.pdf",
+      "license": "verificar politica do CNJ",
+      "notes": "Amostra oficial menor para testar ingestao, chunking e perguntas sobre execucao penal."
+    },
+    {
+      "id": "datajud-api-publica",
+      "title": "API Publica Datajud",
+      "kind": "dataset",
+      "origin": "oficial",
+      "url": "https://datajud-wiki.cnj.jus.br/api-publica/",
+      "license": "verificar politica do CNJ",
+      "notes": "Fornece metadados processuais, nao o PDF dos autos. Pode ajudar em benchmark de metadados e classificacao."
+    },
+    {
+      "id": "arquivo-nacional-docjud",
+      "title": "DocJud e processos judiciais historicos do Arquivo Nacional",
+      "kind": "dataset",
+      "origin": "oficial",
+      "url": "https://www.gov.br/arquivonacional/pt-br/servicos/acervos/copy_of_acervos-mais-consultados/processos-judiciais",
+      "license": "verificar politica do acervo",
+      "notes": "Fonte potencial de processos historicos. Pode nao refletir a rotina atual de audiencia, mas ajuda a testar extracao e busca."
+    }
+  ]
+}

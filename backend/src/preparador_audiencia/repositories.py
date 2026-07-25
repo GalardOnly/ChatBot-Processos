@@ -4,8 +4,12 @@ import json
 import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from preparador_audiencia.chunking import TextChunk
+
+if TYPE_CHECKING:
+    from preparador_audiencia.quality import LegalQualityEvaluation
 
 
 @dataclass(frozen=True)
@@ -293,3 +297,48 @@ class ChatMessageRepository:
             (processo_id,),
         ).fetchall()
         return [_chat_message_from_row(row) for row in rows]
+
+
+class QualityEvaluationRepository:
+    def __init__(self, connection: sqlite3.Connection) -> None:
+        self.connection = connection
+
+    def add(
+        self,
+        processo_id: str,
+        pergunta: str,
+        resposta: str,
+        evaluation: LegalQualityEvaluation,
+        *,
+        generator_model: str | None,
+    ) -> None:
+        self.connection.execute(
+            """
+            INSERT INTO quality_evaluations (
+                processo_id, pergunta, resposta, evaluator_model, generator_model,
+                fidelidade_fontes, completude_juridica, utilidade_audiencia,
+                risco_alucinacao, pontos_fortes_json, problemas_json, faltou_json,
+                veredito, raw_response, error, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                processo_id,
+                pergunta,
+                resposta,
+                evaluation.evaluator_model,
+                generator_model,
+                evaluation.fidelidade_fontes,
+                evaluation.completude_juridica,
+                evaluation.utilidade_audiencia,
+                evaluation.risco_alucinacao,
+                json.dumps(evaluation.pontos_fortes, ensure_ascii=False),
+                json.dumps(evaluation.problemas, ensure_ascii=False),
+                json.dumps(evaluation.faltou, ensure_ascii=False),
+                evaluation.veredito,
+                evaluation.raw_response,
+                evaluation.error,
+                utc_now_text(),
+            ),
+        )
+        self.connection.commit()

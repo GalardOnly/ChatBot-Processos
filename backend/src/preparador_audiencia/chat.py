@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from preparador_audiencia.llm import LLMAnswer, llm_client_from_spec
-from preparador_audiencia.repositories import ChatMessageRepository
+from preparador_audiencia.quality import LegalQualityEvaluation, evaluate_legal_quality
+from preparador_audiencia.repositories import ChatMessageRepository, QualityEvaluationRepository
 from preparador_audiencia.retrieval import search_process_configured
 from preparador_audiencia.schemas import SearchSource
 from preparador_audiencia.search import SearchResult
@@ -25,6 +26,7 @@ class ChatResult:
     modelo: str | None
     fallback_usado: bool
     fontes: list[SearchResult]
+    avaliacao: LegalQualityEvaluation | None = None
     erro: str | None = None
 
 
@@ -36,6 +38,9 @@ def answer_process_question(
     top_k: int = 5,
     primary_model: str | None = None,
     fallback_model: str | None = None,
+    evaluate_quality: bool = False,
+    evaluator_model: str | None = None,
+    quality_evaluations: QualityEvaluationRepository | None = None,
 ) -> ChatResult:
     messages.add(processo_id, "user", pergunta)
     sources = search_process_configured(processo_id=processo_id, pergunta=pergunta, top_k=top_k)
@@ -64,6 +69,23 @@ def answer_process_question(
     if answer.error:
         raise RuntimeError(answer.error)
 
+    evaluation = None
+    if evaluate_quality:
+        evaluation = evaluate_legal_quality(
+            pergunta=pergunta,
+            resposta=answer.answer,
+            sources=sources,
+            evaluator_model=evaluator_model,
+        )
+        if quality_evaluations is not None:
+            quality_evaluations.add(
+                processo_id=processo_id,
+                pergunta=pergunta,
+                resposta=answer.answer,
+                evaluation=evaluation,
+                generator_model=answer.model,
+            )
+
     messages.add(
         processo_id,
         "assistant",
@@ -79,6 +101,7 @@ def answer_process_question(
         modelo=answer.model,
         fallback_usado=fallback_used,
         fontes=sources,
+        avaliacao=evaluation,
     )
 
 

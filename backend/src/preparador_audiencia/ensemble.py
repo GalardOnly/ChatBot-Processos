@@ -7,7 +7,7 @@ from preparador_audiencia.repositories import ChunkRepository
 from preparador_audiencia.search import SearchResult, index_process_chunks, search_process
 from preparador_audiencia.vector_store import ChromaVectorStore, safe_collection_name
 
-DEFAULT_LEGAL_ENSEMBLE_SPECS = ["bertikal", "jurisbert", "legal-bertimbau"]
+DEFAULT_LEGAL_ENSEMBLE_SPECS = ["jurisbert", "legal-bertimbau"]
 
 
 @dataclass

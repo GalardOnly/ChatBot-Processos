@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 from preparador_audiencia.chat import ChatResult
 from preparador_audiencia.main import app
+from preparador_audiencia.quality import LegalQualityEvaluation
 from preparador_audiencia.search import SearchResult
 
 
@@ -131,6 +132,20 @@ def test_chat_endpoint_returns_answer_with_sources(tmp_path, monkeypatch) -> Non
             modelo="gemini:gemini-3-flash-preview",
             fallback_usado=False,
             fontes=[source],
+            avaliacao=LegalQualityEvaluation(
+                evaluator_model="groq:judge",
+                fidelidade_fontes=5,
+                completude_juridica=4,
+                utilidade_audiencia=4,
+                risco_alucinacao="baixo",
+                pontos_fortes=["cita pagina"],
+                problemas=[],
+                faltou=[],
+                veredito="Boa resposta para triagem.",
+                raw_response="{}",
+            )
+            if kwargs["evaluate_quality"]
+            else None,
         )
 
     monkeypatch.setattr(
@@ -140,7 +155,7 @@ def test_chat_endpoint_returns_answer_with_sources(tmp_path, monkeypatch) -> Non
 
     response = client.post(
         f"/processo/{processo_id}/chat",
-        json={"pergunta": "Quando sera a audiencia?", "top_k": 1},
+        json={"pergunta": "Quando sera a audiencia?", "top_k": 1, "avaliar": True},
     )
 
     assert response.status_code == 200
@@ -148,6 +163,8 @@ def test_chat_endpoint_returns_answer_with_sources(tmp_path, monkeypatch) -> Non
     assert payload["modelo"] == "gemini:gemini-3-flash-preview"
     assert payload["fallback_usado"] is False
     assert payload["fontes"][0]["pagina"] == 1
+    assert payload["avaliacao"]["modelo_avaliador"] == "groq:judge"
+    assert payload["avaliacao"]["fidelidade_fontes"] == 5
 
 
 def test_chat_returns_404_for_unknown_process(tmp_path, monkeypatch) -> None:

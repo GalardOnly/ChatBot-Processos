@@ -32,6 +32,9 @@ class LLMClient(Protocol):
     def answer(self, pergunta: str, sources: list[SearchResult]) -> LLMAnswer:
         """Gera resposta usando apenas as fontes recuperadas."""
 
+    def complete(self, system_prompt: str, user_prompt: str) -> LLMAnswer:
+        """Gera uma resposta livre a partir de prompts explicitos."""
+
 
 def llm_client_from_spec(spec: str) -> LLMClient:
     provider, _, model = spec.partition(":")
@@ -72,6 +75,9 @@ class OpenAICompatibleChatClient:
         self.timeout_seconds = timeout_seconds
 
     def answer(self, pergunta: str, sources: list[SearchResult]) -> LLMAnswer:
+        return self.complete(_system_prompt(), _user_prompt(pergunta, sources))
+
+    def complete(self, system_prompt: str, user_prompt: str) -> LLMAnswer:
         started = time.perf_counter()
         try:
             response = httpx.post(
@@ -84,8 +90,8 @@ class OpenAICompatibleChatClient:
                     "model": self.model_name,
                     "temperature": 0.1,
                     "messages": [
-                        {"role": "system", "content": _system_prompt()},
-                        {"role": "user", "content": _user_prompt(pergunta, sources)},
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
                     ],
                 },
                 timeout=self.timeout_seconds,
@@ -121,6 +127,9 @@ class GeminiChatClient:
         self.timeout_seconds = timeout_seconds
 
     def answer(self, pergunta: str, sources: list[SearchResult]) -> LLMAnswer:
+        return self.complete(_system_prompt(), _user_prompt(pergunta, sources))
+
+    def complete(self, system_prompt: str, user_prompt: str) -> LLMAnswer:
         started = time.perf_counter()
         try:
             response = httpx.post(
@@ -128,11 +137,11 @@ class GeminiChatClient:
                 params={"key": self.api_key},
                 headers={"Content-Type": "application/json"},
                 json={
-                    "systemInstruction": {"parts": [{"text": _system_prompt()}]},
+                    "systemInstruction": {"parts": [{"text": system_prompt}]},
                     "contents": [
                         {
                             "role": "user",
-                            "parts": [{"text": _user_prompt(pergunta, sources)}],
+                            "parts": [{"text": user_prompt}],
                         }
                     ],
                     "generationConfig": {"temperature": 0.1},

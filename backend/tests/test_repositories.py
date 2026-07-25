@@ -1,6 +1,11 @@
 from preparador_audiencia.chunking import TextChunk
 from preparador_audiencia.database import connect_database, initialize_database
-from preparador_audiencia.repositories import ChunkRepository, ProcessoRepository
+from preparador_audiencia.quality import LegalQualityEvaluation
+from preparador_audiencia.repositories import (
+    ChunkRepository,
+    ProcessoRepository,
+    QualityEvaluationRepository,
+)
 
 
 def test_process_repository_lifecycle(tmp_path) -> None:
@@ -52,3 +57,38 @@ def test_chunk_repository_replaces_chunks(tmp_path) -> None:
     )
     assert chunks.count_for_processo("proc_123") == 1
 
+
+def test_quality_evaluation_repository_persists_evaluation(tmp_path) -> None:
+    connection = connect_database(tmp_path / "test.sqlite3")
+    initialize_database(connection)
+    ProcessoRepository(connection).create_pending(
+        processo_id="proc_123",
+        filename="processo.pdf",
+        file_path="storage/processo.pdf",
+        sha256_digest="abc",
+    )
+    evaluation = LegalQualityEvaluation(
+        evaluator_model="groq:judge",
+        fidelidade_fontes=5,
+        completude_juridica=4,
+        utilidade_audiencia=4,
+        risco_alucinacao="baixo",
+        pontos_fortes=["cita fonte"],
+        problemas=[],
+        faltou=["perguntas"],
+        veredito="Boa para triagem.",
+        raw_response="{}",
+    )
+
+    QualityEvaluationRepository(connection).add(
+        processo_id="proc_123",
+        pergunta="Existe audiencia?",
+        resposta="Sim [p. 1].",
+        evaluation=evaluation,
+        generator_model="gemini:flash",
+    )
+
+    row = connection.execute("SELECT * FROM quality_evaluations").fetchone()
+    assert row["evaluator_model"] == "groq:judge"
+    assert row["generator_model"] == "gemini:flash"
+    assert row["fidelidade_fontes"] == 5

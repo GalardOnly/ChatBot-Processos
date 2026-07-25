@@ -75,8 +75,9 @@ $env:PREPARADOR_FALLBACK_LLM="groq:llama-3.1-8b-instant"
 ## Embeddings e busca vetorial
 
 Por padrao, o fluxo principal usa o recuperador `legal-ensemble`, que indexa e
-consulta os trechos com BERTikal, JurisBERT e Legal-BERTimbau, combinando os
-resultados antes de enviar fontes ao Gemini.
+consulta os trechos com JurisBERT e Legal-BERTimbau, combinando os resultados
+antes de enviar fontes ao Gemini. O BERTikal continua disponivel para testes
+isolados.
 
 Para usar o modo leve de desenvolvimento e testes locais:
 
@@ -167,4 +168,22 @@ Aliases de embedding disponiveis:
 - `bertikal`: usa `felipemaiapolo/legalnlp-bert` com mean pooling;
 - `jurisbert`: usa `alfaneo/jurisbert-base-portuguese-uncased` com mean pooling;
 - `legal-bertimbau`: usa `rufimelo/Legal-BERTimbau-sts-base` via sentence-transformers.
-- `legal-ensemble`: usa os tres acima em paralelo e combina os rankings.
+- `legal-ensemble`: usa JurisBERT e Legal-BERTimbau em paralelo e combina os rankings.
+
+## Benchmark por familias
+
+JurisTCU, para recuperacao juridica:
+
+```powershell
+python -m preparador_audiencia.benchmark_cli juristcu --queries 20 --distractors 1000 --embedding legal-ensemble --top-k 10
+```
+
+PDFs publicos, para extracao e OCR:
+
+```powershell
+python -m preparador_audiencia.benchmark_cli pdfs ..\samples\benchmark\*.pdf --family pdfs-publicos --max-pages 5
+```
+
+PDFs reais anonimizados devem ficar em `samples/anonimizados/` e usar
+`benchmark_cases.anonimizado.example.json` como ponto de partida para perguntas
+e paginas esperadas.
