@@ -48,6 +48,11 @@ def main() -> None:
     juristcu_parser.add_argument("--embedding", default="hash")
     juristcu_parser.add_argument("--top-k", type=int, default=10)
     juristcu_parser.add_argument("--output", default="reports/juristcu-benchmark.json")
+    juristcu_parser.add_argument(
+        "--reindex",
+        action="store_true",
+        help="Forca recriacao dos indices mesmo quando ja existe cache compativel.",
+    )
 
     pdf_parser = subparsers.add_parser(
         "pdfs",
@@ -89,11 +94,20 @@ def main() -> None:
             distractor_limit=args.distractors,
             embedding_model=args.embedding,
             top_k=args.top_k,
+            reindex=args.reindex,
         )
         write_juristcu_report(report, args.output)
         print(f"Dataset: {report.dataset}")
         print(f"Embedding: {report.embedding_model}")
         print(f"Documentos indexados: {report.indexed_documents}")
+        print(
+            "Indices reaproveitados: "
+            f"{', '.join(report.reused_indexes) if report.reused_indexes else 'nenhum'}"
+        )
+        print(
+            "Indices recriados: "
+            f"{', '.join(report.rebuilt_indexes) if report.rebuilt_indexes else 'nenhum'}"
+        )
         print(f"Consultas avaliadas: {report.query_count}")
         print(f"Hit rate: {report.hit_rate:.4f}")
         print(f"MRR: {report.mean_reciprocal_rank:.4f}")

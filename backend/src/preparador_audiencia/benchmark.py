@@ -72,6 +72,8 @@ class JurisTCUBenchmarkReport:
     dataset: str
     embedding_model: str
     indexed_documents: int
+    reused_indexes: list[str]
+    rebuilt_indexes: list[str]
     query_count: int
     top_k: int
     hit_rate: float
@@ -315,6 +317,7 @@ def run_juristcu_benchmark(
     distractor_limit: int = 250,
     embedding_model: str = "hash",
     top_k: int = 10,
+    reindex: bool = False,
 ) -> JurisTCUBenchmarkReport:
     paths = ensure_juristcu_files(cache_dir)
     queries = _load_juristcu_queries(paths["query.csv"], query_limit)
@@ -332,6 +335,7 @@ def run_juristcu_benchmark(
         processo_id=processo_id,
         chunks=chunks,
         embedding_model=embedding_model,
+        reindex=reindex,
     )
 
     case_results = []
@@ -363,6 +367,8 @@ def run_juristcu_benchmark(
         dataset="LeandroRibeiro/JurisTCU",
         embedding_model=embedding_model,
         indexed_documents=len(documents),
+        reused_indexes=[retriever.spec for retriever in retrievers if retriever.reused_index],
+        rebuilt_indexes=[retriever.spec for retriever in retrievers if not retriever.reused_index],
         query_count=len(queries),
         top_k=top_k,
         hit_rate=_average([1.0 if case.hit else 0.0 for case in case_results]),
@@ -372,11 +378,20 @@ def run_juristcu_benchmark(
     )
 
 
+@dataclass(frozen=True)
+class JurisTCURetriever:
+    spec: str
+    provider: object
+    store: ChromaVectorStore
+    reused_index: bool
+
+
 def _index_juristcu_retrievers(
     processo_id: str,
     chunks: list[ChunkRecord],
     embedding_model: str,
-) -> list[tuple[str, object, ChromaVectorStore]]:
+    reindex: bool,
+) -> list[JurisTCURetriever]:
     specs = (
         parse_ensemble_spec(embedding_model)
         if is_ensemble_spec(embedding_model)
@@ -384,32 +399,45 @@ def _index_juristcu_retrievers(
     )
     retrievers = []
     for spec in specs:
-        provider = embedding_provider_from_spec(spec)
         collection_name = safe_collection_name("juristcu", spec)
         store = ChromaVectorStore(collection_name=collection_name)
-        embeddings = provider.embed_texts([chunk.text for chunk in chunks])
-        store.replace_process_chunks(processo_id, chunks, embeddings)
-        retrievers.append((spec, provider, store))
+        reused = not reindex and store.count_process_chunks(processo_id) == len(chunks)
+        provider = embedding_provider_from_spec(spec)
+        if not reused:
+            embeddings = provider.embed_texts([chunk.text for chunk in chunks])
+            store.replace_process_chunks(processo_id, chunks, embeddings)
+        retrievers.append(
+            JurisTCURetriever(
+                spec=spec,
+                provider=provider,
+                store=store,
+                reused_index=reused,
+            )
+        )
     return retrievers
 
 
 def _search_juristcu_retrievers(
     processo_id: str,
     query: str,
-    retrievers: list[tuple[str, object, ChromaVectorStore]],
+    retrievers: list[JurisTCURetriever],
     top_k: int,
 ) -> list[str]:
     if len(retrievers) == 1:
-        _, provider, store = retrievers[0]
-        query_embedding = provider.embed_query(query)
-        hits = store.search(processo_id=processo_id, query_embedding=query_embedding, top_k=top_k)
+        retriever = retrievers[0]
+        query_embedding = retriever.provider.embed_query(query)
+        hits = retriever.store.search(
+            processo_id=processo_id,
+            query_embedding=query_embedding,
+            top_k=top_k,
+        )
         return [str(hit.document_type) for hit in hits if hit.document_type]
 
     combined: dict[str, dict[str, float | int]] = {}
     per_model_top_k = max(top_k * 2, 10)
-    for _, provider, store in retrievers:
-        query_embedding = provider.embed_query(query)
-        hits = store.search(
+    for retriever in retrievers:
+        query_embedding = retriever.provider.embed_query(query)
+        hits = retriever.store.search(
             processo_id=processo_id,
             query_embedding=query_embedding,
             top_k=per_model_top_k,
@@ -454,6 +482,8 @@ def render_juristcu_markdown(report: JurisTCUBenchmarkReport) -> str:
         f"Dataset: `{report.dataset}`",
         f"Embedding: `{report.embedding_model}`",
         f"Documentos indexados: `{report.indexed_documents}`",
+        f"Indices reaproveitados: `{', '.join(report.reused_indexes) or 'nenhum'}`",
+        f"Indices recriados: `{', '.join(report.rebuilt_indexes) or 'nenhum'}`",
         f"Consultas avaliadas: `{report.query_count}`",
         f"Top K: `{report.top_k}`",
         f"Hit rate: `{report.hit_rate:.4f}`",

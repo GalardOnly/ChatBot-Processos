@@ -152,6 +152,57 @@ def test_run_juristcu_benchmark_with_local_fixture(tmp_path, monkeypatch) -> Non
     assert report.dataset == "LeandroRibeiro/JurisTCU"
     assert report.hit_rate == 1.0
     assert report.cases[0].top_doc_ids == ["doc-relevante"]
+    assert report.rebuilt_indexes == ["hash"]
+
+
+def test_run_juristcu_benchmark_reuses_existing_index(tmp_path, monkeypatch) -> None:
+    cache = tmp_path / "juristcu"
+    cache.mkdir()
+    (cache / "query.csv").write_text(
+        "ID,TEXT,SOURCE\n1,regularidade fiscal,fixture\n",
+        encoding="utf-8",
+    )
+    (cache / "qrel.csv").write_text(
+        "QUERY_ID,DOC_ID,SCORE,ENGINE,RANK\n1,doc-relevante,3,fixture,1\n",
+        encoding="utf-8",
+    )
+    (cache / "doc.csv").write_text(
+        "\n".join(
+            [
+                "KEY,AREA,TEMA,SUBTEMA,ENUNCIADO,EXCERTO,INDEXADORESCONSOLIDADOS,REFERENCIALEGAL",
+                "doc-relevante,Licitacao,Habilitacao,Documentacao,regularidade fiscal,"
+                "certidao de regularidade fiscal,regularidade fiscal,Lei 8666",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "preparador_audiencia.benchmark.ensure_juristcu_files",
+        lambda cache_dir: {
+            "doc.csv": cache / "doc.csv",
+            "query.csv": cache / "query.csv",
+            "qrel.csv": cache / "qrel.csv",
+        },
+    )
+    monkeypatch.setenv("PREPARADOR_CHROMA_DIR", str(tmp_path / "chroma"))
+    run_juristcu_benchmark(
+        cache_dir=cache,
+        query_limit=1,
+        distractor_limit=0,
+        embedding_model="hash",
+        top_k=1,
+    )
+
+    report = run_juristcu_benchmark(
+        cache_dir=cache,
+        query_limit=1,
+        distractor_limit=0,
+        embedding_model="hash",
+        top_k=1,
+    )
+
+    assert report.reused_indexes == ["hash"]
+    assert report.rebuilt_indexes == []
 
 
 def test_run_pdf_benchmark_extracts_local_pdf(tmp_path) -> None:

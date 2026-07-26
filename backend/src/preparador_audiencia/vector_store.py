@@ -69,6 +69,10 @@ class ChromaVectorStore:
         if ids:
             self.collection.delete(ids=ids)
 
+    def count_process_chunks(self, processo_id: str) -> int:
+        existing = self.collection.get(where={"processo_id": processo_id})
+        return len(existing.get("ids", []))
+
     def search(
         self,
         processo_id: str,

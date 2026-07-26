@@ -23,6 +23,13 @@ Precisao media no Top K: `0.4150`
 
 Leitura: bom para medir se a busca encontra algum documento juridicamente relevante. Nao mede OCR, pagina de processo nem utilidade de audiencia.
 
+O benchmark do JurisTCU reaproveita indices existentes no ChromaDB quando a mesma combinacao de consultas, distraidores e embedding ja foi indexada antes. Isso evita recalcular embeddings de milhares de documentos em rodadas repetidas. Para forcar recriacao dos indices, use `--reindex`.
+
+```powershell
+cd backend
+python -m preparador_audiencia.benchmark_cli juristcu --queries 100 --distractors 1000 --embedding legal-ensemble --top-k 10 --reindex
+```
+
 ## Familia 2: PDFs publicos digitalizados
 
 Objetivo: medir robustez de PDF, texto nativo, OCR, paginas com imagem e tempo de extracao.
