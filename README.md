@@ -16,6 +16,8 @@ Em um teste local com um PDF real de aproximadamente 14 MB, a aplicacao processo
 
 O objetivo da PoC e validar se e possivel transformar um processo judicial em PDF em uma experiencia de consulta realmente util para o defensor publico. A ferramenta nao substitui a analise juridica, nao toma decisoes pelo profissional e nao deve ser tratada como fonte definitiva. Ela serve para organizar informacoes, recuperar trechos relevantes, sugerir pontos de atencao e acelerar a leitura dirigida do processo, sempre exigindo revisao humana.
 
+O [mapa mental e registro de decisoes](docs/28-mapa-mental-e-decisoes.md) explica por que a arquitetura atual foi escolhida, quais alternativas existiam e o que deve ser mantido ou substituido antes de um produto comercial.
+
 ## Fluxo principal
 
 O fluxo principal comeca quando o defensor envia o PDF do processo pela interface. O backend extrai o texto pagina por pagina e, quando encontra paginas ruins ou escaneadas, pode acionar OCR para tentar recuperar o conteudo. Depois disso, o texto e dividido em blocos menores, mantendo a pagina de origem de cada trecho. Esses blocos sao indexados no ChromaDB para permitir busca semantica.

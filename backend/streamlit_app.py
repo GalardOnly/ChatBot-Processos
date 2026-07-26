@@ -232,6 +232,10 @@ def _render_chat(api_url: str) -> None:
         return
 
     st.caption("Escreva sua pergunta do seu jeito. A triagem juridica acontece internamente.")
+    st.info(
+        "Cada pergunta e respondida de forma independente. Em perguntas de continuacao, "
+        "repita o contexto necessario para que a resposta considere as informacoes anteriores."
+    )
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -332,10 +336,12 @@ def _render_sources(fontes: list[dict[str, Any]]) -> None:
         return
     with st.expander("Fontes recuperadas"):
         for fonte in fontes:
-            st.markdown(
-                f"**Pagina {fonte['pagina']}**, chunk {fonte['chunk_index']} "
-                f"- score {fonte['score']:.3f}"
-            )
+            source_label = f"**Pagina {fonte['pagina']}**"
+            document_type = fonte.get("tipo_documento")
+            if document_type:
+                readable_type = document_type.replace("_", " ").capitalize()
+                source_label += f" | Tipo: {readable_type}"
+            st.markdown(source_label)
             st.write(fonte["trecho"])
 
 

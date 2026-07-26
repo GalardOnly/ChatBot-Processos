@@ -5,7 +5,8 @@ import sqlite3
 import unicodedata
 
 from preparador_audiencia.database import connect_database, initialize_database
-from preparador_audiencia.repositories import ChunkRecord, ChunkRepository
+from preparador_audiencia.lexical_index import ensure_process_fts
+from preparador_audiencia.repositories import ChunkRecord
 from preparador_audiencia.search import SearchResult
 
 MIN_TOKEN_LENGTH = 3
@@ -61,10 +62,55 @@ def search_process_lexical(
     connection = connect_database()
     initialize_database(connection)
     try:
-        chunks = ChunkRepository(connection).list_for_processo(processo_id)
+        return search_persisted_lexical(
+            connection,
+            processo_id=processo_id,
+            pergunta=pergunta,
+            top_k=top_k,
+        )
     finally:
         connection.close()
-    return search_chunks_lexical(chunks, pergunta, top_k)
+
+
+def search_persisted_lexical(
+    connection: sqlite3.Connection,
+    *,
+    processo_id: str,
+    pergunta: str,
+    top_k: int = 5,
+) -> list[SearchResult]:
+    tokens = _query_tokens(pergunta)
+    if not tokens or top_k <= 0:
+        return []
+
+    query = _match_query(tokens)
+    table_name = ensure_process_fts(
+        connection,
+        processo_id,
+        commit_backfill=True,
+    )
+    rows = connection.execute(
+        f"""
+        SELECT chunks.text, chunks.page_number, chunks.chunk_index,
+               chunks.document_type, bm25({table_name}) AS lexical_rank
+        FROM {table_name}
+        JOIN chunks ON chunks.id = {table_name}.rowid
+        WHERE {table_name} MATCH ?
+        ORDER BY lexical_rank
+        LIMIT ?
+        """,
+        (query, top_k),
+    ).fetchall()
+    return [
+        SearchResult(
+            text=str(row["text"]),
+            page_number=int(row["page_number"]),
+            chunk_index=int(row["chunk_index"]),
+            document_type=row["document_type"],
+            score=round(1.0 / rank, 4),
+        )
+        for rank, row in enumerate(rows, start=1)
+    ]
 
 
 def search_chunks_lexical(
@@ -87,7 +133,7 @@ def search_chunks_lexical(
             "INSERT INTO docs(rowid, text) VALUES (?, ?)",
             [(chunk.id, chunk.text) for chunk in chunks],
         )
-        query = " OR ".join(f'"{token}"' for token in tokens)
+        query = _match_query(tokens)
         rows = connection.execute(
             """
             SELECT rowid, bm25(docs) AS lexical_rank
@@ -118,6 +164,10 @@ def search_chunks_lexical(
 
 def needs_lexical_priority(text: str) -> bool:
     return bool(set(_query_tokens(text)).intersection(PRECISION_TERMS))
+
+
+def _match_query(tokens: list[str]) -> str:
+    return " OR ".join(f'"{token}"' for token in tokens)
 
 
 def _query_tokens(text: str) -> list[str]:

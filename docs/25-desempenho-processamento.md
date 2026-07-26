@@ -28,3 +28,16 @@ levou 34,2 segundos no JurisBERT e 22,8 segundos no Legal-BERTimbau. O tempo
 estimado do pipeline completo ficou em aproximadamente 190 segundos. Um novo
 upload do mesmo arquivo deixa de executar esse pipeline e reutiliza o
 resultado concluido.
+
+## Busca lexical persistente
+
+A primeira implementacao da recuperacao hibrida reconstruia uma tabela FTS5 em
+memoria a cada pergunta. O indice agora e persistido separadamente por processo,
+com nome interno derivado por hash. Ele e criado ou substituido junto com os
+chunks e a consulta do chat apenas executa a busca.
+
+No processo de 149 chunks, a mediana isolada da busca lexical caiu de `3,658 ms`
+para `1,765 ms`, reducao de `51,7%`. As 50 perguntas de regressao produziram o
+mesmo ranking lexical antes e depois da mudanca. A suite multidominio manteve hit
+rate de `0,90` sem triagem e `1,00` com triagem; o conjunto automatico de 50
+perguntas manteve hit rate de `0,84` nas duas variantes.

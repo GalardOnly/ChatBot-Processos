@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from preparador_audiencia.chunking import TextChunk
+from preparador_audiencia.lexical_index import replace_process_fts
 
 if TYPE_CHECKING:
     from preparador_audiencia.quality import LegalQualityEvaluation
@@ -297,6 +298,7 @@ class ChunkRepository:
                 for chunk in chunks
             ],
         )
+        replace_process_fts(self.connection, processo_id)
         self.connection.commit()
 
     def count_for_processo(self, processo_id: str) -> int:
