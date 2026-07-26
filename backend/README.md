@@ -145,6 +145,78 @@ O comando gera:
 - `reports/poc-modelos.json`: dados completos da avaliacao;
 - `reports/poc-modelos.md`: tabela legivel com melhor embedding e melhor LLM.
 
+## Benchmark de respostas
+
+Depois de escolher o recuperador padrao, o proximo teste importante e avaliar o
+fluxo completo. Nesse modo, o sistema indexa o processo no recuperador escolhido,
+recupera fontes com o `legal-ensemble`, pede ao Gemini para responder e usa o
+Groq como avaliador auxiliar da qualidade juridica da resposta.
+
+Antes de rodar valendo, confira o plano:
+
+```powershell
+benchmark-respostas `
+  --processo-id proc_xxxxx `
+  --cases benchmark_cases.hc-312561.example.json `
+  --embedding legal-ensemble `
+  --top-k 5 `
+  --dry-run
+```
+
+Para uma amostra pequena e barata, limite a quantidade de perguntas:
+
+```powershell
+benchmark-respostas `
+  --processo-id proc_xxxxx `
+  --cases benchmark_cases.hc-312561.example.json `
+  --embedding legal-ensemble `
+  --limit-cases 1 `
+  --max-llm-calls 3 `
+  --output reports/benchmark-respostas-amostra.json
+```
+
+Para executar uma bateria com os tres casos do exemplo:
+
+```powershell
+benchmark-respostas `
+  --processo-id proc_xxxxx `
+  --cases benchmark_cases.hc-312561.example.json `
+  --embedding legal-ensemble `
+  --top-k 5 `
+  --max-llm-calls 9 `
+  --output reports/benchmark-respostas.json
+```
+
+O comando considera uma estimativa conservadora de chamadas: gerador principal,
+fallback possivel e avaliador para cada pergunta. Ele gera um JSON completo e um
+Markdown resumido com fidelidade as fontes, completude juridica, utilidade para
+audiencia e risco de alucinacao.
+
+## Banco de perguntas para audiencia
+
+A PoC tambem possui um banco inicial de perguntas para orientar testes e ajudar o
+defensor a explorar o processo pelo chat. As perguntas sao separadas por area,
+tipo de audiencia, tags e prioridade.
+
+Para listar perguntas no terminal:
+
+```powershell
+perguntas-audiencia --area criminal --tag custodia --limit 3
+```
+
+Para exportar perguntas em formato compativel com o benchmark de respostas:
+
+```powershell
+perguntas-audiencia `
+  --area geral `
+  --limit 6 `
+  --format cases-json `
+  --output reports/perguntas-gerais.cases.json
+```
+
+A API tambem expoe esse banco em `GET /perguntas-audiencia`, com filtros
+opcionais `area`, `audiencia`, `tag` e `limit`.
+
 Para usar LLMs na PoC:
 
 ```powershell

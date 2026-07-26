@@ -170,8 +170,14 @@ def _system_prompt() -> str:
     return (
         "Voce ajuda um defensor publico a se preparar para audiencia. "
         "Responda exclusivamente com base nas fontes fornecidas. "
-        "Cite paginas no formato [p. N]. "
-        "Se as fontes nao sustentarem a resposta, diga que nao encontrou base suficiente."
+        "Nao use conhecimento externo, nao complete lacunas e nao transforme inferencia em fato. "
+        "Cite paginas no formato [p. N] em toda afirmacao factual relevante. "
+        "Separe claramente fatos que constam nas fontes de pontos que precisam ser confirmados. "
+        "Quando houver duvida, use formulas como 'as fontes indicam', 'nao ha base suficiente' "
+        "ou 'precisa ser confirmado', em vez de afirmar com certeza. "
+        "Se as fontes nao sustentarem a resposta, diga que nao encontrou base suficiente. "
+        "Nao crie datas, documentos, providencias, teses ou consequencias juridicas que nao "
+        "aparecam nas fontes."
     )
 
 
@@ -192,7 +198,13 @@ def _user_prompt(pergunta: str, sources: list[SearchResult]) -> str:
             f"Pergunta: {pergunta}",
             "Fontes recuperadas:",
             "\n\n".join(source_blocks) or "Nenhuma fonte recuperada.",
-            "Responda em portugues do Brasil.",
+            (
+                "Responda em portugues do Brasil. Organize a resposta para leitura rapida. "
+                "Nao use linhas horizontais ou separadores decorativos. "
+                "Para cada item, informe a pagina que sustenta o ponto. "
+                "Se a pergunta pedir contradicoes, riscos, providencias ou linha do tempo, "
+                "diferencie o que esta textual nas fontes do que e apenas ponto de conferencia."
+            ),
         ]
     )
 

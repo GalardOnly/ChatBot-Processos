@@ -91,6 +91,27 @@ def test_list_recent_processes_returns_uploaded_process(tmp_path, monkeypatch) -
     assert payload["processos"][0]["chunks"] == 1
 
 
+def test_list_hearing_questions_returns_filtered_templates() -> None:
+    client = TestClient(app)
+
+    response = client.get("/perguntas-audiencia?area=criminal&tag=custodia&limit=2")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["perguntas"]
+    assert all(item["area"] == "criminal" for item in payload["perguntas"])
+    assert all("custodia" in item["tags"] for item in payload["perguntas"])
+
+
+def test_list_hearing_questions_rejects_invalid_limit() -> None:
+    client = TestClient(app)
+
+    response = client.get("/perguntas-audiencia?limit=101")
+
+    assert response.status_code == 400
+    assert response.json()["error"] == "invalid_limit"
+
+
 def test_search_returns_404_for_unknown_process(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("PREPARADOR_DATABASE_PATH", str(tmp_path / "test.sqlite3"))
     monkeypatch.setenv("PREPARADOR_CHROMA_DIR", str(tmp_path / "chroma"))

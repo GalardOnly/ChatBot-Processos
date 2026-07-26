@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from preparador_audiencia.chat import answer_process_question, sources_to_schema
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.ingestion import create_processo_from_pdf, process_pdf
+from preparador_audiencia.question_bank import list_question_templates
 from preparador_audiencia.repositories import (
     ChatMessageRepository,
     ProcessoRepository,
@@ -22,6 +23,8 @@ from preparador_audiencia.schemas import (
     ProcessListResponse,
     ProcessStatusResponse,
     QualityEvaluationResponse,
+    QuestionTemplateListResponse,
+    QuestionTemplateResponse,
     SearchRequest,
     SearchResponse,
     UploadResponse,
@@ -102,6 +105,40 @@ async def list_recent_processes(limit: int = 10) -> ProcessListResponse | JSONRe
                 atualizado_em=processo.updated_at,
             )
             for processo in processos
+        ]
+    )
+
+
+@router.get("/perguntas-audiencia", response_model=QuestionTemplateListResponse)
+async def list_hearing_questions(
+    area: str | None = None,
+    audiencia: str | None = None,
+    tag: str | None = None,
+    limit: int | None = None,
+) -> QuestionTemplateListResponse | JSONResponse:
+    if limit is not None and (limit <= 0 or limit > 100):
+        return error_response(400, "invalid_limit", "limit deve ficar entre 1 e 100.")
+
+    templates = list_question_templates(
+        area=area,
+        audiencia=audiencia,
+        tags=[tag] if tag else None,
+        limit=limit,
+    )
+    return QuestionTemplateListResponse(
+        perguntas=[
+            QuestionTemplateResponse(
+                id=template.id,
+                titulo=template.titulo,
+                area=template.area,
+                audiencia=template.audiencia,
+                objetivo=template.objetivo,
+                pergunta=template.pergunta,
+                quando_usar=template.quando_usar,
+                tags=template.tags,
+                prioridade=template.prioridade,
+            )
+            for template in templates
         ]
     )
 

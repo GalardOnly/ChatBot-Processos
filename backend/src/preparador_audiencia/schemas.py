@@ -34,6 +34,22 @@ class ProcessListResponse(BaseModel):
     processos: list[ProcessListItem]
 
 
+class QuestionTemplateResponse(BaseModel):
+    id: str
+    titulo: str
+    area: str
+    audiencia: str
+    objetivo: str
+    pergunta: str
+    quando_usar: str
+    tags: list[str]
+    prioridade: int
+
+
+class QuestionTemplateListResponse(BaseModel):
+    perguntas: list[QuestionTemplateResponse]
+
+
 class SearchRequest(BaseModel):
     pergunta: str
     top_k: int = 5

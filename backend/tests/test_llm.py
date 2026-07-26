@@ -4,8 +4,10 @@ from preparador_audiencia.llm import (
     GeminiChatClient,
     OpenAICompatibleChatClient,
     _safe_error,
+    _user_prompt,
     llm_client_from_spec,
 )
+from preparador_audiencia.search import SearchResult
 
 
 def test_llm_client_from_spec_builds_groq_client(monkeypatch) -> None:
@@ -42,3 +44,20 @@ def test_safe_error_redacts_query_key_and_env_secret(monkeypatch) -> None:
 
     assert "secret-value" not in message
     assert "key=[REDACTED]" in message
+
+
+def test_user_prompt_discourages_decorative_separators() -> None:
+    prompt = _user_prompt(
+        "Monte uma linha do tempo.",
+        [
+            SearchResult(
+                text="Audiencia designada.",
+                page_number=1,
+                chunk_index=0,
+                document_type=None,
+                score=0.9,
+            )
+        ],
+    )
+
+    assert "Nao use linhas horizontais" in prompt

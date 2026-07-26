@@ -37,6 +37,8 @@ models = [
 extrair-pdf-processo = "preparador_audiencia.cli:main"
 avaliar-poc-modelos = "preparador_audiencia.eval_cli:main"
 benchmark-fontes = "preparador_audiencia.benchmark_cli:main"
+benchmark-respostas = "preparador_audiencia.response_benchmark_cli:main"
+perguntas-audiencia = "preparador_audiencia.question_bank_cli:main"
 
 [build-system]
 requires = ["setuptools>=69"]

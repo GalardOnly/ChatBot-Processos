@@ -1,5 +1,9 @@
 from preparador_audiencia.llm import LLMAnswer
-from preparador_audiencia.quality import evaluate_legal_quality, parse_quality_evaluation
+from preparador_audiencia.quality import (
+    _quality_system_prompt,
+    evaluate_legal_quality,
+    parse_quality_evaluation,
+)
 from preparador_audiencia.search import SearchResult
 
 
@@ -76,3 +80,10 @@ def test_evaluate_legal_quality_uses_injected_llm_client(monkeypatch) -> None:
     assert evaluation.evaluator_model == "groq:fake-judge"
     assert evaluation.fidelidade_fontes == 5
     assert evaluation.faltou == ["perguntas para testemunha"]
+
+
+def test_quality_prompt_does_not_punish_declared_lacunas() -> None:
+    prompt = _quality_system_prompt()
+
+    assert "lacuna real" in prompt
+    assert "nao como alucinacao" in prompt
