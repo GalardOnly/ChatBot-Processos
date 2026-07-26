@@ -6,7 +6,10 @@ from preparador_audiencia.llm import LLMAnswer, llm_client_from_spec
 from preparador_audiencia.quality import LegalQualityEvaluation, evaluate_legal_quality
 from preparador_audiencia.question_router import route_question
 from preparador_audiencia.repositories import ChatMessageRepository, QualityEvaluationRepository
-from preparador_audiencia.retrieval import search_process_configured
+from preparador_audiencia.retrieval import (
+    ROUTED_QUERY_WEIGHT,
+    search_process_queries_configured,
+)
 from preparador_audiencia.schemas import SearchSource
 from preparador_audiencia.search import SearchResult
 from preparador_audiencia.settings import (
@@ -27,6 +30,7 @@ class ChatResult:
     modelo: str | None
     fallback_usado: bool
     fontes: list[SearchResult]
+    latency_ms: int | None = None
     avaliacao: LegalQualityEvaluation | None = None
     erro: str | None = None
 
@@ -42,12 +46,17 @@ def answer_process_question(
     evaluate_quality: bool = False,
     evaluator_model: str | None = None,
     quality_evaluations: QualityEvaluationRepository | None = None,
+    use_question_routing: bool = True,
 ) -> ChatResult:
     messages.add(processo_id, "user", pergunta)
-    question_route = route_question(pergunta)
-    sources = search_process_configured(
+    question_route = route_question(pergunta) if use_question_routing else None
+    search_query = question_route.search_query() if question_route else pergunta
+    sources = search_process_queries_configured(
         processo_id=processo_id,
-        pergunta=question_route.search_query(),
+        queries=[
+            (pergunta, 1.0),
+            (search_query, ROUTED_QUERY_WEIGHT),
+        ],
         top_k=top_k,
     )
 
@@ -71,7 +80,7 @@ def answer_process_question(
     primary_spec = primary_model or primary_llm_from_environment()
     fallback_spec = fallback_model or fallback_llm_from_environment()
     answer, fallback_used = _answer_with_fallback(
-        question_route.llm_question(),
+        question_route.llm_question() if question_route else pergunta,
         sources,
         primary_spec,
         fallback_spec,
@@ -112,6 +121,7 @@ def answer_process_question(
         modelo=answer.model,
         fallback_usado=fallback_used,
         fontes=sources,
+        latency_ms=answer.latency_ms,
         avaliacao=evaluation,
     )
 

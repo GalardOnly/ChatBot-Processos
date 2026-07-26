@@ -49,7 +49,7 @@ def test_answer_process_question_uses_primary_model_and_records_history(
 ) -> None:
     messages = create_chat_repository(tmp_path)
     monkeypatch.setattr(
-        "preparador_audiencia.chat.search_process_configured",
+        "preparador_audiencia.chat.search_process_queries_configured",
         lambda **kwargs: fake_sources(),
     )
     monkeypatch.setattr(
@@ -99,10 +99,13 @@ def test_answer_process_question_routes_question_internally(tmp_path, monkeypatc
             )
 
     def fake_search(**kwargs) -> list[SearchResult]:
-        search_queries.append(kwargs["pergunta"])
+        search_queries.extend(query for query, _weight in kwargs["queries"])
         return fake_sources()
 
-    monkeypatch.setattr("preparador_audiencia.chat.search_process_configured", fake_search)
+    monkeypatch.setattr(
+        "preparador_audiencia.chat.search_process_queries_configured",
+        fake_search,
+    )
     monkeypatch.setattr(
         "preparador_audiencia.chat.llm_client_from_spec",
         lambda spec: RecordingLLMClient(),
@@ -120,9 +123,9 @@ def test_answer_process_question_routes_question_internally(tmp_path, monkeypatc
     assert result.pergunta == pergunta
     assert history[0].content == pergunta
     assert search_queries
-    assert pergunta in search_queries[0]
-    assert search_queries[0] != pergunta
-    assert "Prisao" in search_queries[0]
+    assert search_queries[0] == pergunta
+    assert search_queries[1] != pergunta
+    assert "prisao" in search_queries[1].lower()
     assert llm_questions
     assert pergunta in llm_questions[0]
     assert "Triagem interna" in llm_questions[0]
@@ -152,7 +155,7 @@ def test_answer_process_question_uses_groq_fallback_when_primary_fails(
         )
 
     monkeypatch.setattr(
-        "preparador_audiencia.chat.search_process_configured",
+        "preparador_audiencia.chat.search_process_queries_configured",
         lambda **kwargs: fake_sources(),
     )
     monkeypatch.setattr("preparador_audiencia.chat.llm_client_from_spec", fake_client)
@@ -174,7 +177,10 @@ def test_answer_process_question_uses_groq_fallback_when_primary_fails(
 
 def test_answer_process_question_does_not_call_llm_without_sources(tmp_path, monkeypatch) -> None:
     messages = create_chat_repository(tmp_path)
-    monkeypatch.setattr("preparador_audiencia.chat.search_process_configured", lambda **kwargs: [])
+    monkeypatch.setattr(
+        "preparador_audiencia.chat.search_process_queries_configured",
+        lambda **kwargs: [],
+    )
 
     def fail_if_called(spec: str) -> FakeLLMClient:
         raise AssertionError(f"LLM nao deveria ser chamado: {spec}")
@@ -203,7 +209,7 @@ def test_answer_process_question_can_evaluate_legal_quality(tmp_path, monkeypatc
     messages = ChatMessageRepository(connection)
     quality_evaluations = QualityEvaluationRepository(connection)
     monkeypatch.setattr(
-        "preparador_audiencia.chat.search_process_configured",
+        "preparador_audiencia.chat.search_process_queries_configured",
         lambda **kwargs: fake_sources(),
     )
     monkeypatch.setattr(

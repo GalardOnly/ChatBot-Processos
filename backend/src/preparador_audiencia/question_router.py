@@ -14,6 +14,75 @@ from preparador_audiencia.question_sources import (
 
 MIN_TOKEN_LENGTH = 3
 DEFAULT_GUIDE_LIMIT = 4
+MIN_GUIDE_SCORE = 0.36
+TOKEN_ALIASES = {
+    "beneficiaria": "beneficiario",
+    "julgado": "julgamento",
+    "julgou": "julgamento",
+    "recursos": "recurso",
+}
+GUIDE_REQUIRED_ANY = {
+    "geral_resultado_julgamento": {
+        "decidiu",
+        "decisao",
+        "provimento",
+        "resultado",
+    },
+}
+ROUTING_STOPWORDS = {
+    "antes",
+    "ainda",
+    "algum",
+    "alguma",
+    "algumas",
+    "alguns",
+    "aparece",
+    "aparecem",
+    "audiencia",
+    "caso",
+    "como",
+    "confirmar",
+    "contexto",
+    "deve",
+    "devem",
+    "deveria",
+    "disso",
+    "dizer",
+    "documento",
+    "durante",
+    "ele",
+    "ela",
+    "esse",
+    "esta",
+    "este",
+    "fazer",
+    "feito",
+    "foi",
+    "informa",
+    "informacoes",
+    "isso",
+    "neste",
+    "onde",
+    "para",
+    "pela",
+    "pelo",
+    "pode",
+    "poderia",
+    "pontos",
+    "porque",
+    "processo",
+    "qual",
+    "quais",
+    "quando",
+    "quem",
+    "sobre",
+    "ser",
+    "tem",
+    "ter",
+    "uma",
+    "voce",
+    "que",
+}
 
 
 @dataclass(frozen=True)
@@ -37,7 +106,16 @@ class QuestionRoute:
     guides: list[QuestionGuide]
 
     def search_query(self) -> str:
-        guide_terms = " ".join(guide.titulo for guide in self.guides[:2])
+        guide_terms = " ".join(
+            " ".join(
+                [
+                    guide.titulo,
+                    guide.objetivo,
+                    " ".join(tag.replace("_", " ") for tag in guide.tags),
+                ]
+            )
+            for guide in self.guides[:2]
+        )
         return f"{self.pergunta_original} {guide_terms}".strip()
 
     def llm_question(self) -> str:
@@ -62,7 +140,8 @@ class QuestionRoute:
 
 
 def route_question(pergunta: str, *, limit: int = DEFAULT_GUIDE_LIMIT) -> QuestionRoute:
-    guides = rank_question_guides(pergunta, limit=limit)
+    ranked_guides = rank_question_guides(pergunta, limit=limit)
+    guides = [guide for guide in ranked_guides if guide.score >= MIN_GUIDE_SCORE]
     return QuestionRoute(
         pergunta_original=pergunta,
         area=guides[0].area if guides else None,
@@ -81,7 +160,7 @@ def rank_question_guides(pergunta: str, *, limit: int = DEFAULT_GUIDE_LIMIT) -> 
         if (guide := _score_guide(template, query_tokens)).score > 0
     ]
     scored.sort(key=lambda guide: (guide.score, guide.source == "oficial"), reverse=True)
-    return scored[:limit]
+    return _distinct_guides(scored, limit)
 
 
 @lru_cache(maxsize=1)
@@ -98,6 +177,9 @@ def _load_guides() -> tuple[QuestionGuide, ...]:
 
 
 def _score_guide(template: QuestionGuide, query_tokens: set[str]) -> QuestionGuide:
+    required_tokens = GUIDE_REQUIRED_ANY.get(template.id)
+    if required_tokens and not query_tokens.intersection(required_tokens):
+        return QuestionGuide(**{**template.__dict__, "score": 0.0})
     haystack = " ".join(
         [
             template.titulo,
@@ -112,9 +194,17 @@ def _score_guide(template: QuestionGuide, query_tokens: set[str]) -> QuestionGui
     overlap = query_tokens.intersection(guide_tokens)
     if not overlap:
         return QuestionGuide(**{**template.__dict__, "score": 0.0})
+    if len(query_tokens) > 1 and len(overlap) < 2:
+        return QuestionGuide(**{**template.__dict__, "score": 0.0})
     coverage = len(overlap) / max(1, len(query_tokens))
     specificity = len(overlap) / max(1, len(guide_tokens))
-    score = round((0.75 * coverage) + (0.25 * specificity), 4)
+    title_tokens = _tokens(template.titulo.split(" - ", 1)[0])
+    exact_topic_bonus = (
+        0.2
+        if len(title_tokens) >= 2 and title_tokens.issubset(query_tokens)
+        else 0.0
+    )
+    score = round((0.75 * coverage) + (0.25 * specificity) + exact_topic_bonus, 4)
     if template.source == "oficial":
         score += 0.05
     return QuestionGuide(**{**template.__dict__, "score": score})
@@ -162,11 +252,32 @@ def _guides_block(guides: list[QuestionGuide]) -> str:
     return "\n".join(lines)
 
 
+def _distinct_guides(
+    guides: list[QuestionGuide],
+    limit: int,
+) -> list[QuestionGuide]:
+    selected = []
+    topics: set[str] = set()
+    for guide in guides:
+        topic = _normalize_topic(guide.titulo.split(" - ", 1)[0])
+        if topic in topics:
+            continue
+        topics.add(topic)
+        selected.append(guide)
+        if len(selected) >= limit:
+            break
+    return selected
+
+
+def _normalize_topic(text: str) -> str:
+    return " ".join(sorted(_tokens(text)))
+
+
 def _tokens(text: str) -> set[str]:
-    normalized = unicodedata.normalize("NFKD", text.lower())
+    normalized = unicodedata.normalize("NFKD", text.lower().replace("_", " "))
     normalized = "".join(char for char in normalized if not unicodedata.combining(char))
     return {
-        token
+        TOKEN_ALIASES.get(token, token)
         for token in re.findall(r"[a-z0-9_]+", normalized)
-        if len(token) >= MIN_TOKEN_LENGTH
+        if len(token) >= MIN_TOKEN_LENGTH and token not in ROUTING_STOPWORDS
     }

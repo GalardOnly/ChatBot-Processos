@@ -70,6 +70,44 @@ def test_score_llm_answer_rewards_citation_and_expected_terms() -> None:
     assert score_llm_answer(answer, case) == 1.0
 
 
+def test_score_llm_answer_reads_expected_page_in_grouped_citation() -> None:
+    case = evaluate_retrieval_case(
+        EvaluationCase(
+            id="datas",
+            pergunta="Quais datas aparecem?",
+            expected_pages=[7],
+            expected_terms=["denuncia"],
+        ),
+        [SearchResult("Denuncia recebida.", 7, 0, None, 0.9)],
+    )
+    answer = LLMAnswer(
+        model="fake",
+        answer="A denuncia foi recebida na data informada [p. 1, 7].",
+        latency_ms=10,
+    )
+
+    assert score_llm_answer(answer, case) == 1.0
+
+
+def test_score_llm_answer_matches_term_split_by_line_break() -> None:
+    case = evaluate_retrieval_case(
+        EvaluationCase(
+            id="saude",
+            pergunta="Qual era a condicao de saude?",
+            expected_pages=[13],
+            expected_terms=["esquisenfalia cerebral bilateral"],
+        ),
+        [SearchResult("esquisenfalia\ncerebral bilateral", 13, 0, None, 0.9)],
+    )
+    answer = LLMAnswer(
+        model="fake",
+        answer="Consta esquisenfalia\ncerebral bilateral [p. 13].",
+        latency_ms=10,
+    )
+
+    assert score_llm_answer(answer, case) == 1.0
+
+
 def test_evaluate_llm_models_uses_injected_clients() -> None:
     case = evaluate_retrieval_case(
         EvaluationCase(

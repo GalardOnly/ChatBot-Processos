@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import unicodedata
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -17,6 +16,7 @@ from preparador_audiencia.ensemble import (
     search_process_ensemble,
 )
 from preparador_audiencia.llm import LLMAnswer, LLMClient, llm_client_from_spec
+from preparador_audiencia.quality_signals import extract_cited_pages
 from preparador_audiencia.repositories import ChunkRepository
 from preparador_audiencia.search import SearchResult, index_process_chunks, search_process
 from preparador_audiencia.vector_store import ChromaVectorStore, safe_collection_name
@@ -350,13 +350,8 @@ def _term_score(text: str, expected_terms: list[str]) -> float:
 def _citation_score(answer: str, expected_pages: list[int]) -> float:
     if not expected_pages:
         return 0.0
-    normalized = _normalize(answer)
-    hits = 0
-    for page in expected_pages:
-        patterns = [fr"p\.?\s*{page}\b", fr"pagina\s*{page}\b"]
-        if any(re.search(pattern, normalized) for pattern in patterns):
-            hits += 1
-    return hits / len(expected_pages)
+    cited_pages = set(extract_cited_pages(answer))
+    return len(cited_pages.intersection(expected_pages)) / len(expected_pages)
 
 
 def _average(values: list[float]) -> float:
@@ -365,4 +360,7 @@ def _average(values: list[float]) -> float:
 
 def _normalize(text: str) -> str:
     normalized = unicodedata.normalize("NFKD", text.lower())
-    return "".join(char for char in normalized if not unicodedata.combining(char))
+    without_accents = "".join(
+        char for char in normalized if not unicodedata.combining(char)
+    )
+    return " ".join(without_accents.split())

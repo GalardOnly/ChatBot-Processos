@@ -309,7 +309,7 @@ def _case_result(case: EvaluationCase, chat_result: ChatResult) -> ResponseBench
         resposta=chat_result.resposta,
         generator_model=chat_result.modelo,
         fallback_used=chat_result.fallback_usado,
-        latency_ms=None,
+        latency_ms=chat_result.latency_ms,
         source_pages=_unique_pages(chat_result.fontes),
         source_chunks=_source_chunks(chat_result.fontes),
         signals=signals,

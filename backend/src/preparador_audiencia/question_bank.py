@@ -55,6 +55,57 @@ DEFAULT_QUESTION_TEMPLATES = [
         prioridade=1,
     ),
     QuestionTemplate(
+        id="geral_resultado_julgamento",
+        titulo="Resultado do julgamento",
+        area="geral",
+        audiencia="qualquer",
+        objetivo=(
+            "Localizar decisao, provimento, orgao julgador e data do julgamento."
+        ),
+        pergunta=(
+            "Qual foi o resultado do julgamento, qual orgao decidiu, em que data e "
+            "qual providencia foi determinada? Cite as paginas."
+        ),
+        quando_usar="Quando a pergunta busca o desfecho de recurso, acao ou incidente.",
+        tags=[
+            "resultado",
+            "julgamento",
+            "decisao",
+            "acordao",
+            "provimento",
+            "recurso",
+            "recursos",
+            "data",
+            "turma",
+            "orgao_julgador",
+        ],
+        prioridade=1,
+    ),
+    QuestionTemplate(
+        id="saude_condicao_tratamento",
+        titulo="Condicao de saude e tratamento",
+        area="saude",
+        audiencia="qualquer",
+        objetivo=(
+            "Localizar diagnostico, condicao clinica, tratamento e atendimento domiciliar."
+        ),
+        pergunta=(
+            "Qual condicao de saude ou diagnostico aparece, qual tratamento foi indicado "
+            "e onde deve ser prestado? Cite as paginas."
+        ),
+        quando_usar="Processos sobre saude publica, plano de saude ou home care.",
+        tags=[
+            "saude",
+            "condicao",
+            "diagnostico",
+            "tratamento",
+            "domiciliar",
+            "home_care",
+            "beneficiario",
+        ],
+        prioridade=1,
+    ),
+    QuestionTemplate(
         id="geral_provas_documentos",
         titulo="Provas e documentos essenciais",
         area="geral",

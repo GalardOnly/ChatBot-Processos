@@ -340,3 +340,31 @@ python -m preparador_audiencia.benchmark_cli pdfs ..\samples\benchmark\*.pdf --f
 PDFs reais anonimizados devem ficar em `samples/anonimizados/` e usar
 `benchmark_cases.anonimizado.example.json` como ponto de partida para perguntas
 e paginas esperadas.
+
+## Suite de referencia multidominio
+
+A suite versionada em `data/reference_suite_multidomain.json` descreve tres
+acordaos publicos do STJ, seus hashes e dez casos de recuperacao. Os PDFs ficam
+fora do Git e podem ser baixados das URLs oficiais registradas no manifesto.
+
+Para validar apenas o schema e os gabaritos:
+
+```powershell
+suite-referencia validar
+```
+
+Para baixar os documentos ausentes, processar os PDFs e executar o benchmark sem
+chamadas de LLM:
+
+```powershell
+suite-referencia executar `
+  --download-missing `
+  --status pending `
+  --top-k 5 `
+  --embedding legal-ensemble `
+  --output reports/benchmark-referencia-multidominio.json
+```
+
+Os estados `pending`, `in_review` e `approved` permitem separar conferencia
+tecnica de aprovacao juridica. O resultado atual nao deve ser apresentado como
+validacao profissional enquanto os casos permanecerem pendentes.

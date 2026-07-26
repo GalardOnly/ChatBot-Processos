@@ -1,0 +1,167 @@
+{
+  "schema_version": "1.0",
+  "id": "stj-multidominio-v1",
+  "description": "Casos tecnicamente conferidos em acordaos publicos do STJ. Aprovacao juridica humana ainda pendente.",
+  "processes": [
+    {
+      "id": "stj-resp-1481531-familia",
+      "domain": "familia.convivencia",
+      "document": "stj-resp-1481531-familia.pdf",
+      "source": "STJ, REsp 1.481.531/SP, inteiro teor do acordao",
+      "source_url": "https://www.stj.jus.br/websecstj/cgi/revista/REJ.cgi/ITA?dt=20170307&formato=PDF&nreg=201401869064&salvar=false&seq=1568697&tipo=0",
+      "sha256": "23e1ba3c2b613471077ffbb98475242fba143cb13642905167b5643a7ed291d9",
+      "cases": [
+        {
+          "id": "identificacao-julgado",
+          "pergunta": "Qual e o recurso, quem foi o relator e qual tema familiar aparece no julgamento?",
+          "expected_pages": [1, 3, 5],
+          "expected_terms": [
+            "RECURSO ESPECIAL Nº 1.481.531",
+            "MINISTRO MOURA RIBEIRO",
+            "DIREITO DE VISITAÇÃO"
+          ],
+          "review_status": "pending",
+          "reviewer": null,
+          "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
+        },
+        {
+          "id": "astreintes-visitas",
+          "pergunta": "Por que foram discutidas astreintes no regime de visitas e qual valor foi fixado?",
+          "expected_pages": [8],
+          "expected_terms": [
+            "fixação preventiva de astreintes",
+            "descumprimento do regime de visitação",
+            "R$ 500,00"
+          ],
+          "review_status": "pending",
+          "reviewer": null,
+          "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
+        },
+        {
+          "id": "resultado-julgamento",
+          "pergunta": "Qual foi o resultado do julgamento, por qual orgao e em que data?",
+          "expected_pages": [2, 18],
+          "expected_terms": [
+            "Terceira Turma",
+            "negar provimento",
+            "16 de fevereiro de 2017"
+          ],
+          "review_status": "pending",
+          "reviewer": null,
+          "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
+        }
+      ]
+    },
+    {
+      "id": "stj-hc-477723-violencia-domestica",
+      "domain": "penal.violencia-domestica",
+      "document": "stj-hc-477723-violencia-domestica.pdf",
+      "source": "STJ, HC 477.723/SP, inteiro teor do acordao",
+      "source_url": "https://www.stj.jus.br/websecstj/cgi/revista/REJ.cgi/ITA?dt=20190307&formato=PDF&nreg=201802942955&salvar=false&seq=1791608&tipo=0",
+      "sha256": "6eeecf66d9bfdafb6a487ecc5b9ef9985c08ceac97b4d9e827324e4fe825d4bd",
+      "cases": [
+        {
+          "id": "medidas-protetivas-aplicadas",
+          "pergunta": "Quais medidas protetivas foram impostas, em que data e com qual distancia minima?",
+          "expected_pages": [3, 5],
+          "expected_terms": [
+            "29/05/2018",
+            "200m",
+            "proibição de contato"
+          ],
+          "review_status": "pending",
+          "reviewer": null,
+          "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
+        },
+        {
+          "id": "coabitacao-lei-maria-penha",
+          "pergunta": "A aplicacao da Lei Maria da Penha exigia coabitacao entre o paciente e a vitima?",
+          "expected_pages": [1, 5, 9],
+          "expected_terms": [
+            "relação íntima de afeto",
+            "independentemente de coabitação",
+            "Súmula n.º 600"
+          ],
+          "review_status": "pending",
+          "reviewer": null,
+          "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
+        },
+        {
+          "id": "resultado-habeas-corpus",
+          "pergunta": "Qual foi o resultado do habeas corpus e quando ocorreu o julgamento?",
+          "expected_pages": [2, 11],
+          "expected_terms": [
+            "unanimidade",
+            "denegar a ordem",
+            "12 de fevereiro de 2019"
+          ],
+          "review_status": "pending",
+          "reviewer": null,
+          "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
+        }
+      ]
+    },
+    {
+      "id": "stj-resp-1876047-saude",
+      "domain": "consumidor.saude-suplementar",
+      "document": "stj-resp-202000415389-saude.pdf",
+      "source": "STJ, REsp 1.876.047/SP, inteiro teor do acordao",
+      "source_url": "https://www.stj.jus.br/websecstj/cgi/revista/REJ.cgi/ITA?dt=20230420&formato=PDF&nreg=202000415389&salvar=false&seq=2288246&tipo=0",
+      "sha256": "bef6d305d2edb25bb5a2c42b89bdbed7976bbeba6e012ceec7bbed31980f66c8",
+      "cases": [
+        {
+          "id": "identificacao-e-defensoria",
+          "pergunta": "Qual e o recurso, quem foi a relatora e qual Defensoria atuou pela beneficiaria?",
+          "expected_pages": [1, 4, 7, 10],
+          "expected_terms": [
+            "RECURSO ESPECIAL Nº 1.876.047",
+            "MINISTRA NANCY ANDRIGHI",
+            "DEFENSORIA PÚBLICA DO ESTADO DE SÃO PAULO"
+          ],
+          "review_status": "pending",
+          "reviewer": null,
+          "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
+        },
+        {
+          "id": "condicao-e-tratamento",
+          "pergunta": "Qual era a condicao de saude da beneficiaria e qual tratamento domiciliar era necessario?",
+          "expected_pages": [13],
+          "expected_terms": [
+            "esquisenfalia cerebral bilateral",
+            "paralisia cerebral",
+            "síndrome de Lennox-Gastaut"
+          ],
+          "review_status": "pending",
+          "reviewer": null,
+          "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
+        },
+        {
+          "id": "cobertura-sem-plano-individual",
+          "pergunta": "O que o STJ decidiu sobre migracao para plano individual e continuidade do home care?",
+          "expected_pages": [16, 21],
+          "expected_terms": [
+            "excluir da condenação a obrigação",
+            "plano individual",
+            "home care em duas cidades distintas"
+          ],
+          "review_status": "pending",
+          "reviewer": null,
+          "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
+        },
+        {
+          "id": "resultado-recursos",
+          "pergunta": "Qual foi o resultado dos recursos e quando a Terceira Turma julgou o caso?",
+          "expected_pages": [22],
+          "expected_terms": [
+            "parcial provimento",
+            "Terceira Turma",
+            "18/04/2023"
+          ],
+          "review_status": "pending",
+          "reviewer": null,
+          "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
+        }
+      ]
+    }
+  ]
+}

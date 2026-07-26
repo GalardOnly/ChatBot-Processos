@@ -9,6 +9,10 @@ PAGE_CITATION_PATTERN = re.compile(
     r"(?:\[?\s*(?:p|pag|pagina)\.?\s*(\d+)\s*\]?)",
     flags=re.IGNORECASE,
 )
+PAGE_CITATION_BLOCK_PATTERN = re.compile(
+    r"\[\s*(?:p|pp|pag|pagina)s?\.?\s*([0-9][0-9,\s;e-]*)\]",
+    flags=re.IGNORECASE,
+)
 UNCERTAINTY_MARKERS = [
     "nao consta",
     "nao ha base",
@@ -44,7 +48,7 @@ class GroundingSignals:
 
 def inspect_response_grounding(resposta: str, sources: list[SearchResult]) -> GroundingSignals:
     source_pages = sorted({source.page_number for source in sources})
-    cited_pages = _extract_cited_pages(resposta)
+    cited_pages = extract_cited_pages(resposta)
     unsupported = [page for page in cited_pages if page not in set(source_pages)]
     claim_lines = _claim_lines(resposta)
     cited_claim_lines = [line for line in claim_lines if PAGE_CITATION_PATTERN.search(line)]
@@ -76,8 +80,10 @@ def inspect_response_grounding(resposta: str, sources: list[SearchResult]) -> Gr
     )
 
 
-def _extract_cited_pages(text: str) -> list[int]:
+def extract_cited_pages(text: str) -> list[int]:
     pages = {int(match.group(1)) for match in PAGE_CITATION_PATTERN.finditer(text)}
+    for block in PAGE_CITATION_BLOCK_PATTERN.findall(text):
+        pages.update(int(page) for page in re.findall(r"\d+", block))
     return sorted(pages)
 
 

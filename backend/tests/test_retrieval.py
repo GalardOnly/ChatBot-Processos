@@ -1,6 +1,7 @@
 from preparador_audiencia.retrieval import (
     index_process_chunks_configured,
     search_process_configured,
+    search_process_queries_configured,
 )
 from preparador_audiencia.search import SearchResult
 
@@ -53,3 +54,135 @@ def test_search_process_configured_uses_ensemble(monkeypatch) -> None:
             ["jurisbert", "legal-bertimbau"],
         )
     ]
+
+
+def test_search_process_queries_configured_fuses_raw_and_routed_results(
+    monkeypatch,
+) -> None:
+    calls: list[tuple[str, int]] = []
+
+    def fake_search(**kwargs) -> list[SearchResult]:
+        query = kwargs["pergunta"]
+        calls.append((query, kwargs["top_k"]))
+        if query == "pergunta original":
+            return [
+                SearchResult("Trecho original 1", 1, 0, None, 0.9),
+                SearchResult("Trecho compartilhado", 2, 0, None, 0.8),
+                SearchResult("Trecho original 3", 3, 0, None, 0.7),
+            ]
+        return [
+            SearchResult("Trecho compartilhado", 2, 0, None, 0.95),
+            SearchResult("Trecho roteado", 4, 0, None, 0.9),
+        ]
+
+    monkeypatch.setattr(
+        "preparador_audiencia.retrieval.search_process_configured",
+        fake_search,
+    )
+
+    results = search_process_queries_configured(
+        processo_id="proc_123",
+        queries=[
+            ("pergunta original", 1.0),
+            ("pergunta enriquecida", 0.35),
+        ],
+        top_k=3,
+        embedding_spec="legal-ensemble",
+    )
+
+    assert calls == [
+        ("pergunta original", 12),
+        ("pergunta enriquecida", 12),
+    ]
+    assert [(result.page_number, result.chunk_index) for result in results] == [
+        (2, 0),
+        (1, 0),
+        (3, 0),
+    ]
+    assert results[0].score > results[1].score
+
+
+def test_search_process_queries_configured_deduplicates_equal_queries(
+    monkeypatch,
+) -> None:
+    calls = []
+    expected = [SearchResult("Trecho", 1, 0, None, 0.9)]
+
+    def fake_search(**kwargs) -> list[SearchResult]:
+        calls.append(kwargs)
+        return expected
+
+    monkeypatch.setattr(
+        "preparador_audiencia.retrieval.search_process_configured",
+        fake_search,
+    )
+
+    results = search_process_queries_configured(
+        processo_id="proc_123",
+        queries=[("mesma pergunta", 1.0), ("mesma pergunta", 0.35)],
+        top_k=5,
+    )
+
+    assert results == expected
+    assert len(calls) == 1
+    assert calls[0]["pergunta"] == "mesma pergunta"
+
+
+def test_search_process_queries_prioritizes_exact_lexical_result(
+    monkeypatch,
+) -> None:
+    semantic = [
+        SearchResult("Contexto semantico", 1, 0, None, 0.9),
+        SearchResult("Outro contexto", 2, 0, None, 0.8),
+    ]
+    lexical = [
+        SearchResult("Resultado literal", 8, 0, "decisao", 1.0),
+        SearchResult("Contexto literal", 1, 0, None, 0.5),
+    ]
+    monkeypatch.setattr(
+        "preparador_audiencia.retrieval.search_process_configured",
+        lambda **kwargs: semantic,
+    )
+    monkeypatch.setattr(
+        "preparador_audiencia.retrieval.search_process_lexical",
+        lambda **kwargs: lexical,
+    )
+
+    results = search_process_queries_configured(
+        processo_id="proc_123",
+        queries=[("Qual foi o resultado do julgamento?", 1.0)],
+        top_k=2,
+    )
+
+    assert results[0].page_number == 8
+
+
+def test_search_process_queries_includes_routed_exact_result(
+    monkeypatch,
+) -> None:
+    def fake_hybrid(**kwargs) -> list[SearchResult]:
+        if kwargs["pergunta"] == "pergunta original":
+            return [
+                SearchResult("Contexto original", 1, 0, None, 0.9),
+                SearchResult("Outro contexto", 2, 0, None, 0.8),
+            ]
+        return [
+            SearchResult("Resultado literal", 22, 0, "decisao", 1.0),
+            SearchResult("Contexto expandido", 3, 0, None, 0.8),
+        ]
+
+    monkeypatch.setattr(
+        "preparador_audiencia.retrieval._search_process_hybrid_configured",
+        fake_hybrid,
+    )
+
+    results = search_process_queries_configured(
+        processo_id="proc_123",
+        queries=[
+            ("pergunta original", 1.0),
+            ("resultado decisao provimento", 0.35),
+        ],
+        top_k=2,
+    )
+
+    assert 22 in [result.page_number for result in results]

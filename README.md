@@ -8,7 +8,7 @@ Nesta versao inicial, o defensor envia o PDF completo do processo, o sistema ext
 
 O projeto esta em fase de Prova de Conceito. A intencao neste momento nao e entregar um produto final, mas validar se a ideia principal funciona na pratica: receber um processo real, extrair o texto com referencias de pagina, recuperar os trechos mais importantes e responder perguntas de forma util para a preparacao de audiencia.
 
-A PoC ja funciona localmente com upload de PDF, extracao de texto por pagina usando PyMuPDF, OCR para paginas escaneadas ou com pouco texto, divisao do conteudo em chunks, armazenamento local em SQLite, indexacao vetorial com ChromaDB, recuperacao semantica com ensemble juridico, chat com Gemini como modelo principal, Groq como fallback, interface simples em Streamlit, botoes de preparacao para audiencia e testes automatizados.
+A PoC ja funciona localmente com upload de PDF, extracao de texto por pagina usando PyMuPDF, OCR para paginas escaneadas ou com pouco texto, divisao do conteudo em chunks, armazenamento local em SQLite, indexacao vetorial com ChromaDB, recuperacao semantica com ensemble juridico, chat com Gemini como modelo principal, Groq como fallback, triagem juridica interna das perguntas, interface simples em Streamlit e testes automatizados.
 
 Em um teste local com um PDF real de aproximadamente 14 MB, a aplicacao processou 105 paginas e gerou 149 chunks pesquisaveis.
 
@@ -24,9 +24,15 @@ Quando o defensor faz uma pergunta, a aplicacao busca os trechos mais relevantes
 
 ## Recuperacao juridica
 
-O projeto usa um recuperador chamado `legal-ensemble`, pensado para combinar sinais dos modelos juridicos JurisBERT e Legal-BERTimbau. O BERTikal continua disponivel para testes isolados, mas saiu do ensemble padrao depois dos primeiros benchmarks. Esses modelos nao respondem diretamente ao usuario. A funcao deles e ajudar a encontrar quais trechos do processo parecem mais relevantes para uma pergunta.
+O projeto usa recuperacao hibrida. O componente semantico `legal-ensemble` combina sinais dos modelos juridicos JurisBERT e Legal-BERTimbau, enquanto uma busca lexical local reforca datas, numeros, resultados e outras expressoes exatas. O BERTikal continua disponivel para testes isolados, mas saiu do ensemble padrao depois dos primeiros benchmarks. Esses modelos nao respondem diretamente ao usuario. A funcao deles e ajudar a encontrar quais trechos do processo parecem mais relevantes para uma pergunta.
 
 Na pratica, eles atuam antes da LLM. Primeiro, a pergunta do defensor e comparada com os chunks do processo. Depois, os trechos mais promissores sao selecionados e enviados para o modelo gerador. Assim, Gemini e Groq ficam responsaveis pela resposta final, enquanto os modelos juridicos ajudam na recuperacao do contexto correto.
+
+## Triagem interna das perguntas
+
+O defensor escreve a pergunta com as proprias palavras. Antes da busca, o sistema tenta relacionar essa pergunta com guias juridicos oficiais e candidatos previamente catalogados. Essa classificacao nao aparece como uma lista de botoes e nao substitui a pergunta original. Quando a correspondencia e forte, os termos do guia funcionam como um reforco para localizar trechos relevantes e como contexto de organizacao para a LLM.
+
+Perguntas vagas ou sem correspondencia juridica segura seguem para a busca sem enriquecimento. Nas perguntas classificadas, o recuperador combina os resultados da pergunta original com os resultados da versao enriquecida, dando mais peso ao texto escrito pelo defensor. Isso reduz o risco de um guia inadequado desviar a consulta.
 
 ## LLMs
 
@@ -34,9 +40,15 @@ O modelo principal de resposta e o `gemini:gemini-3-flash-preview`, escolhido po
 
 ## Interface
 
-A interface atual foi feita em Streamlit para manter a PoC simples e rapida de testar. Ela permite subir um PDF, acompanhar o processamento, conversar com o processo, visualizar as fontes recuperadas e usar botoes com perguntas prontas voltadas para a rotina de preparacao de audiencia.
+A interface atual foi feita em Streamlit para manter a PoC simples e rapida de testar. Ela permite subir um PDF, acompanhar o processamento, conversar livremente com o processo e visualizar as fontes recuperadas.
 
-Hoje a interface ja inclui atalhos como preparar audiencia, gerar perguntas para a parte assistida, levantar pontos para contraditar, identificar documentos que precisam ser abertos, apontar riscos e urgencias e produzir um resumo rapido de dois minutos. Esses botoes ainda devem ser validados com defensores em uso real, porque a utilidade deles depende diretamente da rotina de trabalho de quem atua em audiencia.
+O banco de perguntas juridicas atua nos bastidores. O usuario nao precisa escolher entre dezenas de perguntas prontas nem entender a classificacao interna. A intencao e preservar uma experiencia de chat simples enquanto a aplicacao usa as referencias oficiais para compreender melhor o objetivo da consulta.
+
+## Benchmark do roteamento
+
+O roteamento interno foi comparado com a pergunta bruta em 50 consultas deterministicas geradas a partir de um processo real de 105 paginas. Com a recuperacao hibrida, o hit rate ficou em `0,84` nas duas variantes e o MRR passou de `0,5247` para `0,5347`. Dois casos melhoraram, um piorou e 47 empataram.
+
+Uma nova suite multidominio usa tres acordaos publicos do STJ, nas areas de familia, violencia domestica e saude suplementar, com dez perguntas e paginas esperadas. Nela, o hit rate passou de `0,90` para `1,00`, o MRR passou de `0,6450` para `0,6733` e nenhum caso piorou. Os dez casos ainda aguardam revisao profissional, portanto o resultado valida a recuperacao tecnica, nao a qualidade juridica final.
 
 ## Estrutura
 
@@ -53,12 +65,19 @@ backend/
     embeddings.py
     ensemble.py
     ingestion.py
+    lexical_search.py
     llm.py
     ocr.py
     pdf_extraction.py
     quality.py
+    question_router.py
+    reference_benchmark.py
+    reference_suite.py
+    reference_suite_cli.py
     repositories.py
     retrieval.py
+    routing_benchmark.py
+    routing_benchmark_cli.py
     search.py
     settings.py
     vector_store.py
@@ -116,8 +135,8 @@ python -m ruff check .
 
 ## Limitacoes atuais
 
-Esta PoC ainda nao e um produto pronto para producao. A interface ainda e simples, PDFs grandes podem demorar para processar, a primeira busca com modelos BERT pode ser lenta e ainda faltam pontos importantes como autenticacao, controle de usuarios, politica de dados e LGPD, logging estruturado, deploy e validacao com defensores em uso real.
+Esta PoC ainda nao e um produto pronto para producao. A interface ainda e simples, a primeira busca com modelos BERT pode ser lenta e ainda faltam pontos importantes como autenticacao, controle de usuarios, politica de dados e LGPD, logging estruturado, deploy e validacao com defensores em uso real. Os casos automaticos do benchmark usam as paginas e os termos do proprio processo como referencia, portanto nao substituem um conjunto de perguntas e respostas revisado por profissionais.
 
 ## Proximo passo
 
-O proximo passo recomendado e mostrar a PoC para um defensor publico, coletar feedback real e ajustar os botoes, prompts e roteiro de preparacao conforme a rotina dele. A partir desse retorno, o projeto pode evoluir com mais seguranca para uma versao menos experimental e mais proxima de um produto utilizavel.
+O proximo passo recomendado e revisar com um profissional os dez casos da suite multidominio e acrescentar respostas de referencia. Depois disso, o benchmark deve avaliar as respostas geradas por fidelidade as fontes, completude, utilidade para audiencia e risco de alucinacao, sem usar a LLM como unica avaliadora.

@@ -40,6 +40,20 @@ def test_inspect_response_grounding_flags_unsupported_page() -> None:
     assert signals.rule_risk == "alto"
 
 
+def test_inspect_response_grounding_reads_grouped_page_citations() -> None:
+    signals = inspect_response_grounding(
+        "A decisao aparece nas fontes consultadas [p. 1, 7 e 9].",
+        [
+            SearchResult("Fonte 1.", 1, 0, None, 0.9),
+            SearchResult("Fonte 7.", 7, 0, None, 0.9),
+            SearchResult("Fonte 9.", 9, 0, None, 0.9),
+        ],
+    )
+
+    assert signals.cited_pages == [1, 7, 9]
+    assert signals.unsupported_cited_pages == []
+
+
 def test_inspect_response_grounding_flags_many_uncited_claims() -> None:
     resposta = "\n".join(
         [
