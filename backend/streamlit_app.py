@@ -6,7 +6,15 @@ from typing import Any
 import httpx
 import streamlit as st
 
+from preparador_audiencia.question_sources import (
+    generate_question_candidates,
+    load_question_sources,
+)
+
 DEFAULT_API_URL = "http://127.0.0.1:8910"
+ALL_FILTER = "Todas"
+OFFICIAL_QUESTIONS_LIMIT = 100
+CANDIDATE_QUESTIONS_LIMIT = 24
 GUIDED_QUESTIONS = [
     (
         "Preparar audiencia",
@@ -262,13 +270,164 @@ def _render_chat(api_url: str) -> None:
 
 
 def _render_guided_questions(api_url: str) -> None:
-    with st.expander("Perguntas sugeridas", expanded=True):
-        columns = st.columns(3)
-        for index, (label, prompt) in enumerate(GUIDED_QUESTIONS):
-            with columns[index % len(columns)]:
-                if st.button(label, use_container_width=True):
-                    _submit_chat_question(api_url, prompt)
-                    st.rerun()
+    official_questions = _fetch_official_questions(api_url)
+    with st.expander("Perguntas oficiais", expanded=True):
+        filtered = _render_question_filters(official_questions, prefix="official")
+        _render_question_buttons(
+            api_url=api_url,
+            questions=filtered[:12],
+            key_prefix="official_question",
+        )
+
+    with st.expander("Perguntas candidatas", expanded=False):
+        area, audiencia = _render_candidate_filters()
+        candidates = _load_candidate_questions(
+            area=None if area == ALL_FILTER else area,
+            audiencia=None if audiencia == ALL_FILTER else audiencia,
+        )
+        _render_question_buttons(
+            api_url=api_url,
+            questions=candidates,
+            key_prefix="candidate_question",
+        )
+
+
+def _fetch_official_questions(api_url: str) -> list[dict[str, Any]]:
+    try:
+        response = httpx.get(
+            f"{api_url}/perguntas-audiencia",
+            params={"limit": OFFICIAL_QUESTIONS_LIMIT},
+            timeout=30,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        st.warning(f"Nao foi possivel carregar perguntas oficiais: {exc}")
+        return _legacy_guided_questions()
+    return response.json()["perguntas"]
+
+
+def _render_question_filters(
+    questions: list[dict[str, Any]],
+    *,
+    prefix: str,
+) -> list[dict[str, Any]]:
+    area = st.selectbox(
+        "Area",
+        _filter_options(questions, "area"),
+        key=f"{prefix}_area",
+    )
+    audiencia = st.selectbox(
+        "Audiencia",
+        _filter_options(questions, "audiencia"),
+        key=f"{prefix}_audiencia",
+    )
+    tags = sorted({tag for question in questions for tag in question.get("tags", [])})
+    tag = st.selectbox("Tema", [ALL_FILTER, *tags], key=f"{prefix}_tag")
+    return [
+        question
+        for question in questions
+        if _matches_filter(question["area"], area)
+        and _matches_filter(question["audiencia"], audiencia)
+        and (tag == ALL_FILTER or tag in question.get("tags", []))
+    ]
+
+
+def _render_candidate_filters() -> tuple[str, str]:
+    sources = load_question_sources()
+    source_payloads = [source.to_dict() for source in sources if source.area != "benchmark"]
+    col_area, col_audiencia = st.columns(2)
+    with col_area:
+        area = st.selectbox(
+            "Area",
+            _filter_options(source_payloads, "area"),
+            key="candidate_area",
+        )
+    with col_audiencia:
+        audiencia = st.selectbox(
+            "Audiencia",
+            _filter_options(source_payloads, "audiencia"),
+            key="candidate_audiencia",
+        )
+    return area, audiencia
+
+
+def _load_candidate_questions(
+    *,
+    area: str | None,
+    audiencia: str | None,
+) -> list[dict[str, Any]]:
+    try:
+        candidates = generate_question_candidates(
+            load_question_sources(),
+            area=area,
+            audiencia=audiencia,
+            official_only=True,
+            limit=CANDIDATE_QUESTIONS_LIMIT,
+        )
+    except Exception as exc:
+        st.warning(f"Nao foi possivel carregar perguntas candidatas: {exc}")
+        return []
+    return [
+        {
+            "id": candidate.id,
+            "titulo": candidate.titulo,
+            "area": candidate.area,
+            "audiencia": candidate.audiencia,
+            "objetivo": candidate.objetivo,
+            "pergunta": candidate.pergunta,
+            "quando_usar": candidate.quando_usar,
+            "tags": candidate.tags,
+        }
+        for candidate in candidates
+    ]
+
+
+def _render_question_buttons(
+    *,
+    api_url: str,
+    questions: list[dict[str, Any]],
+    key_prefix: str,
+) -> None:
+    if not questions:
+        st.info("Nenhuma pergunta encontrada para estes filtros.")
+        return
+    columns = st.columns(2)
+    for index, question in enumerate(questions):
+        with columns[index % len(columns)]:
+            st.caption(f"{question['area']} / {question['audiencia']}")
+            if st.button(
+                question["titulo"],
+                key=f"{key_prefix}_{question['id']}",
+                help=question["pergunta"],
+                use_container_width=True,
+            ):
+                _submit_chat_question(api_url, question["pergunta"])
+                st.rerun()
+
+
+def _filter_options(items: list[dict[str, Any]], field_name: str) -> list[str]:
+    values = sorted({str(item[field_name]) for item in items if item.get(field_name)})
+    return [ALL_FILTER, *values]
+
+
+def _matches_filter(value: str, selected: str) -> bool:
+    return selected == ALL_FILTER or value == selected
+
+
+def _legacy_guided_questions() -> list[dict[str, Any]]:
+    return [
+        {
+            "id": f"legacy_{index}",
+            "titulo": label,
+            "area": "geral",
+            "audiencia": "qualquer",
+            "objetivo": "Pergunta padrao da interface.",
+            "pergunta": prompt,
+            "quando_usar": "Preparacao geral.",
+            "tags": ["geral"],
+        }
+        for index, (label, prompt) in enumerate(GUIDED_QUESTIONS)
+    ]
 
 
 def _submit_chat_question(api_url: str, pergunta: str) -> None:

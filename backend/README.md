@@ -265,6 +265,11 @@ perguntas-promocao promover --review reports/revisao-custodia.json
 As aprovadas entram em `data/approved_question_templates.json` e passam a ser
 lidas por `perguntas-audiencia` e pelo endpoint `GET /perguntas-audiencia`.
 
+Na interface Streamlit, a aba de chat carrega as perguntas oficiais da API e
+permite filtrar por area, audiencia e tema. Perguntas candidatas tambem podem
+ser exibidas em uma area separada para teste, sem mistura-las com o banco
+revisado.
+
 Para usar LLMs na PoC:
 
 ```powershell
