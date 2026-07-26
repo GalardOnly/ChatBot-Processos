@@ -21,6 +21,10 @@ class ProcessoRecord:
     status: str
     page_count: int
     chunk_count: int
+    progress_stage: str
+    progress_current: int
+    progress_total: int
+    progress_message: str | None
     error_message: str | None
     created_at: str
     updated_at: str
@@ -67,6 +71,10 @@ def _processo_from_row(row: sqlite3.Row | None) -> ProcessoRecord | None:
         status=str(row["status"]),
         page_count=int(row["page_count"]),
         chunk_count=int(row["chunk_count"]),
+        progress_stage=str(row["progress_stage"]),
+        progress_current=int(row["progress_current"]),
+        progress_total=int(row["progress_total"]),
+        progress_message=row["progress_message"],
         error_message=row["error_message"],
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
@@ -152,14 +160,80 @@ class ProcessoRepository:
             if (processo := _processo_from_row(row)) is not None
         ]
 
+    def find_reusable_by_sha256(self, sha256_digest: str) -> ProcessoRecord | None:
+        row = self.connection.execute(
+            """
+            SELECT *
+            FROM processos
+            WHERE sha256 = ?
+              AND status IN ('concluido', 'processando', 'pendente')
+            ORDER BY
+                CASE status
+                    WHEN 'concluido' THEN 0
+                    WHEN 'processando' THEN 1
+                    ELSE 2
+                END,
+                updated_at DESC
+            LIMIT 1
+            """,
+            (sha256_digest,),
+        ).fetchone()
+        return _processo_from_row(row)
+
     def mark_processing(self, processo_id: str) -> None:
         self.connection.execute(
             """
             UPDATE processos
-            SET status = ?, error_message = NULL, updated_at = ?
+            SET status = ?, progress_stage = ?, progress_current = 0,
+                progress_total = 0, progress_message = ?,
+                error_message = NULL, updated_at = ?
             WHERE id = ?
             """,
-            ("processando", utc_now_text(), processo_id),
+            (
+                "processando",
+                "iniciando",
+                "Preparando o processamento",
+                utc_now_text(),
+                processo_id,
+            ),
+        )
+        self.connection.commit()
+
+    def update_progress(
+        self,
+        processo_id: str,
+        *,
+        stage: str,
+        current: int,
+        total: int,
+        message: str,
+        page_count: int | None = None,
+        chunk_count: int | None = None,
+    ) -> None:
+        assignments = [
+            "progress_stage = ?",
+            "progress_current = ?",
+            "progress_total = ?",
+            "progress_message = ?",
+            "updated_at = ?",
+        ]
+        values: list[object] = [
+            stage,
+            max(0, current),
+            max(0, total),
+            message,
+            utc_now_text(),
+        ]
+        if page_count is not None:
+            assignments.append("page_count = ?")
+            values.append(max(0, page_count))
+        if chunk_count is not None:
+            assignments.append("chunk_count = ?")
+            values.append(max(0, chunk_count))
+        values.append(processo_id)
+        self.connection.execute(
+            f"UPDATE processos SET {', '.join(assignments)} WHERE id = ?",
+            values,
         )
         self.connection.commit()
 
@@ -167,10 +241,20 @@ class ProcessoRepository:
         self.connection.execute(
             """
             UPDATE processos
-            SET status = ?, page_count = ?, chunk_count = ?, error_message = NULL, updated_at = ?
+            SET status = ?, page_count = ?, chunk_count = ?,
+                progress_stage = ?, progress_current = 1, progress_total = 1,
+                progress_message = ?, error_message = NULL, updated_at = ?
             WHERE id = ?
             """,
-            ("concluido", page_count, chunk_count, utc_now_text(), processo_id),
+            (
+                "concluido",
+                page_count,
+                chunk_count,
+                "concluido",
+                "Processo pronto para consulta",
+                utc_now_text(),
+                processo_id,
+            ),
         )
         self.connection.commit()
 
@@ -178,10 +262,11 @@ class ProcessoRepository:
         self.connection.execute(
             """
             UPDATE processos
-            SET status = ?, error_message = ?, updated_at = ?
+            SET status = ?, progress_stage = ?, progress_message = ?,
+                error_message = ?, updated_at = ?
             WHERE id = ?
             """,
-            ("erro", message, utc_now_text(), processo_id),
+            ("erro", "erro", "Falha no processamento", message, utc_now_text(), processo_id),
         )
         self.connection.commit()
 

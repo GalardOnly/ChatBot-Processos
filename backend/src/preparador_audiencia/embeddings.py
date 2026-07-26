@@ -7,6 +7,7 @@ import re
 import unicodedata
 from collections.abc import Iterable
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Protocol
 
 DEFAULT_BERTIKAL_MODEL = "felipemaiapolo/legalnlp-bert"
@@ -40,6 +41,7 @@ def get_embedding_provider() -> EmbeddingProvider:
     return embedding_provider_from_spec(provider_name)
 
 
+@lru_cache(maxsize=8)
 def embedding_provider_from_spec(spec: str) -> EmbeddingProvider:
     resolved = resolve_embedding_spec(spec)
     if resolved.provider == "hash":

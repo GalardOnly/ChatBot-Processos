@@ -1,16 +1,20 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
 import fitz
 
-from preparador_audiencia.ocr import OcrEngine, RapidOcrEngine
+from preparador_audiencia.ocr import OcrEngine, RapidOcrEngine, RapidOcrPool
 
 DEFAULT_SAMPLE_CHARS = 500
 LOW_TEXT_THRESHOLD = 80
 IMAGE_WITH_SPARSE_TEXT_THRESHOLD = 500
+DEFAULT_OCR_BATCH_SIZE = 4
+
+ExtractionProgressCallback = Callable[[int, int], None]
 
 
 @dataclass(frozen=True)
@@ -52,13 +56,24 @@ class PdfExtractionReport:
         }
 
 
+@dataclass(frozen=True)
+class _PageDraft:
+    page: fitz.Page
+    page_number: int
+    native_text: str
+    image_count: int
+    should_run_ocr: bool
+
+
 def extract_pdf_report(
     pdf_path: str | Path,
     sample_chars: int = DEFAULT_SAMPLE_CHARS,
     ocr_enabled: bool = True,
-    ocr_zoom: float = 2.0,
+    ocr_zoom: float = 1.5,
+    ocr_workers: int = 2,
     ocr_engine: OcrEngine | None = None,
     max_pages: int | None = None,
+    progress_callback: ExtractionProgressCallback | None = None,
 ) -> PdfExtractionReport:
     path = Path(pdf_path)
     if not path.exists():
@@ -68,42 +83,46 @@ def extract_pdf_report(
 
     pages: list[PageExtraction] = []
     resolved_ocr_engine: OcrEngine | None = ocr_engine
-    with fitz.open(path) as document:
-        for page_index, page in enumerate(document):
-            if max_pages is not None and page_index >= max_pages:
-                break
-            native_text = normalize_text(page.get_text("text"))
-            image_count = len(page.get_images(full=True))
-            should_run_ocr = ocr_enabled and _should_run_ocr(native_text, image_count)
-            ocr_text = ""
-            if should_run_ocr:
-                if resolved_ocr_engine is None:
-                    resolved_ocr_engine = RapidOcrEngine()
-                ocr_text = normalize_text(
-                    resolved_ocr_engine.extract_page_text(page, zoom=ocr_zoom)
+    ocr_pool: RapidOcrPool | None = None
+    try:
+        with fitz.open(path) as document:
+            total_pages = document.page_count
+            if max_pages is not None:
+                total_pages = min(total_pages, max_pages)
+            batch_size = max(DEFAULT_OCR_BATCH_SIZE, max(1, ocr_workers) * 2)
+
+            for batch_start in range(0, total_pages, batch_size):
+                batch_end = min(batch_start + batch_size, total_pages)
+                drafts = [
+                    _create_page_draft(document[page_index], page_index, ocr_enabled)
+                    for page_index in range(batch_start, batch_end)
+                ]
+                has_ocr = any(draft.should_run_ocr for draft in drafts)
+                if has_ocr and resolved_ocr_engine is None and ocr_pool is None:
+                    if ocr_workers > 1:
+                        ocr_pool = RapidOcrPool(ocr_workers)
+                    else:
+                        resolved_ocr_engine = RapidOcrEngine()
+
+                ocr_texts = _extract_ocr_batch(
+                    drafts,
+                    resolved_ocr_engine,
+                    ocr_pool=ocr_pool,
+                    ocr_zoom=ocr_zoom,
                 )
-            text = _merge_native_and_ocr_text(native_text, ocr_text)
-            pages.append(
-                PageExtraction(
-                    page_number=page_index + 1,
-                    char_count=len(text),
-                    word_count=len(text.split()),
-                    native_char_count=len(native_text),
-                    image_count=image_count,
-                    ocr_applied=should_run_ocr,
-                    ocr_char_count=len(ocr_text),
-                    extraction_method=_extraction_method(native_text, ocr_text),
-                    full_text=text,
-                    text_sample=text[:sample_chars],
-                    is_probably_empty=_is_probably_empty(text),
-                    quality_notes=_quality_notes(
-                        native_text,
-                        image_count=image_count,
-                        ocr_applied=should_run_ocr,
-                        ocr_text=ocr_text,
-                    ),
-                )
-            )
+                for draft, ocr_text in zip(drafts, ocr_texts, strict=True):
+                    pages.append(
+                        _finish_page_extraction(
+                            draft,
+                            ocr_text=normalize_text(ocr_text),
+                            sample_chars=sample_chars,
+                        )
+                    )
+                    if progress_callback is not None:
+                        progress_callback(len(pages), total_pages)
+    finally:
+        if ocr_pool is not None:
+            ocr_pool.close()
 
     return PdfExtractionReport(
         file_name=path.name,
@@ -114,6 +133,82 @@ def extract_pdf_report(
             1 for page in pages if "baixo_texto_extraido" in page.quality_notes
         ),
         pages=pages,
+    )
+
+
+def _create_page_draft(
+    page: fitz.Page,
+    page_index: int,
+    ocr_enabled: bool,
+) -> _PageDraft:
+    native_text = normalize_text(page.get_text("text"))
+    image_count = len(page.get_images(full=True))
+    return _PageDraft(
+        page=page,
+        page_number=page_index + 1,
+        native_text=native_text,
+        image_count=image_count,
+        should_run_ocr=ocr_enabled and _should_run_ocr(native_text, image_count),
+    )
+
+
+def _extract_ocr_batch(
+    drafts: list[_PageDraft],
+    ocr_engine: OcrEngine | None,
+    *,
+    ocr_pool: RapidOcrPool | None,
+    ocr_zoom: float,
+) -> list[str]:
+    texts = [""] * len(drafts)
+    candidates = [
+        (index, draft)
+        for index, draft in enumerate(drafts)
+        if draft.should_run_ocr
+    ]
+    if not candidates:
+        return texts
+
+    if ocr_pool is not None:
+        images = [
+            RapidOcrEngine.render_page_image(draft.page, ocr_zoom)
+            for _index, draft in candidates
+        ]
+        results = ocr_pool.extract_images(images)
+        for (index, _draft), result in zip(candidates, results, strict=True):
+            texts[index] = result
+        return texts
+
+    if ocr_engine is not None:
+        for index, draft in candidates:
+            texts[index] = ocr_engine.extract_page_text(draft.page, zoom=ocr_zoom)
+    return texts
+
+
+def _finish_page_extraction(
+    draft: _PageDraft,
+    *,
+    ocr_text: str,
+    sample_chars: int,
+) -> PageExtraction:
+    text = _merge_native_and_ocr_text(draft.native_text, ocr_text)
+    return PageExtraction(
+        page_number=draft.page_number,
+        char_count=len(text),
+        word_count=len(text.split()),
+        native_char_count=len(draft.native_text),
+        image_count=draft.image_count,
+        ocr_applied=draft.should_run_ocr,
+        ocr_char_count=len(ocr_text),
+        extraction_method=_extraction_method(draft.native_text, ocr_text),
+        full_text=text,
+        text_sample=text[:sample_chars],
+        is_probably_empty=_is_probably_empty(text),
+        quality_notes=_quality_notes(
+            draft.native_text,
+            image_count=draft.image_count,
+            ocr_applied=draft.should_run_ocr,
+            ocr_text=ocr_text,
+        ),
     )
 
 

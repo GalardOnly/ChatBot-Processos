@@ -6,49 +6,7 @@ from typing import Any
 import httpx
 import streamlit as st
 
-from preparador_audiencia.question_sources import (
-    generate_question_candidates,
-    load_question_sources,
-)
-
 DEFAULT_API_URL = "http://127.0.0.1:8910"
-ALL_FILTER = "Todas"
-OFFICIAL_QUESTIONS_LIMIT = 100
-CANDIDATE_QUESTIONS_LIMIT = 24
-GUIDED_QUESTIONS = [
-    (
-        "Preparar audiencia",
-        "Prepare um roteiro pratico para a audiencia deste processo. "
-        "Inclua resumo do caso, pontos de atencao, fatos a confirmar, provas importantes "
-        "e perguntas sugeridas. Cite as paginas em cada item.",
-    ),
-    (
-        "Perguntas para a parte assistida",
-        "Quais perguntas o defensor deve fazer para a parte assistida antes ou durante "
-        "a audiencia? Separe por tema, explique o objetivo de cada pergunta e cite as paginas.",
-    ),
-    (
-        "Pontos para contraditar",
-        "Quais pontos do processo podem ser contraditados, esclarecidos ou questionados "
-        "em audiencia? Indique o fundamento de cada ponto e cite as paginas.",
-    ),
-    (
-        "Documentos que preciso abrir",
-        "Quais documentos, laudos, decisoes, mandados, certidoes ou provas o defensor "
-        "deve abrir e conferir antes da audiencia? "
-        "Explique por que cada um importa e cite paginas.",
-    ),
-    (
-        "Riscos e urgencias",
-        "Identifique riscos, urgencias, prazos, determinacoes judiciais, contradicoes ou "
-        "pontos sensiveis que podem impactar a audiencia. Cite as paginas usadas.",
-    ),
-    (
-        "Resumo de 2 minutos",
-        "Faça um resumo de ate 2 minutos para o defensor lembrar rapidamente do caso "
-        "antes da audiencia. Foque no que e essencial e cite as paginas principais.",
-    ),
-]
 HEARING_SECTIONS = [
     {
         "title": "Resumo do caso",
@@ -121,7 +79,7 @@ def main() -> None:
         if st.button("Atualizar status", disabled=not st.session_state.processo_id):
             _refresh_status(st.session_state.api_url)
 
-    _render_process_status()
+    _render_process_status(st.session_state.api_url)
     st.divider()
     chat_tab, preparation_tab = st.tabs(["Chat", "Preparacao de audiencia"])
     with chat_tab:
@@ -165,7 +123,13 @@ def _upload_pdf(api_url: str, uploaded_file: Any) -> None:
     st.session_state.messages = []
     st.session_state.hearing_report = []
     _refresh_status(api_url)
-    st.success("PDF enviado. Aguarde o processamento terminar.")
+    if payload.get("reutilizado"):
+        if payload["status"] == "concluido":
+            st.success("Este PDF ja havia sido processado. Resultado carregado.")
+        else:
+            st.info("Este PDF ja esta na fila ou em processamento.")
+    else:
+        st.success("PDF recebido. O processamento foi iniciado.")
 
 
 def _refresh_status(api_url: str) -> None:
@@ -222,7 +186,7 @@ def _load_latest_process(api_url: str, *, completed_only: bool) -> None:
     _refresh_status(api_url)
 
 
-def _render_process_status() -> None:
+def _render_process_status(api_url: str) -> None:
     processo_id = st.session_state.processo_id
     status = st.session_state.status
     if not processo_id:
@@ -236,14 +200,25 @@ def _render_process_status() -> None:
         st.warning("Status ainda nao consultado.")
         return
 
-    cols = st.columns(4)
-    cols[0].metric("Status", status["status"])
-    cols[1].metric("Paginas", status["paginas_extraidas"])
-    cols[2].metric("Chunks", status["chunks"])
-    cols[3].metric("Erro", status["erro"] or "-")
+    status_cols = st.columns(2)
+    status_cols[0].metric("Status", status["status"])
+    status_cols[1].metric("Etapa", status.get("etapa", "-"))
+    count_cols = st.columns(2)
+    count_cols[0].metric("Paginas", status["paginas_extraidas"])
+    count_cols[1].metric("Chunks", status["chunks"])
+
+    progress_percent = int(status.get("progresso_percentual", 0))
+    progress_message = status.get("mensagem") or "Aguardando processamento"
+    if status["status"] in {"pendente", "processando"}:
+        st.progress(progress_percent, text=progress_message)
+    elif status["status"] == "concluido":
+        st.progress(100, text=progress_message)
+    if status.get("erro"):
+        st.error(status["erro"])
 
     if status["status"] in {"pendente", "processando"}:
         time.sleep(1)
+        _refresh_status(api_url)
         st.rerun()
 
 
@@ -256,7 +231,7 @@ def _render_chat(api_url: str) -> None:
         st.caption("O chat fica disponivel quando o processamento estiver concluido.")
         return
 
-    _render_guided_questions(api_url)
+    st.caption("Escreva sua pergunta do seu jeito. A triagem juridica acontece internamente.")
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -267,167 +242,6 @@ def _render_chat(api_url: str) -> None:
     pergunta = st.chat_input("Pergunte sobre o processo")
     if pergunta:
         _submit_chat_question(api_url, pergunta)
-
-
-def _render_guided_questions(api_url: str) -> None:
-    official_questions = _fetch_official_questions(api_url)
-    with st.expander("Perguntas oficiais", expanded=True):
-        filtered = _render_question_filters(official_questions, prefix="official")
-        _render_question_buttons(
-            api_url=api_url,
-            questions=filtered[:12],
-            key_prefix="official_question",
-        )
-
-    with st.expander("Perguntas candidatas", expanded=False):
-        area, audiencia = _render_candidate_filters()
-        candidates = _load_candidate_questions(
-            area=None if area == ALL_FILTER else area,
-            audiencia=None if audiencia == ALL_FILTER else audiencia,
-        )
-        _render_question_buttons(
-            api_url=api_url,
-            questions=candidates,
-            key_prefix="candidate_question",
-        )
-
-
-def _fetch_official_questions(api_url: str) -> list[dict[str, Any]]:
-    try:
-        response = httpx.get(
-            f"{api_url}/perguntas-audiencia",
-            params={"limit": OFFICIAL_QUESTIONS_LIMIT},
-            timeout=30,
-        )
-        response.raise_for_status()
-    except httpx.HTTPError as exc:
-        st.warning(f"Nao foi possivel carregar perguntas oficiais: {exc}")
-        return _legacy_guided_questions()
-    return response.json()["perguntas"]
-
-
-def _render_question_filters(
-    questions: list[dict[str, Any]],
-    *,
-    prefix: str,
-) -> list[dict[str, Any]]:
-    area = st.selectbox(
-        "Area",
-        _filter_options(questions, "area"),
-        key=f"{prefix}_area",
-    )
-    audiencia = st.selectbox(
-        "Audiencia",
-        _filter_options(questions, "audiencia"),
-        key=f"{prefix}_audiencia",
-    )
-    tags = sorted({tag for question in questions for tag in question.get("tags", [])})
-    tag = st.selectbox("Tema", [ALL_FILTER, *tags], key=f"{prefix}_tag")
-    return [
-        question
-        for question in questions
-        if _matches_filter(question["area"], area)
-        and _matches_filter(question["audiencia"], audiencia)
-        and (tag == ALL_FILTER or tag in question.get("tags", []))
-    ]
-
-
-def _render_candidate_filters() -> tuple[str, str]:
-    sources = load_question_sources()
-    source_payloads = [source.to_dict() for source in sources if source.area != "benchmark"]
-    col_area, col_audiencia = st.columns(2)
-    with col_area:
-        area = st.selectbox(
-            "Area",
-            _filter_options(source_payloads, "area"),
-            key="candidate_area",
-        )
-    with col_audiencia:
-        audiencia = st.selectbox(
-            "Audiencia",
-            _filter_options(source_payloads, "audiencia"),
-            key="candidate_audiencia",
-        )
-    return area, audiencia
-
-
-def _load_candidate_questions(
-    *,
-    area: str | None,
-    audiencia: str | None,
-) -> list[dict[str, Any]]:
-    try:
-        candidates = generate_question_candidates(
-            load_question_sources(),
-            area=area,
-            audiencia=audiencia,
-            official_only=True,
-            limit=CANDIDATE_QUESTIONS_LIMIT,
-        )
-    except Exception as exc:
-        st.warning(f"Nao foi possivel carregar perguntas candidatas: {exc}")
-        return []
-    return [
-        {
-            "id": candidate.id,
-            "titulo": candidate.titulo,
-            "area": candidate.area,
-            "audiencia": candidate.audiencia,
-            "objetivo": candidate.objetivo,
-            "pergunta": candidate.pergunta,
-            "quando_usar": candidate.quando_usar,
-            "tags": candidate.tags,
-        }
-        for candidate in candidates
-    ]
-
-
-def _render_question_buttons(
-    *,
-    api_url: str,
-    questions: list[dict[str, Any]],
-    key_prefix: str,
-) -> None:
-    if not questions:
-        st.info("Nenhuma pergunta encontrada para estes filtros.")
-        return
-    columns = st.columns(2)
-    for index, question in enumerate(questions):
-        with columns[index % len(columns)]:
-            st.caption(f"{question['area']} / {question['audiencia']}")
-            if st.button(
-                question["titulo"],
-                key=f"{key_prefix}_{question['id']}",
-                help=question["pergunta"],
-                use_container_width=True,
-            ):
-                _submit_chat_question(api_url, question["pergunta"])
-                st.rerun()
-
-
-def _filter_options(items: list[dict[str, Any]], field_name: str) -> list[str]:
-    values = sorted({str(item[field_name]) for item in items if item.get(field_name)})
-    return [ALL_FILTER, *values]
-
-
-def _matches_filter(value: str, selected: str) -> bool:
-    return selected == ALL_FILTER or value == selected
-
-
-def _legacy_guided_questions() -> list[dict[str, Any]]:
-    return [
-        {
-            "id": f"legacy_{index}",
-            "titulo": label,
-            "area": "geral",
-            "audiencia": "qualquer",
-            "objetivo": "Pergunta padrao da interface.",
-            "pergunta": prompt,
-            "quando_usar": "Preparacao geral.",
-            "tags": ["geral"],
-        }
-        for index, (label, prompt) in enumerate(GUIDED_QUESTIONS)
-    ]
 
 
 def _submit_chat_question(api_url: str, pergunta: str) -> None:
@@ -506,12 +320,9 @@ def _ask_question(api_url: str, pergunta: str, top_k: int = 5) -> dict[str, Any]
         }
 
     payload = response.json()
-    model_note = f"\n\nModelo usado: `{payload['modelo']}`"
-    if payload["fallback_usado"]:
-        model_note += " (fallback)"
     return {
         "role": "assistant",
-        "content": payload["resposta"] + model_note,
+        "content": payload["resposta"],
         "fontes": payload["fontes"],
     }
 

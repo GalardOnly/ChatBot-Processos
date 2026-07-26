@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from preparador_audiencia.llm import LLMAnswer, llm_client_from_spec
 from preparador_audiencia.quality import LegalQualityEvaluation, evaluate_legal_quality
+from preparador_audiencia.question_router import route_question
 from preparador_audiencia.repositories import ChatMessageRepository, QualityEvaluationRepository
 from preparador_audiencia.retrieval import search_process_configured
 from preparador_audiencia.schemas import SearchSource
@@ -43,7 +44,12 @@ def answer_process_question(
     quality_evaluations: QualityEvaluationRepository | None = None,
 ) -> ChatResult:
     messages.add(processo_id, "user", pergunta)
-    sources = search_process_configured(processo_id=processo_id, pergunta=pergunta, top_k=top_k)
+    question_route = route_question(pergunta)
+    sources = search_process_configured(
+        processo_id=processo_id,
+        pergunta=question_route.search_query(),
+        top_k=top_k,
+    )
 
     if not sources:
         messages.add(
@@ -64,7 +70,12 @@ def answer_process_question(
 
     primary_spec = primary_model or primary_llm_from_environment()
     fallback_spec = fallback_model or fallback_llm_from_environment()
-    answer, fallback_used = _answer_with_fallback(pergunta, sources, primary_spec, fallback_spec)
+    answer, fallback_used = _answer_with_fallback(
+        question_route.llm_question(),
+        sources,
+        primary_spec,
+        fallback_spec,
+    )
 
     if answer.error:
         raise RuntimeError(answer.error)

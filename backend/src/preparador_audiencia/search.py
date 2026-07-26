@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from preparador_audiencia.embeddings import EmbeddingProvider, get_embedding_provider
 from preparador_audiencia.repositories import ChunkRepository
+from preparador_audiencia.settings import embedding_batch_size_from_environment
 from preparador_audiencia.vector_store import ChromaVectorStore, VectorSearchResult
+
+IndexProgressCallback = Callable[[int, int], None]
 
 
 @dataclass(frozen=True)
@@ -21,12 +25,22 @@ def index_process_chunks(
     chunks: ChunkRepository,
     embedding_provider: EmbeddingProvider | None = None,
     vector_store: ChromaVectorStore | None = None,
+    *,
+    batch_size: int | None = None,
+    progress_callback: IndexProgressCallback | None = None,
 ) -> int:
     chunk_records = chunks.list_for_processo(processo_id)
     provider = embedding_provider or get_embedding_provider()
     store = vector_store or ChromaVectorStore()
 
-    embeddings = provider.embed_texts([chunk.text for chunk in chunk_records])
+    resolved_batch_size = batch_size or embedding_batch_size_from_environment()
+    embeddings: list[list[float]] = []
+    total = len(chunk_records)
+    for start in range(0, total, resolved_batch_size):
+        batch = chunk_records[start : start + resolved_batch_size]
+        embeddings.extend(provider.embed_texts([chunk.text for chunk in batch]))
+        if progress_callback is not None:
+            progress_callback(min(start + len(batch), total), total)
     vector_ids_by_chunk_id = store.replace_process_chunks(
         processo_id=processo_id,
         chunks=chunk_records,

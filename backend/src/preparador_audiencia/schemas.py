@@ -10,6 +10,7 @@ ProcessStatus = Literal["pendente", "processando", "concluido", "erro"]
 class UploadResponse(BaseModel):
     processo_id: str
     status: ProcessStatus
+    reutilizado: bool = False
 
 
 class ProcessStatusResponse(BaseModel):
@@ -17,6 +18,11 @@ class ProcessStatusResponse(BaseModel):
     status: ProcessStatus
     paginas_extraidas: int
     chunks: int
+    etapa: str
+    progresso_atual: int
+    progresso_total: int
+    progresso_percentual: int
+    mensagem: str | None
     erro: str | None
 
 

@@ -47,6 +47,33 @@ python -m streamlit run streamlit_app.py --server.address 127.0.0.1 --server.por
 
 Acesse `http://127.0.0.1:8501`.
 
+## Processamento de PDFs grandes
+
+O upload identifica o arquivo pelo hash SHA-256. Quando o mesmo PDF ja foi
+processado, o resultado existente e carregado sem repetir extracao, OCR ou
+embeddings. Se ele ja estiver na fila, um segundo envio tambem reutiliza o
+mesmo processamento.
+
+Durante um processamento novo, o endpoint de status informa a etapa, a
+mensagem e o percentual concluido. A interface atualiza esses dados
+automaticamente. O OCR trabalha em lotes pequenos com duas sessoes
+independentes e os embeddings sao gerados em lotes para limitar memoria e
+manter a maquina responsiva.
+
+Os valores podem ser ajustados pela configuracao:
+
+```powershell
+$env:PREPARADOR_OCR_ZOOM="1.5"
+$env:PREPARADOR_OCR_WORKERS="2"
+$env:PREPARADOR_EMBEDDING_BATCH_SIZE="16"
+```
+
+No PDF real de referencia com 14,9 MB e 105 paginas, sendo 39 submetidas a
+OCR, a extracao caiu de aproximadamente 242 para 133 segundos no ambiente
+local usado pela PoC. JurisBERT e Legal-BERTimbau acrescentaram cerca de 57
+segundos na primeira carga. Reenvios do mesmo PDF passam a ser praticamente
+imediatos.
+
 ## Chat do processo
 
 O chat usa os trechos recuperados pela busca vetorial e instrui o LLM a
@@ -263,12 +290,13 @@ perguntas-promocao promover --review reports/revisao-custodia.json
 ```
 
 As aprovadas entram em `data/approved_question_templates.json` e passam a ser
-lidas por `perguntas-audiencia` e pelo endpoint `GET /perguntas-audiencia`.
+lidas por `perguntas-audiencia`, pelo endpoint `GET /perguntas-audiencia` e pelo
+roteador interno do chat.
 
-Na interface Streamlit, a aba de chat carrega as perguntas oficiais da API e
-permite filtrar por area, audiencia e tema. Perguntas candidatas tambem podem
-ser exibidas em uma area separada para teste, sem mistura-las com o banco
-revisado.
+Na interface Streamlit, o defensor escreve livremente. O backend usa perguntas
+oficiais e candidatas como uma camada interna de triagem, classificacao e
+ranking. Essa camada enriquece a busca vetorial e orienta o prompt enviado ao
+LLM, mas nao aparece como lista de botoes na tela.
 
 Para usar LLMs na PoC:
 

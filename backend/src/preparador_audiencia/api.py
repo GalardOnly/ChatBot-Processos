@@ -60,9 +60,14 @@ async def upload_process_pdf(
     if not content.startswith(b"%PDF"):
         return error_response(400, "invalid_pdf", "O arquivo enviado nao parece ser PDF.")
 
-    processo_id = create_processo_from_pdf(file.filename or "processo.pdf", content)
-    background_tasks.add_task(process_pdf, processo_id)
-    return UploadResponse(processo_id=processo_id, status="pendente")
+    submission = create_processo_from_pdf(file.filename or "processo.pdf", content)
+    if submission.should_process:
+        background_tasks.add_task(process_pdf, submission.processo_id)
+    return UploadResponse(
+        processo_id=submission.processo_id,
+        status=submission.status,
+        reutilizado=submission.reused,
+    )
 
 
 @router.get(
@@ -76,11 +81,23 @@ async def get_process_status(processo_id: str) -> ProcessStatusResponse | JSONRe
     processo = ProcessoRepository(connection).get(processo_id)
     if processo is None:
         return error_response(404, "process_not_found", "Processo nao encontrado.")
+    progress_percent = (
+        round((processo.progress_current / processo.progress_total) * 100)
+        if processo.progress_total
+        else 0
+    )
+    if processo.status == "concluido":
+        progress_percent = 100
     return ProcessStatusResponse(
         processo_id=processo.id,
         status=processo.status,
         paginas_extraidas=processo.page_count,
         chunks=processo.chunk_count,
+        etapa=processo.progress_stage,
+        progresso_atual=processo.progress_current,
+        progresso_total=processo.progress_total,
+        progresso_percentual=max(0, min(100, progress_percent)),
+        mensagem=processo.progress_message,
         erro=processo.error_message,
     )
 

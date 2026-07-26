@@ -44,3 +44,37 @@ def test_index_and_search_returns_relevant_page(tmp_path) -> None:
     assert results[0].chunk_index == 0
     assert results[0].document_type == "audiencia"
     assert chunks.list_for_processo("proc_123")[1].vector_id is not None
+
+
+def test_index_process_chunks_uses_small_batches_and_reports_progress(tmp_path) -> None:
+    connection = connect_database(tmp_path / "test.sqlite3")
+    initialize_database(connection)
+    ProcessoRepository(connection).create_pending(
+        processo_id="proc_batch",
+        filename="processo.pdf",
+        file_path="storage/processo.pdf",
+        sha256_digest="batch",
+    )
+    chunks = ChunkRepository(connection)
+    chunks.replace_for_processo(
+        "proc_batch",
+        [
+            TextChunk(page_number=1, chunk_index=index, text=f"Trecho {index}")
+            for index in range(5)
+        ],
+    )
+    provider = HashEmbeddingProvider(dimensions=16)
+    store = ChromaVectorStore(path=tmp_path / "chroma")
+    progress = []
+
+    indexed = index_process_chunks(
+        "proc_batch",
+        chunks,
+        provider,
+        store,
+        batch_size=2,
+        progress_callback=lambda current, total: progress.append((current, total)),
+    )
+
+    assert indexed == 5
+    assert progress == [(2, 5), (4, 5), (5, 5)]

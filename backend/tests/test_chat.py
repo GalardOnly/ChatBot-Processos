@@ -83,6 +83,51 @@ def test_answer_process_question_uses_primary_model_and_records_history(
     assert history[1].retrieved_chunks[0]["chunk_index"] == 0
 
 
+def test_answer_process_question_routes_question_internally(tmp_path, monkeypatch) -> None:
+    messages = create_chat_repository(tmp_path)
+    search_queries: list[str] = []
+    llm_questions: list[str] = []
+    pergunta = "O que perguntar na audiencia de custodia sobre a prisao?"
+
+    class RecordingLLMClient:
+        def answer(self, pergunta: str, sources: list[SearchResult]) -> LLMAnswer:
+            llm_questions.append(pergunta)
+            return LLMAnswer(
+                model="gemini:gemini-3-flash-preview",
+                answer="Confira a legalidade da prisao e cite as paginas relevantes [p. 2].",
+                latency_ms=123,
+            )
+
+    def fake_search(**kwargs) -> list[SearchResult]:
+        search_queries.append(kwargs["pergunta"])
+        return fake_sources()
+
+    monkeypatch.setattr("preparador_audiencia.chat.search_process_configured", fake_search)
+    monkeypatch.setattr(
+        "preparador_audiencia.chat.llm_client_from_spec",
+        lambda spec: RecordingLLMClient(),
+    )
+
+    result = answer_process_question(
+        "proc_123",
+        pergunta,
+        messages,
+        primary_model="gemini:gemini-3-flash-preview",
+        fallback_model="groq:llama-3.1-8b-instant",
+    )
+
+    history = messages.list_for_processo("proc_123")
+    assert result.pergunta == pergunta
+    assert history[0].content == pergunta
+    assert search_queries
+    assert pergunta in search_queries[0]
+    assert search_queries[0] != pergunta
+    assert "Prisao" in search_queries[0]
+    assert llm_questions
+    assert pergunta in llm_questions[0]
+    assert "Triagem interna" in llm_questions[0]
+
+
 def test_answer_process_question_uses_groq_fallback_when_primary_fails(
     tmp_path,
     monkeypatch,

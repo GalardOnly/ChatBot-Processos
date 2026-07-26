@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from preparador_audiencia.embeddings import embedding_provider_from_spec
 from preparador_audiencia.ensemble import (
+    EnsembleIndexProgressCallback,
     index_process_chunks_ensemble,
     is_ensemble_spec,
     parse_ensemble_spec,
@@ -17,12 +18,34 @@ def index_process_chunks_configured(
     processo_id: str,
     chunks: ChunkRepository,
     embedding_spec: str | None = None,
+    progress_callback: EnsembleIndexProgressCallback | None = None,
 ) -> int:
     spec = embedding_spec or embedding_provider_from_environment()
     if is_ensemble_spec(spec):
+        if progress_callback is not None:
+            return index_process_chunks_ensemble(
+                processo_id,
+                chunks,
+                parse_ensemble_spec(spec),
+                progress_callback=progress_callback,
+            )
         return index_process_chunks_ensemble(processo_id, chunks, parse_ensemble_spec(spec))
 
     provider = embedding_provider_from_spec(spec)
+    if progress_callback is not None:
+        return index_process_chunks(
+            processo_id=processo_id,
+            chunks=chunks,
+            embedding_provider=provider,
+            vector_store=_vector_store_for_single_spec(spec),
+            progress_callback=lambda current, total: progress_callback(
+                spec,
+                1,
+                1,
+                current,
+                total,
+            ),
+        )
     return index_process_chunks(
         processo_id=processo_id,
         chunks=chunks,

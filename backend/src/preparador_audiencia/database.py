@@ -30,6 +30,10 @@ def initialize_database(connection: sqlite3.Connection) -> None:
             status TEXT NOT NULL,
             page_count INTEGER NOT NULL DEFAULT 0,
             chunk_count INTEGER NOT NULL DEFAULT 0,
+            progress_stage TEXT NOT NULL DEFAULT 'aguardando',
+            progress_current INTEGER NOT NULL DEFAULT 0,
+            progress_total INTEGER NOT NULL DEFAULT 0,
+            progress_message TEXT,
             error_message TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
@@ -81,8 +85,45 @@ def initialize_database(connection: sqlite3.Connection) -> None:
         );
         """
     )
+    _ensure_process_columns(connection)
     _ensure_chat_message_columns(connection)
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_processos_sha256_status ON processos (sha256, status)"
+    )
+    connection.execute(
+        """
+        UPDATE processos
+        SET progress_stage = 'concluido',
+            progress_current = 1,
+            progress_total = 1,
+            progress_message = 'Processo pronto para consulta'
+        WHERE status = 'concluido' AND progress_stage = 'aguardando'
+        """
+    )
     connection.commit()
+
+
+def _ensure_process_columns(connection: sqlite3.Connection) -> None:
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(processos)").fetchall()
+    }
+    migrations = {
+        "progress_stage": (
+            "ALTER TABLE processos ADD COLUMN progress_stage "
+            "TEXT NOT NULL DEFAULT 'aguardando'"
+        ),
+        "progress_current": (
+            "ALTER TABLE processos ADD COLUMN progress_current INTEGER NOT NULL DEFAULT 0"
+        ),
+        "progress_total": (
+            "ALTER TABLE processos ADD COLUMN progress_total INTEGER NOT NULL DEFAULT 0"
+        ),
+        "progress_message": "ALTER TABLE processos ADD COLUMN progress_message TEXT",
+    }
+    for column, statement in migrations.items():
+        if column not in columns:
+            connection.execute(statement)
 
 
 def _ensure_chat_message_columns(connection: sqlite3.Connection) -> None:

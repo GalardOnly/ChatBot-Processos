@@ -121,5 +121,19 @@ def test_extract_pdf_report_is_json_serializable(tmp_path) -> None:
     assert payload["empty_page_count"] == 1
 
 
+def test_extract_pdf_report_reports_page_progress(tmp_path) -> None:
+    pdf_path = tmp_path / "processo.pdf"
+    create_pdf(pdf_path)
+    progress = []
+
+    report = extract_pdf_report(
+        pdf_path,
+        progress_callback=lambda current, total: progress.append((current, total)),
+    )
+
+    assert report.page_count == 3
+    assert progress == [(1, 3), (2, 3), (3, 3)]
+
+
 def test_normalize_text_removes_excess_blank_lines_and_spaces() -> None:
     assert normalize_text(" A   B \n\n C\r\n") == "A B\nC"

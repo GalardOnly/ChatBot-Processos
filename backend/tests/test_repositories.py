@@ -22,13 +22,43 @@ def test_process_repository_lifecycle(tmp_path) -> None:
     assert created.status == "pendente"
 
     processos.mark_processing("proc_123")
-    assert processos.get("proc_123").status == "processando"
+    processing = processos.get("proc_123")
+    assert processing.status == "processando"
+    assert processing.progress_stage == "iniciando"
+
+    processos.update_progress(
+        "proc_123",
+        stage="extraindo",
+        current=1,
+        total=2,
+        message="Extraindo pagina 1 de 2",
+        page_count=1,
+    )
+    progress = processos.get("proc_123")
+    assert progress.progress_current == 1
+    assert progress.progress_total == 2
+    assert progress.page_count == 1
 
     processos.mark_completed("proc_123", page_count=2, chunk_count=5)
     completed = processos.get("proc_123")
     assert completed.status == "concluido"
+    assert completed.progress_stage == "concluido"
     assert completed.page_count == 2
     assert completed.chunk_count == 5
+
+
+def test_process_repository_prefers_completed_duplicate(tmp_path) -> None:
+    connection = connect_database(tmp_path / "test.sqlite3")
+    initialize_database(connection)
+    processos = ProcessoRepository(connection)
+    processos.create_pending("proc_pending", "a.pdf", "a.pdf", "same")
+    processos.create_pending("proc_completed", "b.pdf", "b.pdf", "same")
+    processos.mark_completed("proc_completed", page_count=2, chunk_count=3)
+
+    reusable = processos.find_reusable_by_sha256("same")
+
+    assert reusable is not None
+    assert reusable.id == "proc_completed"
 
 
 def test_chunk_repository_replaces_chunks(tmp_path) -> None:

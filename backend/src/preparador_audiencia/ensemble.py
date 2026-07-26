@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from preparador_audiencia.embeddings import embedding_provider_from_spec
@@ -8,6 +9,7 @@ from preparador_audiencia.search import SearchResult, index_process_chunks, sear
 from preparador_audiencia.vector_store import ChromaVectorStore, safe_collection_name
 
 DEFAULT_LEGAL_ENSEMBLE_SPECS = ["jurisbert", "legal-bertimbau"]
+EnsembleIndexProgressCallback = Callable[[str, int, int, int, int], None]
 
 
 @dataclass
@@ -51,13 +53,32 @@ def index_process_chunks_ensemble(
     processo_id: str,
     chunks: ChunkRepository,
     model_specs: list[str] | None = None,
+    progress_callback: EnsembleIndexProgressCallback | None = None,
 ) -> int:
     specs = model_specs or DEFAULT_LEGAL_ENSEMBLE_SPECS
     indexed = 0
-    for spec in specs:
+    for model_index, spec in enumerate(specs, start=1):
         provider = embedding_provider_from_spec(spec)
         store = ChromaVectorStore(collection_name=_collection_name_for_spec(spec))
-        indexed = index_process_chunks(processo_id, chunks, provider, store)
+        indexed = index_process_chunks(
+            processo_id,
+            chunks,
+            provider,
+            store,
+            progress_callback=(
+                lambda current, total, current_spec=spec, current_index=model_index: (
+                    progress_callback(
+                        current_spec,
+                        current_index,
+                        len(specs),
+                        current,
+                        total,
+                    )
+                )
+                if progress_callback is not None
+                else None
+            ),
+        )
     return indexed
 
 

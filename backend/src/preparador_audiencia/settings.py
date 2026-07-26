@@ -9,6 +9,9 @@ DEFAULT_EMBEDDING_PROVIDER = "legal-ensemble"
 DEFAULT_PRIMARY_LLM = "gemini:gemini-3-flash-preview"
 DEFAULT_FALLBACK_LLM = "groq:llama-3.1-8b-instant"
 DEFAULT_EVALUATOR_LLM = "groq:llama-3.1-8b-instant"
+DEFAULT_OCR_ZOOM = 1.5
+DEFAULT_OCR_WORKERS = 2
+DEFAULT_EMBEDDING_BATCH_SIZE = 16
 
 
 def storage_dir_from_environment() -> Path:
@@ -33,3 +36,23 @@ def evaluator_llm_from_environment() -> str:
 
 def embedding_provider_from_environment() -> str:
     return os.getenv("PREPARADOR_EMBEDDING_PROVIDER", DEFAULT_EMBEDDING_PROVIDER)
+
+
+def ocr_zoom_from_environment() -> float:
+    return max(1.0, float(os.getenv("PREPARADOR_OCR_ZOOM", str(DEFAULT_OCR_ZOOM))))
+
+
+def ocr_workers_from_environment() -> int:
+    return max(1, int(os.getenv("PREPARADOR_OCR_WORKERS", str(DEFAULT_OCR_WORKERS))))
+
+
+def embedding_batch_size_from_environment() -> int:
+    return max(
+        1,
+        int(
+            os.getenv(
+                "PREPARADOR_EMBEDDING_BATCH_SIZE",
+                str(DEFAULT_EMBEDDING_BATCH_SIZE),
+            )
+        ),
+    )

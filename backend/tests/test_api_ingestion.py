@@ -35,6 +35,8 @@ def test_upload_processes_pdf_and_status_returns_completed(tmp_path, monkeypatch
     assert status.json()["status"] == "concluido"
     assert status.json()["paginas_extraidas"] == 1
     assert status.json()["chunks"] == 1
+    assert status.json()["etapa"] == "concluido"
+    assert status.json()["progresso_percentual"] == 100
 
     search = client.post(
         f"/processo/{processo_id}/buscar",
@@ -43,6 +45,30 @@ def test_upload_processes_pdf_and_status_returns_completed(tmp_path, monkeypatch
     assert search.status_code == 200
     assert search.json()["fontes"][0]["pagina"] == 1
     assert "Audiencia" in search.json()["fontes"][0]["trecho"]
+
+
+def test_upload_reuses_identical_completed_pdf(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("PREPARADOR_DATABASE_PATH", str(tmp_path / "test.sqlite3"))
+    monkeypatch.setenv("PREPARADOR_STORAGE_DIR", str(tmp_path / "storage"))
+    monkeypatch.setenv("PREPARADOR_CHROMA_DIR", str(tmp_path / "chroma"))
+    monkeypatch.setenv("PREPARADOR_EMBEDDING_PROVIDER", "hash")
+    client = TestClient(app)
+    payload = create_pdf_bytes()
+
+    first = client.post(
+        "/upload",
+        files={"file": ("processo.pdf", payload, "application/pdf")},
+    )
+    second = client.post(
+        "/upload",
+        files={"file": ("copia-do-processo.pdf", payload, "application/pdf")},
+    )
+
+    assert second.status_code == 200
+    assert second.json()["processo_id"] == first.json()["processo_id"]
+    assert second.json()["status"] == "concluido"
+    assert second.json()["reutilizado"] is True
+    assert len(list((tmp_path / "storage").glob("*.pdf"))) == 1
 
 
 def test_upload_rejects_non_pdf_payload(tmp_path, monkeypatch) -> None:
