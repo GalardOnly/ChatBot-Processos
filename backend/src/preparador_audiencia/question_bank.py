@@ -4,6 +4,10 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+DEFAULT_APPROVED_QUESTION_PATH = (
+    Path(__file__).resolve().parents[2] / "data/approved_question_templates.json"
+)
+
 
 @dataclass(frozen=True)
 class QuestionTemplate:
@@ -353,8 +357,9 @@ def list_question_templates(
     audiencia: str | None = None,
     tags: list[str] | None = None,
     limit: int | None = None,
+    approved_path: str | Path | None = None,
 ) -> list[QuestionTemplate]:
-    selected = DEFAULT_QUESTION_TEMPLATES
+    selected = DEFAULT_QUESTION_TEMPLATES + load_approved_question_templates(approved_path)
     if area:
         selected = [item for item in selected if item.area == area]
     if audiencia:
@@ -364,6 +369,39 @@ def list_question_templates(
         selected = [item for item in selected if wanted.intersection(item.tags)]
     selected = sorted(selected, key=lambda item: (item.prioridade, item.area, item.id))
     return selected[:limit] if limit is not None else selected
+
+
+def load_approved_question_templates(
+    path: str | Path | None = None,
+) -> list[QuestionTemplate]:
+    approved_path = Path(path) if path is not None else DEFAULT_APPROVED_QUESTION_PATH
+    if not approved_path.exists():
+        return []
+    payload = json.loads(approved_path.read_text(encoding="utf-8"))
+    return [_template_from_dict(item) for item in payload.get("templates", [])]
+
+
+def write_approved_question_templates(
+    templates: list[QuestionTemplate],
+    path: str | Path | None = None,
+) -> None:
+    approved_path = Path(path) if path is not None else DEFAULT_APPROVED_QUESTION_PATH
+    approved_path.parent.mkdir(parents=True, exist_ok=True)
+    approved_path.write_text(
+        json.dumps(
+            {
+                "version": "0.1",
+                "description": (
+                    "Perguntas promovidas a partir da curadoria. Edite via fluxo de "
+                    "revisao antes de usar no produto."
+                ),
+                "templates": [template.to_dict() for template in templates],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
 
 def question_templates_to_cases(templates: list[QuestionTemplate]) -> dict[str, object]:
@@ -437,3 +475,17 @@ def render_question_templates_markdown(templates: list[QuestionTemplate]) -> str
             ]
         )
     return "\n".join(lines).strip() + "\n"
+
+
+def _template_from_dict(item: dict[str, object]) -> QuestionTemplate:
+    return QuestionTemplate(
+        id=str(item["id"]),
+        titulo=str(item["titulo"]),
+        area=str(item["area"]),
+        audiencia=str(item["audiencia"]),
+        objetivo=str(item["objetivo"]),
+        pergunta=str(item["pergunta"]),
+        quando_usar=str(item["quando_usar"]),
+        tags=[str(tag) for tag in item.get("tags", [])],
+        prioridade=int(item["prioridade"]),
+    )

@@ -40,6 +40,7 @@ benchmark-fontes = "preparador_audiencia.benchmark_cli:main"
 benchmark-respostas = "preparador_audiencia.response_benchmark_cli:main"
 perguntas-audiencia = "preparador_audiencia.question_bank_cli:main"
 perguntas-candidatas = "preparador_audiencia.question_sources_cli:main"
+perguntas-promocao = "preparador_audiencia.question_promotion_cli:main"
 
 [build-system]
 requires = ["setuptools>=69"]

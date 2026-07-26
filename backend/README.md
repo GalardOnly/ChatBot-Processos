@@ -245,6 +245,26 @@ perguntas-candidatas `
 As candidatas nao aparecem automaticamente como perguntas oficiais. Elas devem
 ser revisadas ou testadas antes de serem promovidas para o banco principal.
 
+Para criar um arquivo de revisao e promover apenas perguntas aprovadas:
+
+```powershell
+perguntas-promocao criar-revisao `
+  --area criminal `
+  --audiencia custodia `
+  --official-only `
+  --limit 20 `
+  --output reports/revisao-custodia.json
+```
+
+Depois de alterar `decision` para `approved` nas perguntas escolhidas:
+
+```powershell
+perguntas-promocao promover --review reports/revisao-custodia.json
+```
+
+As aprovadas entram em `data/approved_question_templates.json` e passam a ser
+lidas por `perguntas-audiencia` e pelo endpoint `GET /perguntas-audiencia`.
+
 Para usar LLMs na PoC:
 
 ```powershell
