@@ -219,6 +219,32 @@ perguntas-audiencia `
 A API tambem expoe esse banco em `GET /perguntas-audiencia`, com filtros
 opcionais `area`, `audiencia`, `tag` e `limit`.
 
+## Perguntas candidatas
+
+O banco oficial e intencionalmente revisado. Para aumentar escala sem perder
+rastreabilidade, a PoC possui uma curadoria de fontes em
+`data/question_sources.json` e um gerador deterministico de perguntas
+candidatas. Essas perguntas carregam origem, URL, tipo de fonte e status
+`candidate`.
+
+Para listar candidatas de audiencia de custodia:
+
+```powershell
+perguntas-candidatas --area criminal --audiencia custodia --official-only --limit 12
+```
+
+Para exportar candidatas em formato compativel com o benchmark:
+
+```powershell
+perguntas-candidatas `
+  --area familia `
+  --format cases-json `
+  --output reports/perguntas-familia-candidatas.cases.json
+```
+
+As candidatas nao aparecem automaticamente como perguntas oficiais. Elas devem
+ser revisadas ou testadas antes de serem promovidas para o banco principal.
+
 Para usar LLMs na PoC:
 
 ```powershell

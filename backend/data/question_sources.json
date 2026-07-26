@@ -1,0 +1,353 @@
+{
+  "version": "0.1",
+  "description": "Fontes curadas para gerar perguntas candidatas da PoC. Perguntas geradas a partir daqui precisam de revisao antes de entrar no banco oficial.",
+  "sources": [
+    {
+      "id": "dpesp-duvidas-frequentes",
+      "title": "DPESP - Duvidas frequentes",
+      "url": "https://www.defensoria.sp.def.br/atendimento/duvidas-frequentes",
+      "kind": "faq",
+      "official": true,
+      "area": "geral",
+      "audiencia": "qualquer",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de temas, nao copiar respostas extensas.",
+      "topics": [
+        "mandado de citacao ou intimacao",
+        "numero do processo",
+        "documentos para atendimento",
+        "primeiro atendimento pela defensoria",
+        "situacao processual atual"
+      ]
+    },
+    {
+      "id": "dpema-faq",
+      "title": "DPE-MA - Perguntas frequentes",
+      "url": "https://defensoria.ma.def.br/dpema/portal/faq",
+      "kind": "faq",
+      "official": true,
+      "area": "geral",
+      "audiencia": "qualquer",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de temas.",
+      "topics": [
+        "quando procurar a defensoria",
+        "papel do defensor publico",
+        "gratuidade do atendimento",
+        "orientacao juridica inicial",
+        "direitos da pessoa assistida"
+      ]
+    },
+    {
+      "id": "dpepe-perguntas-frequentes",
+      "title": "DPE-PE - Perguntas frequentes",
+      "url": "https://www.defensoria.pe.def.br/perguntas_frequentes/",
+      "kind": "faq",
+      "official": true,
+      "area": "geral",
+      "audiencia": "qualquer",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de temas.",
+      "topics": [
+        "defensoria publica e orientacao juridica",
+        "triagem de atendimento",
+        "necessidade de documentos",
+        "historico do processo",
+        "pedido principal do assistido"
+      ]
+    },
+    {
+      "id": "dpeba-criminal-execucao",
+      "title": "DPE-BA - Criminal e execucao penal",
+      "url": "https://www.defensoria.ba.def.br/atendimento/areas-de-atuacao/criminal-e-execucao-penal/",
+      "kind": "faq",
+      "official": true,
+      "area": "criminal",
+      "audiencia": "instrucao",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de temas.",
+      "topics": [
+        "pessoa acusada em processo criminal",
+        "prisao de familiar ou conhecido",
+        "documento de oficial de justica",
+        "pedido de liberdade",
+        "habeas corpus",
+        "defesa escrita",
+        "acompanhamento em audiencia",
+        "restituicao de bens apreendidos"
+      ]
+    },
+    {
+      "id": "dpeba-documentos-criminal",
+      "title": "DPE-BA - Documentos para atendimento criminal",
+      "url": "https://www.defensoria.ba.def.br/atendimento/areas-de-atuacao/criminal-e-execucao-penal/",
+      "kind": "checklist",
+      "official": true,
+      "area": "criminal",
+      "audiencia": "instrucao",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de checklist.",
+      "topics": [
+        "nome completo do acusado",
+        "numero do processo criminal",
+        "documentos pessoais do acusado",
+        "comprovante de residencia",
+        "comprovante de trabalho",
+        "documentos relevantes do caso"
+      ]
+    },
+    {
+      "id": "dprs-execucao-penal",
+      "title": "DPE-RS - Execucao penal",
+      "url": "https://www.defensoria.rs.def.br/execucao-penal",
+      "kind": "faq",
+      "official": true,
+      "area": "execucao_penal",
+      "audiencia": "justificacao",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de temas.",
+      "topics": [
+        "atendimento no interior do carcere",
+        "pessoa presa provisoriamente",
+        "sentenciado em liberdade",
+        "egresso do sistema prisional",
+        "procedimento administrativo disciplinar",
+        "mutirao carcerario"
+      ]
+    },
+    {
+      "id": "dpepr-execucao-penal",
+      "title": "DPE-PR - Execucao penal cumprimento de pena",
+      "url": "https://www.defensoriapublica.pr.def.br/Pagina/Execucao-Penal-cumprimento-de-pena",
+      "kind": "service_page",
+      "official": true,
+      "area": "execucao_penal",
+      "audiencia": "justificacao",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de triagem.",
+      "topics": [
+        "regime fechado",
+        "regime semiaberto",
+        "regime aberto",
+        "cumprimento de pena",
+        "vara de execucao penal",
+        "atendimento remoto"
+      ]
+    },
+    {
+      "id": "tjrs-cevid-faq",
+      "title": "TJRS CEVID - Perguntas frequentes violencia domestica",
+      "url": "https://www.tjrs.jus.br/novo/violencia-domestica/ajuda-e-orientacoes/perguntas-frequentes/",
+      "kind": "faq",
+      "official": true,
+      "area": "violencia_domestica",
+      "audiencia": "medida_protetiva",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de temas.",
+      "topics": [
+        "violencia domestica e familiar",
+        "medida protetiva de urgencia",
+        "descumprimento de medida protetiva",
+        "registro de ocorrencia",
+        "risco atual para a vitima",
+        "juizado de violencia domestica"
+      ]
+    },
+    {
+      "id": "dpers-defesa-mulher",
+      "title": "DPE-RS - Defesa da mulher perguntas frequentes",
+      "url": "https://www.defensoria.rs.def.br/defesa-da-mulher-perguntas-frequentes",
+      "kind": "faq",
+      "official": true,
+      "area": "violencia_domestica",
+      "audiencia": "medida_protetiva",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de temas.",
+      "topics": [
+        "primeiro passo em situacao de violencia",
+        "rede de protecao",
+        "relato da vitima",
+        "filhos e dependentes",
+        "alimentos e convivencia familiar",
+        "assistencia juridica em atos do processo"
+      ]
+    },
+    {
+      "id": "dpepr-assistencia-mulher",
+      "title": "DPE-PR - Assistencia qualificada a mulher em situacao de violencia",
+      "url": "https://www.defensoriapublica.pr.def.br/Noticia/Conheca-atuacao-da-DPE-PR-na-assistencia-qualificada-mulher-em-situacao-de-violencia",
+      "kind": "article",
+      "official": true,
+      "area": "violencia_domestica",
+      "audiencia": "medida_protetiva",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de temas.",
+      "topics": [
+        "assistencia qualificada da mulher",
+        "atos civeis e criminais",
+        "protecao durante o processo",
+        "providencias urgentes",
+        "historico de violencia",
+        "necessidade de acompanhamento"
+      ]
+    },
+    {
+      "id": "mpmg-manual-custodia",
+      "title": "MPMG - Manual pratico da audiencia de custodia",
+      "url": "https://memoriadigital.mpmg.mp.br/wp-content/uploads/tainacan-items/4829/99507/42_Manual-Pratico-da-Audiencia-de-Custodia-CAOCRIM.pdf",
+      "kind": "manual",
+      "official": true,
+      "area": "criminal",
+      "audiencia": "custodia",
+      "license_note": "Manual publico institucional. Usar como inspiracao e conferir atualidade normativa.",
+      "topics": [
+        "prazo de 24 horas",
+        "descumprimento do prazo da custodia",
+        "audiencia de custodia virtual",
+        "uso de algemas",
+        "relaxamento de prisao ilegal",
+        "prisao preventiva",
+        "medidas cautelares diversas",
+        "maus-tratos ou tortura"
+      ]
+    },
+    {
+      "id": "cnj-cartilha-custodia-pessoa-presa",
+      "title": "CNJ - Audiencia de custodia informacoes a pessoa presa",
+      "url": "https://www.cnj.jus.br/wp-content/uploads/2021/09/audiencia-de-custodia-info-pessoa-presa.pdf",
+      "kind": "cartilha",
+      "official": true,
+      "area": "criminal",
+      "audiencia": "custodia",
+      "license_note": "Cartilha publica institucional. Usar como inspiracao de perguntas de triagem.",
+      "topics": [
+        "conversa com defensor ou advogado",
+        "exame de corpo de delito",
+        "relato de violencia policial",
+        "contato com familia",
+        "condicoes pessoais do custodiado",
+        "situacao de saude",
+        "trabalho e residencia",
+        "dependentes familiares"
+      ]
+    },
+    {
+      "id": "dpers-familia-faq",
+      "title": "DPE-RS - Familia perguntas frequentes",
+      "url": "https://www.defensoria.rs.def.br/familia-perguntas-frequentes",
+      "kind": "faq",
+      "official": true,
+      "area": "familia",
+      "audiencia": "conciliacao",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de temas.",
+      "topics": [
+        "documentos para acao de familia",
+        "alimentos",
+        "guarda",
+        "convivencia familiar",
+        "divorcio",
+        "reconhecimento de paternidade",
+        "acordo em audiencia",
+        "necessidade e possibilidade"
+      ]
+    },
+    {
+      "id": "dpemt-faq-areas",
+      "title": "DPE-MT - FAQ duvidas mais frequentes",
+      "url": "https://www.defensoria.mt.def.br/dpmt/servicos/faq---duvidas-mais-frequentes-",
+      "kind": "faq",
+      "official": true,
+      "area": "geral",
+      "audiencia": "qualquer",
+      "license_note": "Fonte publica institucional. Usar como inspiracao de triagem por area.",
+      "topics": [
+        "familia e sucessoes",
+        "saude",
+        "direito do consumidor",
+        "criminal",
+        "direitos humanos",
+        "documentos para atendimento"
+      ]
+    },
+    {
+      "id": "legalbench-br",
+      "title": "LegalBench.BR",
+      "url": "https://huggingface.co/datasets/celsowm/legalbench.br",
+      "kind": "dataset",
+      "official": false,
+      "area": "benchmark",
+      "audiencia": "avaliacao",
+      "license_note": "Dataset CC-BY-SA-4.0. Usar para avaliacao e inspiracao, respeitando licenca.",
+      "topics": [
+        "perguntas juridicas de multipla escolha",
+        "classificacao de area juridica",
+        "entailment juridico",
+        "recordacao de normas",
+        "risco de alucinacao",
+        "portugues juridico brasileiro"
+      ]
+    },
+    {
+      "id": "juristcu",
+      "title": "JurisTCU",
+      "url": "https://huggingface.co/datasets/LeandroRibeiro/JurisTCU",
+      "kind": "dataset",
+      "official": false,
+      "area": "benchmark",
+      "audiencia": "avaliacao",
+      "license_note": "Dataset academico de recuperacao juridica. Usar para benchmark de busca.",
+      "topics": [
+        "consulta por palavras-chave reais",
+        "consulta sintetica por pergunta",
+        "julgamentos de relevancia",
+        "recuperacao juridica",
+        "ranking de documentos",
+        "avaliacao de embeddings"
+      ]
+    },
+    {
+      "id": "br-taxqa-r",
+      "title": "BR-TaxQA-R",
+      "url": "https://huggingface.co/datasets/unicamp-dl/BR-TaxQA-R",
+      "kind": "dataset",
+      "official": false,
+      "area": "benchmark",
+      "audiencia": "avaliacao",
+      "license_note": "Dataset RAG tributario brasileiro. Usar para benchmark de resposta com referencia.",
+      "topics": [
+        "pergunta com referencia normativa",
+        "resposta apoiada em documento oficial",
+        "citacao de fonte",
+        "recuperacao em RAG",
+        "qualidade da resposta",
+        "pergunta frequente tributaria"
+      ]
+    },
+    {
+      "id": "repojus",
+      "title": "RepOJus",
+      "url": "https://huggingface.co/datasets/andrebadini/repojus",
+      "kind": "dataset",
+      "official": false,
+      "area": "benchmark",
+      "audiencia": "avaliacao",
+      "license_note": "Corpus juridico brasileiro CC-BY-4.0. Usar para corpus, classificacao e QA experimental.",
+      "topics": [
+        "jurisprudencia brasileira",
+        "corpus juridico em portugues",
+        "classificacao de texto juridico",
+        "question answering juridico",
+        "tribunais brasileiros",
+        "tarefas de NLP juridico"
+      ]
+    },
+    {
+      "id": "juridia-hackathon-retrieval",
+      "title": "Juridia Hackathon - Relevance of Retrieval",
+      "url": "https://www.kaggle.com/competitions/juridia-hackhaton-relevance-competition/data",
+      "kind": "dataset",
+      "official": false,
+      "area": "benchmark",
+      "audiencia": "avaliacao",
+      "license_note": "Dataset de competicao. Conferir termos do Kaggle antes de uso fora de avaliacao local.",
+      "topics": [
+        "perguntas e artigos legais",
+        "relevancia de recuperacao",
+        "ranking de normas",
+        "avaliacao de busca",
+        "pergunta juridica curta",
+        "artigo legal correspondente"
+      ]
+    }
+  ]
+}
