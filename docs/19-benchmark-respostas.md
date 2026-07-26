@@ -12,6 +12,10 @@ O avaliador da notas para tres criterios.
 
 Ele tambem marca risco de alucinacao e registra problemas como resposta sem fonte, contradicao com o trecho recuperado, ausencia de pagina citada ou conclusao juridica alem do que o processo permite.
 
+A partir desta fase, o relatorio tambem traz sinais objetivos calculados por regra. Esses sinais nao julgam o merito juridico, mas ajudam a calibrar a avaliacao: paginas citadas, paginas citadas fora das fontes recuperadas, proporcao de linhas afirmativas com citacao e uso de linguagem de cautela.
+
+Na pratica, isso evita depender apenas do avaliador LLM. Se o avaliador marcar risco alto, mas os sinais objetivos mostrarem boa citacao e nenhuma pagina fora das fontes, o caso deve ser revisado manualmente antes de concluir que o gerador piorou.
+
 ## Comando
 
 Primeiro rode em modo de planejamento para confirmar custo e configuracao.
@@ -61,5 +65,7 @@ O comando gera dois arquivos.
 ## Como interpretar
 
 Uma rodada boa para a PoC deve ter fidelidade alta, utilidade alta e risco baixo. Completude pode variar mais, porque uma resposta conservadora pode ser fiel mas ainda faltar contexto juridico. Quando o risco de alucinacao aparece como alto, o caso deve ser lido manualmente antes de mexer em modelo, prompt ou recuperacao.
+
+Use o campo "Risco regras" como uma segunda opiniao deterministica. Ele sobe quando a resposta cita paginas que nao vieram das fontes ou quando ha muitas linhas afirmativas sem citacao. Ele nao substitui a avaliacao LLM, mas ajuda a identificar quando o avaliador foi severo demais com uma resposta que declarou lacunas corretamente.
 
 Esse benchmark nao substitui feedback de defensor ou promotor. Ele funciona como controle tecnico entre rodadas, para evitar que uma melhoria aparente no texto piore a confiabilidade juridica.

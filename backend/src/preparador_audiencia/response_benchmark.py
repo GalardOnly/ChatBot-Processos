@@ -9,6 +9,7 @@ from preparador_audiencia.chat import ChatResult, answer_process_question
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.evaluation import EvaluationCase
 from preparador_audiencia.quality import LegalQualityEvaluation
+from preparador_audiencia.quality_signals import GroundingSignals, inspect_response_grounding
 from preparador_audiencia.repositories import (
     ChatMessageRepository,
     ChunkRepository,
@@ -34,11 +35,15 @@ class ResponseBenchmarkCaseResult:
     latency_ms: int | None
     source_pages: list[int]
     source_chunks: list[dict[str, object]]
+    signals: GroundingSignals | None
     quality: LegalQualityEvaluation | None
+    calibrated_risk: str
+    calibration_notes: list[str]
     error: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         payload = asdict(self)
+        payload["signals"] = self.signals.to_dict() if self.signals else None
         payload["quality"] = self.quality.to_dict() if self.quality else None
         return payload
 
@@ -56,6 +61,8 @@ class ResponseBenchmarkReport:
     average_completude_juridica: float
     average_utilidade_audiencia: float
     high_risk_count: int
+    calibrated_high_risk_count: int
+    manual_review_count: int
     cases: list[ResponseBenchmarkCaseResult]
 
     def to_dict(self) -> dict[str, object]:
@@ -123,6 +130,12 @@ def run_response_quality_benchmark(
             for result in case_results
             if result.quality and result.quality.risco_alucinacao == "alto"
         ),
+        calibrated_high_risk_count=sum(
+            1 for result in case_results if result.calibrated_risk == "alto"
+        ),
+        manual_review_count=sum(
+            1 for result in case_results if result.calibrated_risk == "revisao_manual"
+        ),
         cases=case_results,
     )
 
@@ -165,22 +178,33 @@ def render_response_benchmark_markdown(report: ResponseBenchmarkReport) -> str:
         "",
         f"Casos com risco alto de alucinacao: `{report.high_risk_count}`",
         "",
+        f"Casos com risco alto calibrado: `{report.calibrated_high_risk_count}`",
+        "",
+        f"Casos para revisao manual: `{report.manual_review_count}`",
+        "",
         "## Casos",
         "",
-        "| Caso | Modelo | Paginas | Fidelidade | Completude | Utilidade | Risco | Erro |",
-        "|---|---|---|---:|---:|---:|---|---|",
+        (
+            "| Caso | Modelo | Paginas | Cobertura citacao | Risco regras | "
+            "Fidelidade | Completude | Utilidade | Risco LLM | Risco calibrado | Erro |"
+        ),
+        "|---|---|---|---:|---|---:|---:|---:|---|---|---|",
     ]
     for result in report.cases:
         quality = result.quality
+        signals = result.signals
         lines.append(
             "| "
             f"`{result.case_id}` | "
             f"`{result.generator_model or 'nao gerado'}` | "
             f"{_format_pages(result.source_pages)} | "
+            f"{_format_coverage(signals)} | "
+            f"{signals.rule_risk if signals else ''} | "
             f"{quality.fidelidade_fontes if quality else ''} | "
             f"{quality.completude_juridica if quality else ''} | "
             f"{quality.utilidade_audiencia if quality else ''} | "
             f"{quality.risco_alucinacao if quality else ''} | "
+            f"{result.calibrated_risk} | "
             f"{result.error or (quality.error if quality and quality.error else '')} |"
         )
     for result in report.cases:
@@ -206,6 +230,29 @@ def render_response_benchmark_markdown(report: ResponseBenchmarkReport) -> str:
                     f"Problemas: {_format_items(quality.problemas)}",
                     "",
                     f"Faltou: {_format_items(quality.faltou)}",
+                    "",
+                    f"Calibragem: {_format_items(result.calibration_notes)}",
+                ]
+            )
+        if result.signals:
+            lines.extend(
+                [
+                    "",
+                    "Sinais objetivos:",
+                    "",
+                    f"Paginas citadas: {_format_pages(result.signals.cited_pages)}",
+                    "",
+                    (
+                        "Paginas citadas fora das fontes: "
+                        f"{_format_pages(result.signals.unsupported_cited_pages) or 'nenhuma'}"
+                    ),
+                    "",
+                    (
+                        "Linhas afirmativas com citacao: "
+                        f"{result.signals.cited_claim_lines}/{result.signals.claim_lines}"
+                    ),
+                    "",
+                    f"Notas: {_format_items(result.signals.notes)}",
                 ]
             )
     return "\n".join(lines) + "\n"
@@ -245,12 +292,17 @@ def _run_case(
             latency_ms=None,
             source_pages=[],
             source_chunks=[],
+            signals=None,
             quality=None,
+            calibrated_risk="indefinido",
+            calibration_notes=["caso nao executado"],
             error=str(exc),
         )
 
 
 def _case_result(case: EvaluationCase, chat_result: ChatResult) -> ResponseBenchmarkCaseResult:
+    signals = inspect_response_grounding(chat_result.resposta, chat_result.fontes)
+    calibrated_risk, calibration_notes = _calibrate_risk(chat_result.avaliacao, signals)
     return ResponseBenchmarkCaseResult(
         case_id=case.id,
         pergunta=case.pergunta,
@@ -260,9 +312,35 @@ def _case_result(case: EvaluationCase, chat_result: ChatResult) -> ResponseBench
         latency_ms=None,
         source_pages=_unique_pages(chat_result.fontes),
         source_chunks=_source_chunks(chat_result.fontes),
+        signals=signals,
         quality=chat_result.avaliacao,
+        calibrated_risk=calibrated_risk,
+        calibration_notes=calibration_notes,
         error=chat_result.erro,
     )
+
+
+def _calibrate_risk(
+    quality: LegalQualityEvaluation | None,
+    signals: GroundingSignals,
+) -> tuple[str, list[str]]:
+    if quality is None:
+        return signals.rule_risk, ["sem avaliacao LLM; usando apenas regras"]
+    if signals.rule_risk == "alto":
+        return "alto", ["sinais objetivos indicam risco alto"]
+    if quality.risco_alucinacao == "alto" and signals.rule_risk == "baixo":
+        return (
+            "revisao_manual",
+            [
+                "avaliador LLM marcou alto, mas regras mostram baixo risco",
+                "revisar manualmente antes de tratar como falha do gerador",
+            ],
+        )
+    if quality.risco_alucinacao == "alto":
+        return "alto", ["avaliador LLM marcou risco alto"]
+    if quality.risco_alucinacao == "medio" or signals.rule_risk == "medio":
+        return "medio", ["risco moderado por avaliacao LLM ou regras"]
+    return "baixo", ["avaliacao LLM e regras sem alerta grave"]
 
 
 def _average_quality(results: list[ResponseBenchmarkCaseResult], field_name: str) -> float:
@@ -296,3 +374,7 @@ def _format_pages(pages: list[int]) -> str:
 
 def _format_items(items: list[str]) -> str:
     return "; ".join(items) if items else "nenhum"
+
+
+def _format_coverage(signals: GroundingSignals | None) -> str:
+    return f"{signals.citation_coverage:.2f}" if signals else ""

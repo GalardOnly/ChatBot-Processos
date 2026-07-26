@@ -84,7 +84,9 @@ def main() -> None:
     print(f"Fidelidade media: {report.average_fidelidade_fontes:.2f}/5")
     print(f"Completude media: {report.average_completude_juridica:.2f}/5")
     print(f"Utilidade media: {report.average_utilidade_audiencia:.2f}/5")
-    print(f"Casos com risco alto: {report.high_risk_count}")
+    print(f"Casos com risco alto LLM: {report.high_risk_count}")
+    print(f"Casos com risco alto calibrado: {report.calibrated_high_risk_count}")
+    print(f"Casos para revisao manual: {report.manual_review_count}")
 
 
 def estimate_response_llm_calls(cases_count: int) -> int:

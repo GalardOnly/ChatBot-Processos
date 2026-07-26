@@ -190,7 +190,9 @@ benchmark-respostas `
 O comando considera uma estimativa conservadora de chamadas: gerador principal,
 fallback possivel e avaliador para cada pergunta. Ele gera um JSON completo e um
 Markdown resumido com fidelidade as fontes, completude juridica, utilidade para
-audiencia e risco de alucinacao.
+audiencia e risco de alucinacao. O relatorio tambem mostra sinais objetivos por
+regra, como paginas citadas, paginas citadas fora das fontes e proporcao de
+linhas afirmativas com citacao.
 
 ## Banco de perguntas para audiencia
 

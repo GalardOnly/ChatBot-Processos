@@ -66,8 +66,11 @@ def test_run_response_quality_benchmark_scores_complete_chat_flow(monkeypatch, t
     assert report.average_completude_juridica == 4
     assert report.average_utilidade_audiencia == 5
     assert report.high_risk_count == 0
+    assert report.calibrated_high_risk_count == 0
+    assert report.manual_review_count == 0
     assert report.cases[0].source_pages == [2]
     assert report.cases[0].generator_model == "gemini:teste"
+    assert report.cases[0].calibrated_risk == "baixo"
 
 
 def test_render_response_benchmark_markdown_includes_scores(monkeypatch, tmp_path) -> None:
@@ -117,3 +120,4 @@ def test_render_response_benchmark_markdown_includes_scores(monkeypatch, tmp_pat
     assert "Benchmark de Respostas da PoC" in markdown
     assert "2.00/5" in markdown
     assert "Casos com risco alto de alucinacao: `1`" in markdown
+    assert "Casos para revisao manual: `1`" in markdown
