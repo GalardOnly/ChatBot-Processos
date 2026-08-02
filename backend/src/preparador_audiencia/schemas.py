@@ -118,6 +118,67 @@ class ChatResponse(BaseModel):
     avaliacao: QualityEvaluationResponse | None = None
 
 
+class NullityAnalysisRequest(BaseModel):
+    top_k: int = 16
+
+
+class NullityRequirementResponse(BaseModel):
+    id: str
+    categoria: str
+    titulo: str
+    condicao: str
+    resultado: Literal[
+        "observado",
+        "nao_observado",
+        "nao_localizado",
+        "nao_aplicavel",
+    ]
+    justificativa: str
+    paginas: list[int]
+    fontes_juridicas: list[str]
+
+
+class LegalSourceResponse(BaseModel):
+    id: str
+    titulo: str
+    autoridade: str
+    tipo: str
+    referencia: str
+    url: str
+
+
+class NullityAnalysisResponse(BaseModel):
+    processo_id: str
+    tema: str
+    titulo: str
+    conclusao: Literal[
+        "forte_fundamento_para_alegar_invalidade",
+        "procedimento_aparentemente_regular",
+        "inconclusivo",
+        "reconhecimento_nao_localizado",
+        "rito_formal_nao_aplicavel",
+    ]
+    conclusao_rotulo: str
+    confianca: Literal["alta", "media", "baixa"]
+    resumo: str
+    aplicabilidade: str
+    justificativa_aplicabilidade: str
+    impacto_processual: str
+    justificativa_impacto: str
+    paginas_impacto: list[int]
+    requisitos: list[NullityRequirementResponse]
+    providencias: list[str]
+    lacunas: list[str]
+    modelo: str | None
+    fallback_usado: bool
+    modo_busca: SearchMode
+    fontes_processuais: list[SearchSource]
+    fontes_juridicas: list[LegalSourceResponse]
+    versao_catalogo_juridico: str
+    catalogo_verificado_em: str
+    avisos: list[str]
+
+
 class ErrorResponse(BaseModel):
     error: str
     detail: str

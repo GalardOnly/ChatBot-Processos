@@ -362,6 +362,7 @@ def test_blocking_api_routes_run_in_fastapi_threadpool() -> None:
         "/perguntas-audiencia",
         "/processo/{processo_id}/buscar",
         "/processo/{processo_id}/chat",
+        "/processo/{processo_id}/analise-nulidade/reconhecimento",
     }
     endpoints = {
         route.path: route.endpoint

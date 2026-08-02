@@ -5,6 +5,10 @@ from typing import Any
 import httpx
 import streamlit as st
 
+from preparador_audiencia.prompts.criminal_analysis import (
+    CRIMINAL_ANALYSIS_SECTIONS,
+)
+
 DEFAULT_API_URL = "http://127.0.0.1:8910"
 HEARING_SECTIONS = [
     {
@@ -80,9 +84,13 @@ def main() -> None:
 
     _render_process_status(st.session_state.api_url)
     st.divider()
-    chat_tab, preparation_tab = st.tabs(["Chat", "Preparacao de audiencia"])
+    chat_tab, criminal_tab, preparation_tab = st.tabs(
+        ["Chat", "Analise criminal", "Preparacao de audiencia"]
+    )
     with chat_tab:
         _render_chat(st.session_state.api_url)
+    with criminal_tab:
+        _render_criminal_analysis(st.session_state.api_url)
     with preparation_tab:
         _render_hearing_preparation(st.session_state.api_url)
 
@@ -94,11 +102,18 @@ def _init_state() -> None:
         "status": None,
         "messages": [],
         "hearing_report": [],
+        "criminal_analysis_report": [],
         "completion_notice": "",
         "status_refresh_error": "",
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
+
+
+def _clear_process_outputs() -> None:
+    st.session_state.messages = []
+    st.session_state.hearing_report = []
+    st.session_state.criminal_analysis_report = []
 
 
 def _upload_pdf(api_url: str, uploaded_file: Any) -> None:
@@ -125,8 +140,7 @@ def _upload_pdf(api_url: str, uploaded_file: Any) -> None:
 
     payload = response.json()
     st.session_state.processo_id = payload["processo_id"]
-    st.session_state.messages = []
-    st.session_state.hearing_report = []
+    _clear_process_outputs()
     _refresh_status(api_url)
     if payload.get("reutilizado"):
         if payload["status"] == "concluido":
@@ -172,8 +186,7 @@ def _render_process_recovery(api_url: str) -> None:
     with col_load:
         if st.button("Carregar", disabled=not typed_id.strip()):
             st.session_state.processo_id = typed_id.strip()
-            st.session_state.messages = []
-            st.session_state.hearing_report = []
+            _clear_process_outputs()
             _refresh_status(api_url)
             st.rerun()
     with col_latest:
@@ -200,8 +213,7 @@ def _load_latest_process(api_url: str, *, completed_only: bool) -> None:
         st.sidebar.info("Nenhum processo encontrado.")
         return
     st.session_state.processo_id = processos[0]["processo_id"]
-    st.session_state.messages = []
-    st.session_state.hearing_report = []
+    _clear_process_outputs()
     _refresh_status(api_url)
 
 
@@ -280,8 +292,7 @@ def _request_reprocessing(api_url: str, processo_id: str) -> None:
     except httpx.HTTPError as exc:
         st.error(f"Nao foi possivel iniciar o reprocessamento: {exc}")
         return
-    st.session_state.messages = []
-    st.session_state.hearing_report = []
+    _clear_process_outputs()
     _refresh_status(api_url)
 
 
@@ -327,6 +338,216 @@ def _submit_chat_question(api_url: str, pergunta: str) -> None:
         st.markdown(answer["content"])
         _render_sources(answer.get("fontes", []))
     st.session_state.messages.append(answer)
+
+
+def _render_criminal_analysis(api_url: str) -> None:
+    st.subheader("Analise criminal")
+    status = st.session_state.status or {}
+    ready = status.get("status") == "concluido"
+
+    if not ready:
+        st.caption("A analise fica disponivel quando o processamento estiver concluido.")
+        return
+
+    st.warning(
+        "Os dados abaixo apoiam a conferencia profissional. Esta versao nao calcula nem "
+        "declara prescricao automaticamente."
+    )
+    st.caption(
+        "Fotos e prints ainda nao sao interpretados visualmente. O sistema considera apenas "
+        "o texto extraido e as descricoes presentes no processo."
+    )
+
+    col_generate, col_clear = st.columns([1, 1])
+    with col_generate:
+        if st.button("Gerar analise criminal", type="primary"):
+            _generate_criminal_analysis(api_url)
+    with col_clear:
+        if st.button(
+            "Limpar analise",
+            disabled=not st.session_state.criminal_analysis_report,
+        ):
+            st.session_state.criminal_analysis_report = []
+            st.rerun()
+
+    if not st.session_state.criminal_analysis_report:
+        st.info("Gere a ficha criminal estruturada para este processo.")
+        return
+
+    for section in st.session_state.criminal_analysis_report:
+        with st.expander(section["title"], expanded=True):
+            if section["key"] == "nulidade_reconhecimento":
+                _render_nullity_analysis(section)
+                continue
+            if section["key"] == "linha_prescricao":
+                st.info(
+                    "Confira os marcos e campos ausentes antes de qualquer calculo juridico."
+                )
+            st.markdown(section["content"])
+            _render_sources(section.get("fontes", []))
+
+
+def _generate_criminal_analysis(api_url: str) -> None:
+    report = []
+    progress = st.progress(0)
+    status_text = st.empty()
+    section_count = len(CRIMINAL_ANALYSIS_SECTIONS) + 1
+    for index, section in enumerate(CRIMINAL_ANALYSIS_SECTIONS, start=1):
+        status_text.write(f"Analisando: {section.title}")
+        answer = _ask_question(api_url, section.prompt, top_k=section.top_k)
+        report.append(
+            {
+                "key": section.key,
+                "title": section.title,
+                "content": answer["content"],
+                "fontes": answer.get("fontes", []),
+            }
+        )
+        progress.progress(index / section_count)
+    status_text.write("Analisando: nulidade no reconhecimento de pessoas")
+    nullity_analysis = _request_recognition_nullity(api_url)
+    report.append(
+        {
+            "key": "nulidade_reconhecimento",
+            "title": "Nulidade: reconhecimento de pessoas",
+            "analysis": nullity_analysis,
+        }
+    )
+    progress.progress(1.0)
+    status_text.empty()
+    st.session_state.criminal_analysis_report = report
+
+
+def _request_recognition_nullity(api_url: str) -> dict[str, Any]:
+    processo_id = st.session_state.processo_id
+    try:
+        response = httpx.post(
+            f"{api_url}/processo/{processo_id}/analise-nulidade/reconhecimento",
+            json={"top_k": 16},
+            timeout=180,
+        )
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        return {"erro": _error_detail(exc.response)}
+    except httpx.HTTPError as exc:
+        return {"erro": str(exc)}
+    return response.json()
+
+
+def _render_nullity_analysis(section: dict[str, Any]) -> None:
+    analysis = section.get("analysis", {})
+    if analysis.get("erro"):
+        st.error(f"Nao foi possivel gerar a analise de nulidade: {analysis['erro']}")
+        return
+
+    conclusion = analysis.get("conclusao", "inconclusivo")
+    conclusion_text = analysis.get("conclusao_rotulo", "Analise inconclusiva")
+    confidence = analysis.get("confianca", "baixa").capitalize()
+    if conclusion == "forte_fundamento_para_alegar_invalidade":
+        st.error(f"{conclusion_text} | Confianca: {confidence}")
+    elif conclusion == "procedimento_aparentemente_regular":
+        st.success(f"{conclusion_text} | Confianca: {confidence}")
+    elif conclusion == "inconclusivo":
+        st.warning(f"{conclusion_text} | Confianca: {confidence}")
+    else:
+        st.info(f"{conclusion_text} | Confianca: {confidence}")
+
+    st.markdown(analysis.get("resumo", ""))
+    st.markdown("**Aplicabilidade do rito formal**")
+    st.write(analysis.get("justificativa_aplicabilidade", "Nao informada."))
+
+    requirements = analysis.get("requisitos", [])
+    if requirements:
+        st.markdown("**Requisitos conferidos**")
+        for requirement in requirements:
+            result = _readable_requirement_result(requirement.get("resultado", ""))
+            st.markdown(f"**{requirement['titulo']}: {result}**")
+            st.write(requirement.get("justificativa", ""))
+            references = []
+            if requirement.get("paginas"):
+                references.append(
+                    "Paginas "
+                    + ", ".join(str(page) for page in requirement["paginas"])
+                )
+            if requirement.get("fontes_juridicas"):
+                references.append(
+                    "Fundamentos " + ", ".join(requirement["fontes_juridicas"])
+                )
+            if references:
+                st.caption(" | ".join(references))
+
+    st.markdown("**Impacto processual**")
+    st.caption(_readable_procedural_impact(analysis.get("impacto_processual", "")))
+    st.write(analysis.get("justificativa_impacto", "Nao foi possivel avaliar."))
+    if analysis.get("paginas_impacto"):
+        st.caption(
+            "Paginas "
+            + ", ".join(str(page) for page in analysis["paginas_impacto"])
+        )
+
+    _render_numbered_items("Providencias sugeridas", analysis.get("providencias", []))
+    _render_numbered_items("Pontos ainda ausentes", analysis.get("lacunas", []))
+    for warning in analysis.get("avisos", []):
+        st.warning(warning)
+
+    _render_sources(analysis.get("fontes_processuais", []))
+    _render_legal_sources(
+        analysis.get("fontes_juridicas", []),
+        analysis.get("versao_catalogo_juridico"),
+        analysis.get("catalogo_verificado_em"),
+    )
+    model = analysis.get("modelo")
+    if model:
+        fallback = " com fallback" if analysis.get("fallback_usado") else ""
+        st.caption(f"Analise gerada por {model}{fallback}.")
+
+
+def _readable_requirement_result(result: str) -> str:
+    labels = {
+        "observado": "Observado",
+        "nao_observado": "Nao observado",
+        "nao_localizado": "Nao localizado",
+        "nao_aplicavel": "Nao aplicavel",
+    }
+    return labels.get(result, "Inconclusivo")
+
+
+def _readable_procedural_impact(impact: str) -> str:
+    labels = {
+        "reconhecimento_determinante_sem_prova_independente": (
+            "O reconhecimento pode ser determinante; prova independente nao localizada."
+        ),
+        "ha_indicios_de_prova_independente": (
+            "Ha indicios de prova de autoria independente do reconhecimento."
+        ),
+        "inconclusivo": "Impacto inconclusivo.",
+        "nao_aplicavel": "Impacto nao aplicavel.",
+    }
+    return labels.get(impact, "Impacto inconclusivo.")
+
+
+def _render_numbered_items(title: str, items: list[str]) -> None:
+    if not items:
+        return
+    st.markdown(f"**{title}**")
+    for index, item in enumerate(items, start=1):
+        st.markdown(f"{index}. {item}")
+
+
+def _render_legal_sources(
+    sources: list[dict[str, Any]],
+    version: str | None,
+    verified_at: str | None,
+) -> None:
+    if not sources:
+        return
+    with st.expander("Fundamentos juridicos oficiais"):
+        if version and verified_at:
+            st.caption(f"Catalogo {version}, conferido em {verified_at}.")
+        for source in sources:
+            st.markdown(f"**{source['titulo']}**")
+            st.write(f"{source['autoridade']} | {source['referencia']}")
+            st.link_button("Abrir fonte oficial", source["url"])
 
 
 def _render_hearing_preparation(api_url: str) -> None:

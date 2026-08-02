@@ -12,6 +12,7 @@ from preparador_audiencia.chat import answer_process_question, sources_to_schema
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.ingestion import create_processo_from_staged_pdf, process_pdf
 from preparador_audiencia.lexical_search import search_process_lexical
+from preparador_audiencia.nullity_analysis import analyze_recognition_nullity
 from preparador_audiencia.question_bank import list_question_templates
 from preparador_audiencia.repositories import (
     ChatMessageRepository,
@@ -25,6 +26,10 @@ from preparador_audiencia.schemas import (
     ChatRequest,
     ChatResponse,
     ErrorResponse,
+    LegalSourceResponse,
+    NullityAnalysisRequest,
+    NullityAnalysisResponse,
+    NullityRequirementResponse,
     ProcessListItem,
     ProcessListResponse,
     ProcessStatusResponse,
@@ -402,6 +407,98 @@ def chat_with_process(
         modo_busca=search_mode,
         fontes=sources_to_schema(result.fontes),
         avaliacao=_quality_to_schema(result.avaliacao),
+    )
+
+
+@router.post(
+    "/processo/{processo_id}/analise-nulidade/reconhecimento",
+    response_model=NullityAnalysisResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+    },
+)
+def analyze_recognition_for_process(
+    processo_id: str,
+    request: NullityAnalysisRequest,
+) -> NullityAnalysisResponse | JSONResponse:
+    if request.top_k <= 0 or request.top_k > 20:
+        return error_response(400, "invalid_top_k", "top_k deve ficar entre 1 e 20.")
+
+    connection = connect_database()
+    initialize_database(connection)
+    processo = ProcessoRepository(connection).get(processo_id)
+    if processo is None:
+        return error_response(404, "process_not_found", "Processo nao encontrado.")
+    search_mode = _process_search_mode(processo)
+    if search_mode == "indisponivel":
+        return error_response(
+            409,
+            "process_not_ready",
+            "Aguarde a organizacao do texto antes de analisar possiveis nulidades.",
+        )
+
+    try:
+        result = analyze_recognition_nullity(
+            processo_id,
+            top_k=request.top_k,
+            lexical_only=search_mode == "lexical",
+        )
+    except RuntimeError as exc:
+        return error_response(
+            503,
+            "llm_unavailable",
+            f"Nao foi possivel concluir a analise com Gemini nem com Groq: {exc}",
+        )
+
+    return NullityAnalysisResponse(
+        processo_id=processo_id,
+        tema=result.topic,
+        titulo=result.title,
+        conclusao=result.conclusion,
+        conclusao_rotulo=result.conclusion_label,
+        confianca=result.confidence,
+        resumo=result.summary,
+        aplicabilidade=result.applicability,
+        justificativa_aplicabilidade=result.applicability_summary,
+        impacto_processual=result.procedural_impact,
+        justificativa_impacto=result.impact_summary,
+        paginas_impacto=list(result.impact_pages),
+        requisitos=[
+            NullityRequirementResponse(
+                id=item.id,
+                categoria=item.category,
+                titulo=item.label,
+                condicao=item.condition,
+                resultado=item.result,
+                justificativa=item.justification,
+                paginas=list(item.pages),
+                fontes_juridicas=list(item.legal_source_ids),
+            )
+            for item in result.requirements
+        ],
+        providencias=list(result.next_steps),
+        lacunas=list(result.gaps),
+        modelo=result.model,
+        fallback_usado=result.fallback_used,
+        modo_busca=search_mode,
+        fontes_processuais=sources_to_schema(list(result.process_sources)),
+        fontes_juridicas=[
+            LegalSourceResponse(
+                id=source.id,
+                titulo=source.title,
+                autoridade=source.authority,
+                tipo=source.kind,
+                referencia=source.reference,
+                url=source.url,
+            )
+            for source in result.legal_sources
+        ],
+        versao_catalogo_juridico=result.legal_catalog_version,
+        catalogo_verificado_em=result.legal_catalog_verified_at,
+        avisos=list(result.warnings),
     )
 
 

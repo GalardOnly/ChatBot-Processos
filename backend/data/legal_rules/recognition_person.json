@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "topic": {
+    "id": "reconhecimento_pessoas",
+    "title": "Reconhecimento de pessoas",
+    "version": "2026.08.02",
+    "verified_at": "2026-08-02",
+    "scope": "Validade do reconhecimento de pessoa e impacto processual da prova.",
+    "search_queries": [
+      "reconhecimento fotografico reconhecimento pessoal vitima testemunha suspeito acusado",
+      "descricao previa alinhamento pessoas semelhantes fotografia mostrada reconhecimento",
+      "auto termo pormenorizado reconhecimento duas testemunhas autoridade policial",
+      "reconhecedores separados comunicacao entre testemunhas reconhecimento",
+      "autoria prova independente reconhecimento confissao apreensao pericia camera testemunha",
+      "pessoa conhecida anteriormente identificacao reconhecimento"
+    ],
+    "sources": [
+      {
+        "id": "cpp_arts_226_228",
+        "authority": "Presidencia da Republica",
+        "kind": "legislacao",
+        "title": "Codigo de Processo Penal, artigos 226 a 228",
+        "reference": "Decreto-Lei 3.689/1941, arts. 226 a 228",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm",
+        "summary": "Define descricao previa, alinhamento com pessoas semelhantes, cautela contra intimidacao, termo pormenorizado e separacao entre reconhecedores."
+      },
+      {
+        "id": "cnj_resolucao_484_2022",
+        "authority": "Conselho Nacional de Justica",
+        "kind": "ato_normativo",
+        "title": "Resolucao CNJ 484/2022",
+        "reference": "Diretrizes para o reconhecimento de pessoas em procedimentos e processos criminais",
+        "url": "https://atos.cnj.jus.br/atos/detalhar/4883",
+        "summary": "Trata o reconhecimento como prova irrepetivel, voltada a pessoa desconhecida, e exige procedimento livre de apresentacao isolada, sugestao e reforco da resposta."
+      },
+      {
+        "id": "stj_tema_1258",
+        "authority": "Superior Tribunal de Justica",
+        "kind": "precedente_repetitivo",
+        "title": "Tema Repetitivo 1.258 do STJ",
+        "reference": "Terceira Secao, julgado em 11/06/2025, publicado em 30/06/2025",
+        "url": "https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?cod_tema_final=1258&cod_tema_inicial=1258&novaConsulta=true&tipo_pesquisa=T",
+        "summary": "Afirma a obrigatoriedade do art. 226, a irrepetibilidade cognitiva do reconhecimento, a necessidade de pessoas semelhantes e a possibilidade de considerar apenas provas independentes da identificacao viciada."
+      },
+      {
+        "id": "stj_hc_598886_sc",
+        "authority": "Superior Tribunal de Justica",
+        "kind": "precedente",
+        "title": "Habeas Corpus 598.886/SC",
+        "reference": "Sexta Turma do STJ, julgado em 27/10/2020",
+        "url": "https://www.stj.jus.br/sites/portalp/SiteAssets/documentos/noticias/27102020%20HC598886-SC.pdf",
+        "summary": "Precedente historico que consolidou a leitura do art. 226 como garantia contra reconhecimentos falhos e destacou o risco do reconhecimento fotografico sugestivo."
+      }
+    ],
+    "requirements": [
+      {
+        "id": "pessoa_desconhecida",
+        "category": "aplicabilidade",
+        "label": "Identificacao de pessoa antes desconhecida",
+        "question": "A pessoa reconhecedora tentava identificar alguem que nao conhecia antes do fato?",
+        "condition": "O rito formal pode ser dispensado quando ha mera identificacao de pessoa previamente conhecida.",
+        "legal_source_ids": [
+          "cnj_resolucao_484_2022",
+          "stj_tema_1258"
+        ]
+      },
+      {
+        "id": "descricao_previa",
+        "category": "validade",
+        "label": "Descricao previa",
+        "question": "A pessoa reconhecedora descreveu previamente as caracteristicas de quem seria identificado?",
+        "condition": "Aplicavel ao reconhecimento formal de pessoa desconhecida.",
+        "legal_source_ids": [
+          "cpp_arts_226_228",
+          "stj_tema_1258"
+        ]
+      },
+      {
+        "id": "alinhamento_semelhantes",
+        "category": "validade",
+        "label": "Alinhamento com pessoas semelhantes",
+        "question": "O suspeito foi apresentado ao lado de outras pessoas semelhantes, sem discrepancia marcante?",
+        "condition": "Aplicavel ao reconhecimento formal, pessoal ou fotografico.",
+        "legal_source_ids": [
+          "cpp_arts_226_228",
+          "cnj_resolucao_484_2022",
+          "stj_tema_1258"
+        ]
+      },
+      {
+        "id": "procedimento_nao_sugestivo",
+        "category": "validade",
+        "label": "Procedimento nao sugestivo",
+        "question": "A apresentacao evitou fotografia isolada, informacao previa, insinuacao e reforco da resposta?",
+        "condition": "Aplicavel a toda identificacao de pessoa desconhecida.",
+        "legal_source_ids": [
+          "cnj_resolucao_484_2022",
+          "stj_tema_1258",
+          "stj_hc_598886_sc"
+        ]
+      },
+      {
+        "id": "protecao_reconhecedor",
+        "category": "validade",
+        "label": "Protecao contra intimidacao",
+        "question": "Quando havia receio de intimidacao, a autoridade impediu que o suspeito visse a pessoa reconhecedora?",
+        "condition": "Aplicavel quando as circunstancias indicavam risco de intimidacao ou influencia.",
+        "legal_source_ids": [
+          "cpp_arts_226_228"
+        ]
+      },
+      {
+        "id": "termo_pormenorizado",
+        "category": "validade",
+        "label": "Registro pormenorizado",
+        "question": "Foi lavrado termo detalhado, assinado pela autoridade, pela pessoa reconhecedora e por duas testemunhas presenciais?",
+        "condition": "Aplicavel ao ato formal de reconhecimento.",
+        "legal_source_ids": [
+          "cpp_arts_226_228"
+        ]
+      },
+      {
+        "id": "separacao_reconhecedores",
+        "category": "validade",
+        "label": "Separacao entre reconhecedores",
+        "question": "Havendo mais de uma pessoa reconhecedora, cada uma realizou o ato separadamente e sem comunicacao?",
+        "condition": "Aplicavel apenas quando houve mais de uma pessoa reconhecedora.",
+        "legal_source_ids": [
+          "cpp_arts_226_228",
+          "cnj_resolucao_484_2022"
+        ]
+      },
+      {
+        "id": "repeticao_contaminada",
+        "category": "impacto",
+        "label": "Repeticao posterior",
+        "question": "O reconhecimento inicial falho foi repetido posteriormente, inclusive em juizo?",
+        "condition": "Uma repeticao posterior nao apaga automaticamente a contaminacao cognitiva do primeiro ato.",
+        "legal_source_ids": [
+          "cnj_resolucao_484_2022",
+          "stj_tema_1258"
+        ]
+      },
+      {
+        "id": "prova_independente",
+        "category": "impacto",
+        "label": "Prova independente de autoria",
+        "question": "Ha prova de autoria independente e sem relacao causal com o reconhecimento questionado?",
+        "condition": "Provas realmente independentes podem sustentar a autoria mesmo quando o reconhecimento e invalido.",
+        "legal_source_ids": [
+          "stj_tema_1258"
+        ]
+      }
+    ]
+  }
+}
