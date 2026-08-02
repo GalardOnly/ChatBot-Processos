@@ -14,6 +14,7 @@ class TextChunk:
     chunk_index: int
     text: str
     document_type: str | None = None
+    source_confidence: str = "alta"
 
 
 def chunk_extracted_pages(
@@ -34,6 +35,7 @@ def chunk_extracted_pages(
                     chunk_index=chunk_index,
                     text=chunk_text,
                     document_type=detect_document_type(chunk_text),
+                    source_confidence=page.source_confidence,
                 )
             )
     return chunks
@@ -73,4 +75,3 @@ def detect_document_type(text: str) -> str | None:
     if "sentenca" in lowered or "sentença" in lowered:
         return "sentenca"
     return None
-

@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Protocol
 
+from preparador_audiencia.settings import embedding_device_from_environment
+
 DEFAULT_BERTIKAL_MODEL = "felipemaiapolo/legalnlp-bert"
 DEFAULT_JURISBERT_MODEL = "alfaneo/jurisbert-base-portuguese-uncased"
 DEFAULT_LEGAL_BERTIMBAU_MODEL = "rufimelo/Legal-BERTimbau-sts-base"
@@ -41,15 +43,25 @@ def get_embedding_provider() -> EmbeddingProvider:
     return embedding_provider_from_spec(provider_name)
 
 
-@lru_cache(maxsize=8)
 def embedding_provider_from_spec(spec: str) -> EmbeddingProvider:
+    return _embedding_provider_from_spec(spec, embedding_device_from_environment())
+
+
+@lru_cache(maxsize=16)
+def _embedding_provider_from_spec(spec: str, requested_device: str) -> EmbeddingProvider:
     resolved = resolve_embedding_spec(spec)
     if resolved.provider == "hash":
         return HashEmbeddingProvider()
     if resolved.provider == "hf_mean_pool" and resolved.model_name:
-        return MeanPoolingTransformerEmbeddingProvider(resolved.model_name)
+        return MeanPoolingTransformerEmbeddingProvider(
+            resolved.model_name,
+            device=requested_device,
+        )
     if resolved.provider == "sentence_transformers" and resolved.model_name:
-        return SentenceTransformersEmbeddingProvider(resolved.model_name)
+        return SentenceTransformersEmbeddingProvider(
+            resolved.model_name,
+            device=requested_device,
+        )
     raise ValueError(f"Provider de embedding desconhecido: {spec}")
 
 
@@ -113,7 +125,12 @@ class HashEmbeddingProvider:
 class MeanPoolingTransformerEmbeddingProvider:
     """Embeddings Hugging Face via mean pooling da ultima camada."""
 
-    def __init__(self, model_name: str = DEFAULT_BERTIKAL_MODEL, max_length: int = 512) -> None:
+    def __init__(
+        self,
+        model_name: str = DEFAULT_BERTIKAL_MODEL,
+        max_length: int = 512,
+        device: str | None = None,
+    ) -> None:
         try:
             import torch
             from transformers import AutoModel, AutoTokenizer
@@ -125,8 +142,23 @@ class MeanPoolingTransformerEmbeddingProvider:
 
         self.model_name = model_name
         self.torch = torch
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModel.from_pretrained(model_name)
+        self.device = resolve_embedding_device(
+            torch,
+            device or embedding_device_from_environment(),
+        )
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                model_name,
+                local_files_only=True,
+            )
+            self.model = AutoModel.from_pretrained(
+                model_name,
+                local_files_only=True,
+            )
+        except OSError:
+            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+            self.model = AutoModel.from_pretrained(model_name)
+        self.model.to(self.device)
         self.model.eval()
         self.max_length = max_length
 
@@ -141,7 +173,8 @@ class MeanPoolingTransformerEmbeddingProvider:
             max_length=self.max_length,
             return_tensors="pt",
         )
-        with self.torch.no_grad():
+        encoded = {key: value.to(self.device) for key, value in encoded.items()}
+        with self.torch.inference_mode():
             output = self.model(**encoded)
         pooled = _mean_pool(
             token_embeddings=output.last_hidden_state,
@@ -161,8 +194,9 @@ BertikalEmbeddingProvider = MeanPoolingTransformerEmbeddingProvider
 class SentenceTransformersEmbeddingProvider:
     """Embeddings com modelos sentence-transformers."""
 
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name: str, device: str | None = None) -> None:
         try:
+            import torch
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:
             raise RuntimeError(
@@ -171,7 +205,18 @@ class SentenceTransformersEmbeddingProvider:
             ) from exc
 
         self.model_name = model_name
-        self.model = SentenceTransformer(model_name)
+        self.device = resolve_embedding_device(
+            torch,
+            device or embedding_device_from_environment(),
+        )
+        try:
+            self.model = SentenceTransformer(
+                model_name,
+                device=self.device,
+                local_files_only=True,
+            )
+        except OSError:
+            self.model = SentenceTransformer(model_name, device=self.device)
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:
@@ -185,6 +230,27 @@ class SentenceTransformersEmbeddingProvider:
 
     def embed_query(self, text: str) -> list[float]:
         return self.embed_texts([text])[0]
+
+
+def resolve_embedding_device(torch_module, requested_device: str) -> str:
+    requested = requested_device.strip().lower()
+    if requested == "auto":
+        return "cuda" if torch_module.cuda.is_available() else "cpu"
+    if requested == "cpu":
+        return "cpu"
+    if requested == "cuda" or (
+        requested.startswith("cuda:") and requested[5:].isdigit()
+    ):
+        if not torch_module.cuda.is_available():
+            raise RuntimeError(
+                "GPU CUDA solicitada, mas o PyTorch instalado nao oferece CUDA."
+            )
+        if requested.startswith("cuda:"):
+            device_index = int(requested[5:])
+            if device_index >= torch_module.cuda.device_count():
+                raise RuntimeError(f"Dispositivo CUDA inexistente: {requested}.")
+        return requested
+    raise ValueError(f"Dispositivo de embedding invalido: {requested_device}")
 
 
 def _tokens(text: str) -> Iterable[str]:

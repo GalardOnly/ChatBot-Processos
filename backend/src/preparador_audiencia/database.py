@@ -46,6 +46,7 @@ def initialize_database(connection: sqlite3.Connection) -> None:
             chunk_index INTEGER NOT NULL,
             text TEXT NOT NULL,
             document_type TEXT,
+            source_confidence TEXT NOT NULL DEFAULT 'desconhecida',
             vector_id TEXT,
             created_at TEXT NOT NULL,
             UNIQUE (processo_id, page_number, chunk_index)
@@ -86,6 +87,7 @@ def initialize_database(connection: sqlite3.Connection) -> None:
         """
     )
     _ensure_process_columns(connection)
+    _ensure_chunk_columns(connection)
     _ensure_chat_message_columns(connection)
     connection.execute(
         "CREATE INDEX IF NOT EXISTS idx_processos_sha256_status ON processos (sha256, status)"
@@ -139,3 +141,15 @@ def _ensure_chat_message_columns(connection: sqlite3.Connection) -> None:
     for column, statement in migrations.items():
         if column not in columns:
             connection.execute(statement)
+
+
+def _ensure_chunk_columns(connection: sqlite3.Connection) -> None:
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(chunks)").fetchall()
+    }
+    if "source_confidence" not in columns:
+        connection.execute(
+            "ALTER TABLE chunks ADD COLUMN source_confidence "
+            "TEXT NOT NULL DEFAULT 'desconhecida'"
+        )

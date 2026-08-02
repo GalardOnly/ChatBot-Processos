@@ -21,6 +21,7 @@ class VectorSearchResult:
     document_type: str | None
     distance: float
     score: float
+    source_confidence: str = "desconhecida"
 
 
 class ChromaVectorStore:
@@ -108,6 +109,9 @@ class ChromaVectorStore:
                     document_type=_optional_text(typed_metadata.get("document_type")),
                     distance=distance_value,
                     score=max(0.0, min(1.0, 1.0 - distance_value)),
+                    source_confidence=str(
+                        typed_metadata.get("source_confidence") or "desconhecida"
+                    ),
                 )
             )
         return hits
@@ -123,6 +127,7 @@ def _metadata_for_chunk(processo_id: str, chunk: ChunkRecord) -> dict[str, Any]:
         "page_number": chunk.page_number,
         "chunk_index": chunk.chunk_index,
         "document_type": chunk.document_type or "",
+        "source_confidence": chunk.source_confidence,
     }
 
 

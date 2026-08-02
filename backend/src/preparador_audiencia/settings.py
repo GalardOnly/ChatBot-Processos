@@ -12,6 +12,8 @@ DEFAULT_EVALUATOR_LLM = "groq:llama-3.1-8b-instant"
 DEFAULT_OCR_ZOOM = 1.5
 DEFAULT_OCR_WORKERS = 2
 DEFAULT_EMBEDDING_BATCH_SIZE = 16
+DEFAULT_EMBEDDING_DEVICE = "auto"
+DEFAULT_MAX_UPLOAD_MB = 200
 
 
 def storage_dir_from_environment() -> Path:
@@ -56,3 +58,25 @@ def embedding_batch_size_from_environment() -> int:
             )
         ),
     )
+
+
+def embedding_device_from_environment() -> str:
+    device = os.getenv(
+        "PREPARADOR_EMBEDDING_DEVICE",
+        DEFAULT_EMBEDDING_DEVICE,
+    ).strip().lower()
+    if device in {"auto", "cpu", "cuda"}:
+        return device
+    if device.startswith("cuda:") and device[5:].isdigit():
+        return device
+    raise ValueError(
+        "PREPARADOR_EMBEDDING_DEVICE deve ser auto, cpu, cuda ou cuda:N."
+    )
+
+
+def max_upload_bytes_from_environment() -> int:
+    max_upload_mb = max(
+        1,
+        int(os.getenv("PREPARADOR_MAX_UPLOAD_MB", str(DEFAULT_MAX_UPLOAD_MB))),
+    )
+    return max_upload_mb * 1024 * 1024

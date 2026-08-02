@@ -47,6 +47,12 @@ python -m streamlit run streamlit_app.py --server.address 127.0.0.1 --server.por
 
 Acesse `http://127.0.0.1:8501`.
 
+O ambiente local aceita PDFs de ate 200 MB por padrao. O limite pode ser
+alterado com `PREPARADOR_MAX_UPLOAD_MB`. O encaminhamento de portas do VS Code
+usa Microsoft Dev Tunnels, cujo limite atual e 16 MB por requisicao HTTP.
+Por isso, processos maiores devem ser enviados pelo endereco local; depois de
+processados, o resultado pode ser consultado normalmente pelo endereco publico.
+
 ## Processamento de PDFs grandes
 
 O upload identifica o arquivo pelo hash SHA-256. Quando o mesmo PDF ja foi
@@ -66,6 +72,18 @@ Os valores podem ser ajustados pela configuracao:
 $env:PREPARADOR_OCR_ZOOM="1.5"
 $env:PREPARADOR_OCR_WORKERS="2"
 $env:PREPARADOR_EMBEDDING_BATCH_SIZE="16"
+$env:PREPARADOR_EMBEDDING_DEVICE="auto"
+$env:PREPARADOR_MAX_UPLOAD_MB="200"
+```
+
+Com `auto`, os modelos de embedding usam CUDA quando o PyTorch e uma GPU
+compativel estao disponiveis; caso contrario, continuam na CPU. Use `cpu` para
+forcar o processador ou `cuda:0` para escolher explicitamente a primeira GPU.
+
+Na maquina com GPU NVIDIA, instale a distribuicao CUDA usada pela PoC:
+
+```powershell
+python -m pip install torch==2.11.0+cu128 --index-url https://download.pytorch.org/whl/cu128
 ```
 
 No PDF real de referencia com 14,9 MB e 105 paginas, sendo 39 submetidas a

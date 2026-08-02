@@ -134,12 +134,36 @@ def search_process_queries_configured(
             chunk_index=result.chunk_index,
             document_type=result.document_type,
             score=round(score / maximum_score, 4),
+            source_confidence=result.source_confidence,
         )
         for result, score in ranked[:top_k]
     ]
     if routed_priority_result is not None:
         return _include_result(fused, routed_priority_result, top_k)
     return fused
+
+
+def search_process_queries_lexical(
+    processo_id: str,
+    queries: list[tuple[str, float]],
+    top_k: int = 5,
+) -> list[SearchResult]:
+    resolved_queries = _unique_weighted_queries(queries)
+    if not resolved_queries:
+        return []
+    candidate_limit = max(top_k * 2, top_k)
+    weighted_results = [
+        (
+            search_process_lexical(
+                processo_id=processo_id,
+                pergunta=query,
+                top_k=candidate_limit,
+            ),
+            weight,
+        )
+        for query, weight in resolved_queries
+    ]
+    return _fuse_ranked_results(weighted_results, top_k)
 
 
 def _search_process_hybrid_configured(
@@ -199,6 +223,7 @@ def _fuse_ranked_results(
             chunk_index=result.chunk_index,
             document_type=result.document_type,
             score=round(score / maximum_score, 4),
+            source_confidence=result.source_confidence,
         )
         for result, score in ranked[:top_k]
     ]

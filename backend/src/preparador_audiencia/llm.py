@@ -192,6 +192,7 @@ def _user_prompt(pergunta: str, sources: list[SearchResult]) -> str:
                 [
                     f"<fonte_processual id=\"{index}\">",
                     f"Pagina: {source.page_number}",
+                    f"Confianca da extracao: {source.source_confidence}",
                     f"Trecho: {source.text}",
                     "</fonte_processual>",
                 ]
@@ -211,6 +212,8 @@ def _user_prompt(pergunta: str, sources: list[SearchResult]) -> str:
                 "Responda em portugues do Brasil. Organize a resposta para leitura rapida. "
                 "Nao use linhas horizontais ou separadores decorativos. "
                 "Para cada item, informe a pagina que sustenta o ponto. "
+                "Quando a confianca da extracao for media, sinalize que o dado deve "
+                "ser conferido no PDF. "
                 "Se a pergunta pedir contradicoes, riscos, providencias ou linha do tempo, "
                 "diferencie o que esta textual nas fontes do que e apenas ponto de conferencia."
             ),

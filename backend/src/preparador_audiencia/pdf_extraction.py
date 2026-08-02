@@ -13,6 +13,8 @@ DEFAULT_SAMPLE_CHARS = 500
 LOW_TEXT_THRESHOLD = 80
 IMAGE_WITH_SPARSE_TEXT_THRESHOLD = 500
 DEFAULT_OCR_BATCH_SIZE = 4
+OCR_MIN_REVIEW_CHARS = 160
+OCR_MIN_REVIEW_WORDS = 20
 
 ExtractionProgressCallback = Callable[[int, int], None]
 
@@ -31,6 +33,7 @@ class PageExtraction:
     text_sample: str
     is_probably_empty: bool
     quality_notes: list[str]
+    source_confidence: str = "alta"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -191,6 +194,11 @@ def _finish_page_extraction(
     sample_chars: int,
 ) -> PageExtraction:
     text = _merge_native_and_ocr_text(draft.native_text, ocr_text)
+    source_confidence = _source_confidence(
+        draft.native_text,
+        ocr_applied=draft.should_run_ocr,
+        ocr_text=ocr_text,
+    )
     return PageExtraction(
         page_number=draft.page_number,
         char_count=len(text),
@@ -208,7 +216,9 @@ def _finish_page_extraction(
             image_count=draft.image_count,
             ocr_applied=draft.should_run_ocr,
             ocr_text=ocr_text,
+            source_confidence=source_confidence,
         ),
+        source_confidence=source_confidence,
     )
 
 
@@ -227,6 +237,7 @@ def _quality_notes(
     image_count: int = 0,
     ocr_applied: bool = False,
     ocr_text: str = "",
+    source_confidence: str = "alta",
 ) -> list[str]:
     notes: list[str] = []
     if ocr_applied:
@@ -235,6 +246,7 @@ def _quality_notes(
             notes.append("ocr_com_texto")
         else:
             notes.append("ocr_sem_texto")
+        notes.append(f"confianca_{source_confidence}")
 
     text = native_text
     if not text.strip():
@@ -273,3 +285,21 @@ def _extraction_method(native_text: str, ocr_text: str) -> str:
     if has_native:
         return "native"
     return "empty"
+
+
+def _source_confidence(
+    native_text: str,
+    *,
+    ocr_applied: bool,
+    ocr_text: str,
+) -> str:
+    if not ocr_applied:
+        return "alta" if native_text.strip() else "baixa"
+    if len(native_text) >= IMAGE_WITH_SPARSE_TEXT_THRESHOLD:
+        return "alta"
+    if (
+        len(ocr_text) >= OCR_MIN_REVIEW_CHARS
+        and len(ocr_text.split()) >= OCR_MIN_REVIEW_WORDS
+    ):
+        return "media"
+    return "baixa"

@@ -92,7 +92,8 @@ def search_persisted_lexical(
     rows = connection.execute(
         f"""
         SELECT chunks.text, chunks.page_number, chunks.chunk_index,
-               chunks.document_type, bm25({table_name}) AS lexical_rank
+               chunks.document_type, chunks.source_confidence,
+               bm25({table_name}) AS lexical_rank
         FROM {table_name}
         JOIN chunks ON chunks.id = {table_name}.rowid
         WHERE {table_name} MATCH ?
@@ -108,6 +109,7 @@ def search_persisted_lexical(
             chunk_index=int(row["chunk_index"]),
             document_type=row["document_type"],
             score=round(1.0 / rank, 4),
+            source_confidence=str(row["source_confidence"]),
         )
         for rank, row in enumerate(rows, start=1)
     ]
@@ -157,6 +159,7 @@ def search_chunks_lexical(
                 chunk_index=chunk.chunk_index,
                 document_type=chunk.document_type,
                 score=round(1.0 / rank, 4),
+                source_confidence=chunk.source_confidence,
             )
         )
     return results

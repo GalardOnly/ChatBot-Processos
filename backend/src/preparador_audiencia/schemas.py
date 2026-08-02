@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 ProcessStatus = Literal["pendente", "processando", "concluido", "erro"]
+SearchMode = Literal["indisponivel", "lexical", "hibrida"]
 
 
 class UploadResponse(BaseModel):
@@ -24,6 +25,9 @@ class ProcessStatusResponse(BaseModel):
     progresso_percentual: int
     mensagem: str | None
     erro: str | None
+    reprocessamento_necessario: bool = False
+    consulta_disponivel: bool = False
+    modo_busca: SearchMode = "indisponivel"
 
 
 class ProcessListItem(BaseModel):
@@ -38,6 +42,12 @@ class ProcessListItem(BaseModel):
 
 class ProcessListResponse(BaseModel):
     processos: list[ProcessListItem]
+
+
+class ReprocessResponse(BaseModel):
+    processo_id: str
+    status: ProcessStatus
+    mensagem: str
 
 
 class QuestionTemplateResponse(BaseModel):
@@ -67,11 +77,13 @@ class SearchSource(BaseModel):
     tipo_documento: str | None
     score: float
     trecho: str
+    confianca_fonte: str = "alta"
 
 
 class SearchResponse(BaseModel):
     processo_id: str
     pergunta: str
+    modo_busca: SearchMode
     fontes: list[SearchSource]
 
 
@@ -101,6 +113,7 @@ class ChatResponse(BaseModel):
     resposta: str
     modelo: str | None
     fallback_usado: bool
+    modo_busca: SearchMode
     fontes: list[SearchSource]
     avaliacao: QualityEvaluationResponse | None = None
 

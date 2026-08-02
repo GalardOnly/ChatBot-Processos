@@ -21,6 +21,7 @@ def _chunk(chunk_id: int, page: int, text: str) -> ChunkRecord:
         chunk_index=0,
         text=text,
         document_type=None,
+        source_confidence="alta",
         vector_id=None,
         created_at="2026-07-26T12:00:00+00:00",
     )

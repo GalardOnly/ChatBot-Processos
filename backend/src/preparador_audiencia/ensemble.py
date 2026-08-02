@@ -18,6 +18,7 @@ class CombinedHit:
     page_number: int
     chunk_index: int
     document_type: str | None
+    source_confidence: str = "alta"
     score_sum: float = 0.0
     votes: int = 0
     best_score: float = 0.0
@@ -32,6 +33,7 @@ class CombinedHit:
             chunk_index=self.chunk_index,
             document_type=self.document_type,
             score=round((0.65 * average_score) + (0.35 * vote_score), 4),
+            source_confidence=self.source_confidence,
         )
 
 
@@ -129,6 +131,7 @@ def _merge_model_results(
                 page_number=result.page_number,
                 chunk_index=result.chunk_index,
                 document_type=result.document_type,
+                source_confidence=result.source_confidence,
             )
             combined[key] = hit
         hit.score_sum += score

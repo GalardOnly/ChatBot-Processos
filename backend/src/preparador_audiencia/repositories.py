@@ -39,6 +39,7 @@ class ChunkRecord:
     chunk_index: int
     text: str
     document_type: str | None
+    source_confidence: str
     vector_id: str | None
     created_at: str
 
@@ -90,6 +91,7 @@ def _chunk_from_row(row: sqlite3.Row) -> ChunkRecord:
         chunk_index=int(row["chunk_index"]),
         text=str(row["text"]),
         document_type=row["document_type"],
+        source_confidence=str(row["source_confidence"]),
         vector_id=row["vector_id"],
         created_at=str(row["created_at"]),
     )
@@ -271,6 +273,25 @@ class ProcessoRepository:
         )
         self.connection.commit()
 
+    def mark_pending_for_reprocessing(self, processo_id: str) -> None:
+        self.connection.execute(
+            """
+            UPDATE processos
+            SET status = ?, progress_stage = ?, progress_current = 0,
+                progress_total = 0, progress_message = ?,
+                error_message = NULL, updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                "pendente",
+                "reprocessamento_pendente",
+                "Aguardando reprocessamento da extracao",
+                utc_now_text(),
+                processo_id,
+            ),
+        )
+        self.connection.commit()
+
 
 class ChunkRepository:
     def __init__(self, connection: sqlite3.Connection) -> None:
@@ -282,9 +303,10 @@ class ChunkRepository:
         self.connection.executemany(
             """
             INSERT INTO chunks (
-                processo_id, page_number, chunk_index, text, document_type, vector_id, created_at
+                processo_id, page_number, chunk_index, text, document_type,
+                source_confidence, vector_id, created_at
             )
-            VALUES (?, ?, ?, ?, ?, NULL, ?)
+            VALUES (?, ?, ?, ?, ?, ?, NULL, ?)
             """,
             [
                 (
@@ -293,6 +315,7 @@ class ChunkRepository:
                     chunk.chunk_index,
                     chunk.text,
                     chunk.document_type,
+                    chunk.source_confidence,
                     now,
                 )
                 for chunk in chunks
@@ -307,6 +330,20 @@ class ChunkRepository:
             (processo_id,),
         ).fetchone()
         return int(row["total"])
+
+    def has_unknown_confidence(self, processo_id: str) -> bool:
+        row = self.connection.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1
+                FROM chunks
+                WHERE processo_id = ?
+                  AND source_confidence = 'desconhecida'
+            ) AS found
+            """,
+            (processo_id,),
+        ).fetchone()
+        return bool(row["found"])
 
     def list_for_processo(self, processo_id: str) -> list[ChunkRecord]:
         rows = self.connection.execute(

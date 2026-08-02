@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 from typing import Any
 
 import httpx
@@ -95,25 +94,31 @@ def _init_state() -> None:
         "status": None,
         "messages": [],
         "hearing_report": [],
+        "completion_notice": "",
+        "status_refresh_error": "",
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
 
 
 def _upload_pdf(api_url: str, uploaded_file: Any) -> None:
+    uploaded_file.seek(0)
     try:
         response = httpx.post(
             f"{api_url}/upload",
             files={
                 "file": (
                     uploaded_file.name,
-                    uploaded_file.getvalue(),
+                    uploaded_file,
                     "application/pdf",
                 )
             },
-            timeout=120,
+            timeout=httpx.Timeout(300, connect=10),
         )
         response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        st.error(f"Nao foi possivel enviar o PDF: {_error_detail(exc.response)}")
+        return
     except httpx.HTTPError as exc:
         st.error(f"Nao foi possivel enviar o PDF: {exc}")
         return
@@ -132,17 +137,31 @@ def _upload_pdf(api_url: str, uploaded_file: Any) -> None:
         st.success("PDF recebido. O processamento foi iniciado.")
 
 
-def _refresh_status(api_url: str) -> None:
+def _refresh_status(api_url: str, *, show_error: bool = True) -> bool:
     processo_id = st.session_state.processo_id
     if not processo_id:
-        return
+        return False
     try:
-        response = httpx.get(f"{api_url}/processo/{processo_id}/status", timeout=30)
+        response = httpx.get(f"{api_url}/processo/{processo_id}/status", timeout=10)
         response.raise_for_status()
+    except httpx.TimeoutException:
+        message = (
+            "A atualizacao demorou mais que o esperado. O ultimo status conhecido foi "
+            "mantido e uma nova tentativa sera feita automaticamente."
+        )
+        st.session_state.status_refresh_error = message
+        if show_error:
+            st.warning(message)
+        return False
     except httpx.HTTPError as exc:
-        st.error(f"Nao foi possivel consultar o status: {exc}")
-        return
+        message = f"Nao foi possivel consultar o status agora: {exc}"
+        st.session_state.status_refresh_error = message
+        if show_error:
+            st.warning(message)
+        return False
     st.session_state.status = response.json()
+    st.session_state.status_refresh_error = ""
+    return True
 
 
 def _render_process_recovery(api_url: str) -> None:
@@ -186,19 +205,34 @@ def _load_latest_process(api_url: str, *, completed_only: bool) -> None:
     _refresh_status(api_url)
 
 
+@st.fragment(run_every=2)
 def _render_process_status(api_url: str) -> None:
     processo_id = st.session_state.processo_id
-    status = st.session_state.status
     if not processo_id:
         st.info("Envie um PDF para iniciar a analise.")
         return
+
+    previous_status = (st.session_state.status or {}).get("status")
+    should_refresh = previous_status in {None, "pendente", "processando"}
+    if should_refresh:
+        _refresh_status(api_url, show_error=False)
+    status = st.session_state.status
 
     st.subheader("Processo")
     st.code(processo_id, language=None)
 
     if not status:
+        if st.session_state.status_refresh_error:
+            st.warning(st.session_state.status_refresh_error)
         st.warning("Status ainda nao consultado.")
         return
+
+    if (
+        previous_status in {"pendente", "processando"}
+        and status["status"] == "concluido"
+    ):
+        st.session_state.completion_notice = processo_id
+        st.rerun(scope="app")
 
     status_cols = st.columns(2)
     status_cols[0].metric("Status", status["status"])
@@ -215,21 +249,56 @@ def _render_process_status(api_url: str) -> None:
         st.progress(100, text=progress_message)
     if status.get("erro"):
         st.error(status["erro"])
+    if st.session_state.status_refresh_error:
+        st.warning(st.session_state.status_refresh_error)
+    if status.get("reprocessamento_necessario"):
+        st.warning(
+            "Este processo foi indexado antes da politica de confianca do OCR "
+            "e precisa ser reprocessado."
+        )
+        if st.button("Reprocessar extracao", type="primary"):
+            _request_reprocessing(api_url, processo_id)
+            st.rerun()
 
-    if status["status"] in {"pendente", "processando"}:
-        time.sleep(1)
-        _refresh_status(api_url)
-        st.rerun()
+    if status.get("modo_busca") == "lexical":
+        st.info(
+            "O texto ja pode ser consultado pela busca lexical enquanto o indice "
+            "semantico termina de ser preparado."
+        )
+    if st.session_state.completion_notice == processo_id:
+        st.success("Processamento concluido. A busca hibrida ja esta disponivel.")
+        st.session_state.completion_notice = ""
+
+
+def _request_reprocessing(api_url: str, processo_id: str) -> None:
+    try:
+        response = httpx.post(
+            f"{api_url}/processo/{processo_id}/reprocessar",
+            timeout=30,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        st.error(f"Nao foi possivel iniciar o reprocessamento: {exc}")
+        return
+    st.session_state.messages = []
+    st.session_state.hearing_report = []
+    _refresh_status(api_url)
 
 
 def _render_chat(api_url: str) -> None:
     st.subheader("Chat do processo")
     status = st.session_state.status or {}
-    ready = status.get("status") == "concluido"
+    ready = bool(status.get("consulta_disponivel"))
 
     if not ready:
-        st.caption("O chat fica disponivel quando o processamento estiver concluido.")
+        st.caption("O chat fica disponivel assim que o texto do PDF for organizado.")
         return
+
+    if status.get("modo_busca") == "lexical":
+        st.caption(
+            "Modo lexical temporario: as respostas usam correspondencia textual. "
+            "A busca hibrida sera ativada ao final da indexacao."
+        )
 
     st.caption("Escreva sua pergunta do seu jeito. A triagem juridica acontece internamente.")
     st.info(
@@ -316,6 +385,15 @@ def _ask_question(api_url: str, pergunta: str, top_k: int = 5) -> dict[str, Any]
             timeout=120,
         )
         response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 503:
+            return _read_only_fallback(api_url, processo_id, pergunta, top_k)
+        detail = _error_detail(exc.response)
+        return {
+            "role": "assistant",
+            "content": f"Nao foi possivel consultar o chat: {detail}",
+            "fontes": [],
+        }
     except httpx.HTTPError as exc:
         return {
             "role": "assistant",
@@ -328,7 +406,41 @@ def _ask_question(api_url: str, pergunta: str, top_k: int = 5) -> dict[str, Any]
         "role": "assistant",
         "content": payload["resposta"],
         "fontes": payload["fontes"],
+        "modo_busca": payload.get("modo_busca", "hibrida"),
     }
+
+
+def _read_only_fallback(
+    api_url: str,
+    processo_id: str,
+    pergunta: str,
+    top_k: int,
+) -> dict[str, Any]:
+    try:
+        response = httpx.post(
+            f"{api_url}/processo/{processo_id}/buscar",
+            json={"pergunta": pergunta, "top_k": top_k},
+            timeout=30,
+        )
+        response.raise_for_status()
+        sources = response.json().get("fontes", [])
+    except httpx.HTTPError:
+        sources = []
+    return {
+        "role": "assistant",
+        "content": (
+            "Gemini e Groq estao indisponiveis. Nenhuma resposta foi gerada. "
+            "Abaixo estao apenas os trechos recuperados para conferencia manual."
+        ),
+        "fontes": sources,
+    }
+
+
+def _error_detail(response: httpx.Response) -> str:
+    try:
+        return str(response.json().get("detail") or response.reason_phrase)
+    except ValueError:
+        return response.reason_phrase
 
 
 def _render_sources(fontes: list[dict[str, Any]]) -> None:
@@ -341,6 +453,9 @@ def _render_sources(fontes: list[dict[str, Any]]) -> None:
             if document_type:
                 readable_type = document_type.replace("_", " ").capitalize()
                 source_label += f" | Tipo: {readable_type}"
+            confidence = fonte.get("confianca_fonte", "alta")
+            if confidence != "alta":
+                source_label += f" | Confianca da extracao: {confidence.capitalize()}"
             st.markdown(source_label)
             st.write(fonte["trecho"])
 

@@ -18,6 +18,7 @@ class SearchResult:
     chunk_index: int
     document_type: str | None
     score: float
+    source_confidence: str = "alta"
 
 
 def index_process_chunks(
@@ -71,4 +72,5 @@ def _result_from_hit(hit: VectorSearchResult) -> SearchResult:
         chunk_index=hit.chunk_index,
         document_type=hit.document_type,
         score=hit.score,
+        source_confidence=hit.source_confidence,
     )

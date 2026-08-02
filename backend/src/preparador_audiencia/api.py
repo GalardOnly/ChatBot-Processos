@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from hashlib import sha256
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, File, UploadFile
@@ -7,10 +10,13 @@ from fastapi.responses import JSONResponse
 
 from preparador_audiencia.chat import answer_process_question, sources_to_schema
 from preparador_audiencia.database import connect_database, initialize_database
-from preparador_audiencia.ingestion import create_processo_from_pdf, process_pdf
+from preparador_audiencia.ingestion import create_processo_from_staged_pdf, process_pdf
+from preparador_audiencia.lexical_search import search_process_lexical
 from preparador_audiencia.question_bank import list_question_templates
 from preparador_audiencia.repositories import (
     ChatMessageRepository,
+    ChunkRepository,
+    ProcessoRecord,
     ProcessoRepository,
     QualityEvaluationRepository,
 )
@@ -25,14 +31,28 @@ from preparador_audiencia.schemas import (
     QualityEvaluationResponse,
     QuestionTemplateListResponse,
     QuestionTemplateResponse,
+    ReprocessResponse,
+    SearchMode,
     SearchRequest,
     SearchResponse,
     UploadResponse,
 )
+from preparador_audiencia.settings import (
+    max_upload_bytes_from_environment,
+    storage_dir_from_environment,
+)
 
 router = APIRouter()
 
-MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+
+def _process_search_mode(processo: ProcessoRecord) -> SearchMode:
+    if processo.status == "concluido":
+        return "hibrida"
+    if processo.chunk_count > 0 and processo.progress_stage in {"indexando", "erro"}:
+        return "lexical"
+    return "indisponivel"
 
 
 def error_response(status_code: int, error: str, detail: str) -> JSONResponse:
@@ -54,13 +74,20 @@ async def upload_process_pdf(
     if file.content_type not in {None, "application/pdf"}:
         return error_response(400, "invalid_file_type", "Envie um arquivo PDF.")
 
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_BYTES:
-        return error_response(413, "file_too_large", "O PDF excede o limite de 50 MB.")
-    if not content.startswith(b"%PDF"):
-        return error_response(400, "invalid_pdf", "O arquivo enviado nao parece ser PDF.")
+    max_upload_bytes = max_upload_bytes_from_environment()
+    staged_path, digest, upload_error = await _stage_upload(file, max_upload_bytes)
+    if upload_error is not None:
+        return upload_error
 
-    submission = create_processo_from_pdf(file.filename or "processo.pdf", content)
+    try:
+        submission = create_processo_from_staged_pdf(
+            file.filename or "processo.pdf",
+            staged_path,
+            digest,
+        )
+    except Exception:
+        staged_path.unlink(missing_ok=True)
+        raise
     if submission.should_process:
         background_tasks.add_task(process_pdf, submission.processo_id)
     return UploadResponse(
@@ -70,12 +97,74 @@ async def upload_process_pdf(
     )
 
 
+async def _stage_upload(
+    file: UploadFile,
+    max_upload_bytes: int,
+) -> tuple[Path, str, JSONResponse | None]:
+    storage_dir = storage_dir_from_environment()
+    storage_dir.mkdir(parents=True, exist_ok=True)
+    digest = sha256()
+    total_bytes = 0
+    staged_path: Path | None = None
+    upload_error: JSONResponse | None = None
+
+    try:
+        with NamedTemporaryFile(
+            mode="wb",
+            prefix=".upload-",
+            suffix=".pdf",
+            dir=storage_dir,
+            delete=False,
+        ) as destination:
+            staged_path = Path(destination.name)
+            first_chunk = True
+            while chunk := await file.read(UPLOAD_CHUNK_BYTES):
+                if first_chunk and not chunk.startswith(b"%PDF"):
+                    upload_error = error_response(
+                        400,
+                        "invalid_pdf",
+                        "O arquivo enviado nao parece ser PDF.",
+                    )
+                    break
+                first_chunk = False
+                total_bytes += len(chunk)
+                if total_bytes > max_upload_bytes:
+                    max_upload_mb = max_upload_bytes // (1024 * 1024)
+                    upload_error = error_response(
+                        413,
+                        "file_too_large",
+                        f"O PDF excede o limite local de {max_upload_mb} MB.",
+                    )
+                    break
+                digest.update(chunk)
+                destination.write(chunk)
+    except Exception:
+        if staged_path is not None:
+            staged_path.unlink(missing_ok=True)
+        raise
+
+    if upload_error is not None:
+        if staged_path is not None:
+            staged_path.unlink(missing_ok=True)
+        return staged_path or storage_dir / ".upload-invalido.pdf", "", upload_error
+
+    if staged_path is None or total_bytes == 0:
+        if staged_path is not None:
+            staged_path.unlink(missing_ok=True)
+        return (
+            staged_path or storage_dir / ".upload-vazio.pdf",
+            "",
+            error_response(400, "invalid_pdf", "O PDF enviado esta vazio."),
+        )
+    return staged_path, digest.hexdigest(), None
+
+
 @router.get(
     "/processo/{processo_id}/status",
     response_model=ProcessStatusResponse,
     responses={404: {"model": ErrorResponse}},
 )
-async def get_process_status(processo_id: str) -> ProcessStatusResponse | JSONResponse:
+def get_process_status(processo_id: str) -> ProcessStatusResponse | JSONResponse:
     connection = connect_database()
     initialize_database(connection)
     processo = ProcessoRepository(connection).get(processo_id)
@@ -88,6 +177,7 @@ async def get_process_status(processo_id: str) -> ProcessStatusResponse | JSONRe
     )
     if processo.status == "concluido":
         progress_percent = 100
+    search_mode = _process_search_mode(processo)
     return ProcessStatusResponse(
         processo_id=processo.id,
         status=processo.status,
@@ -99,11 +189,53 @@ async def get_process_status(processo_id: str) -> ProcessStatusResponse | JSONRe
         progresso_percentual=max(0, min(100, progress_percent)),
         mensagem=processo.progress_message,
         erro=processo.error_message,
+        reprocessamento_necessario=ChunkRepository(
+            connection
+        ).has_unknown_confidence(processo_id),
+        consulta_disponivel=search_mode != "indisponivel",
+        modo_busca=search_mode,
+    )
+
+
+@router.post(
+    "/processo/{processo_id}/reprocessar",
+    response_model=ReprocessResponse,
+    responses={404: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+)
+def reprocess_process(
+    processo_id: str,
+    background_tasks: BackgroundTasks,
+) -> ReprocessResponse | JSONResponse:
+    connection = connect_database()
+    initialize_database(connection)
+    processos = ProcessoRepository(connection)
+    processo = processos.get(processo_id)
+    if processo is None:
+        return error_response(404, "process_not_found", "Processo nao encontrado.")
+    if processo.status in {"pendente", "processando"}:
+        return error_response(
+            409,
+            "process_already_running",
+            "O processo ja esta na fila ou em processamento.",
+        )
+    if not Path(processo.file_path).is_file():
+        return error_response(
+            409,
+            "source_file_missing",
+            "O PDF original nao esta disponivel para reprocessamento.",
+        )
+
+    processos.mark_pending_for_reprocessing(processo_id)
+    background_tasks.add_task(process_pdf, processo_id)
+    return ReprocessResponse(
+        processo_id=processo_id,
+        status="pendente",
+        mensagem="Reprocessamento iniciado.",
     )
 
 
 @router.get("/processos", response_model=ProcessListResponse)
-async def list_recent_processes(limit: int = 10) -> ProcessListResponse | JSONResponse:
+def list_recent_processes(limit: int = 10) -> ProcessListResponse | JSONResponse:
     if limit <= 0 or limit > 50:
         return error_response(400, "invalid_limit", "limit deve ficar entre 1 e 50.")
 
@@ -127,7 +259,7 @@ async def list_recent_processes(limit: int = 10) -> ProcessListResponse | JSONRe
 
 
 @router.get("/perguntas-audiencia", response_model=QuestionTemplateListResponse)
-async def list_hearing_questions(
+def list_hearing_questions(
     area: str | None = None,
     audiencia: str | None = None,
     tag: str | None = None,
@@ -165,7 +297,7 @@ async def list_hearing_questions(
     response_model=SearchResponse,
     responses={404: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
 )
-async def search_process_sources(
+def search_process_sources(
     processo_id: str,
     request: SearchRequest,
 ) -> SearchResponse | JSONResponse:
@@ -180,21 +312,30 @@ async def search_process_sources(
     processo = ProcessoRepository(connection).get(processo_id)
     if processo is None:
         return error_response(404, "process_not_found", "Processo nao encontrado.")
-    if processo.status != "concluido":
+    search_mode = _process_search_mode(processo)
+    if search_mode == "indisponivel":
         return error_response(
             409,
             "process_not_ready",
-            "Aguarde o processamento do processo terminar antes de buscar.",
+            "Aguarde a extracao e a organizacao do texto terminarem antes de buscar.",
         )
 
-    results = search_process_configured(
-        processo_id=processo_id,
-        pergunta=pergunta,
-        top_k=request.top_k,
-    )
+    if search_mode == "lexical":
+        results = search_process_lexical(
+            processo_id=processo_id,
+            pergunta=pergunta,
+            top_k=request.top_k,
+        )
+    else:
+        results = search_process_configured(
+            processo_id=processo_id,
+            pergunta=pergunta,
+            top_k=request.top_k,
+        )
     return SearchResponse(
         processo_id=processo_id,
         pergunta=pergunta,
+        modo_busca=search_mode,
         fontes=sources_to_schema(results),
     )
 
@@ -209,7 +350,7 @@ async def search_process_sources(
         503: {"model": ErrorResponse},
     },
 )
-async def chat_with_process(
+def chat_with_process(
     processo_id: str,
     request: ChatRequest,
 ) -> ChatResponse | JSONResponse:
@@ -224,11 +365,12 @@ async def chat_with_process(
     processo = ProcessoRepository(connection).get(processo_id)
     if processo is None:
         return error_response(404, "process_not_found", "Processo nao encontrado.")
-    if processo.status != "concluido":
+    search_mode = _process_search_mode(processo)
+    if search_mode == "indisponivel":
         return error_response(
             409,
             "process_not_ready",
-            "Aguarde o processamento do processo terminar antes de conversar.",
+            "Aguarde a extracao e a organizacao do texto terminarem antes de conversar.",
         )
 
     try:
@@ -242,6 +384,7 @@ async def chat_with_process(
             quality_evaluations=QualityEvaluationRepository(connection)
             if request.avaliar
             else None,
+            lexical_only=search_mode == "lexical",
         )
     except RuntimeError as exc:
         return error_response(
@@ -256,6 +399,7 @@ async def chat_with_process(
         resposta=result.resposta,
         modelo=result.modelo,
         fallback_usado=result.fallback_usado,
+        modo_busca=search_mode,
         fontes=sources_to_schema(result.fontes),
         avaliacao=_quality_to_schema(result.avaliacao),
     )

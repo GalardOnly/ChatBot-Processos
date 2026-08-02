@@ -586,6 +586,7 @@ def _documents_to_chunks(processo_id: str, documents: list[JurisTCUDocument]) ->
             chunk_index=0,
             text=document.text,
             document_type=document.doc_id,
+            source_confidence="alta",
             vector_id=None,
             created_at="",
         )

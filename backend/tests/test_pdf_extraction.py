@@ -96,6 +96,8 @@ def test_extract_pdf_report_applies_ocr_to_image_page_with_sparse_text(tmp_path)
     assert "EDITAL DE CITACAO" in report.pages[0].text_sample
     assert "ocr_aplicado" in report.pages[0].quality_notes
     assert "ocr_com_texto" in report.pages[0].quality_notes
+    assert report.pages[0].source_confidence == "baixa"
+    assert "confianca_baixa" in report.pages[0].quality_notes
 
 
 def test_extract_pdf_report_does_not_apply_ocr_to_text_page(tmp_path) -> None:
@@ -137,3 +139,26 @@ def test_extract_pdf_report_reports_page_progress(tmp_path) -> None:
 
 def test_normalize_text_removes_excess_blank_lines_and_spaces() -> None:
     assert normalize_text(" A   B \n\n C\r\n") == "A B\nC"
+
+
+def test_ocr_with_substantial_text_is_marked_for_review(tmp_path) -> None:
+    pdf_path = tmp_path / "digitalizado-longo.pdf"
+    image_path = tmp_path / "scan.png"
+    ocr_text = " ".join(
+        ["A decisao registra fatos, datas e fundamentos que devem ser conferidos."]
+        * 6
+    )
+    fake_ocr = FakeOcrEngine(ocr_text)
+
+    pixmap = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 300, 120), 0)
+    pixmap.save(image_path)
+    document = fitz.open()
+    page = document.new_page()
+    page.insert_image(fitz.Rect(72, 120, 372, 240), filename=image_path)
+    document.save(pdf_path)
+    document.close()
+
+    report = extract_pdf_report(pdf_path, ocr_engine=fake_ocr)
+
+    assert report.pages[0].source_confidence == "media"
+    assert "confianca_media" in report.pages[0].quality_notes

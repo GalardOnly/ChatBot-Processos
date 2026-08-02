@@ -37,6 +37,7 @@ def _chunk(
         chunk_index=0,
         text=text,
         document_type=document_type,
+        source_confidence="alta",
         vector_id=f"vector-{chunk_id}",
         created_at="2026-07-26T12:00:00+00:00",
     )

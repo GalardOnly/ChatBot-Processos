@@ -68,6 +68,47 @@ def create_processo_from_pdf(
     )
 
 
+def create_processo_from_staged_pdf(
+    filename: str,
+    staged_path: Path,
+    sha256_digest: str,
+    storage_dir: Path | None = None,
+) -> ProcessSubmission:
+    resolved_storage_dir = storage_dir or storage_dir_from_environment()
+    resolved_storage_dir.mkdir(parents=True, exist_ok=True)
+
+    connection = connect_database()
+    initialize_database(connection)
+    processos = ProcessoRepository(connection)
+    reusable = processos.find_reusable_by_sha256(sha256_digest)
+    if reusable is not None and Path(reusable.file_path).is_file():
+        staged_path.unlink(missing_ok=True)
+        return ProcessSubmission(
+            processo_id=reusable.id,
+            status=reusable.status,
+            reused=True,
+            should_process=False,
+        )
+
+    processo_id = f"proc_{uuid4().hex[:12]}"
+    safe_filename = _safe_filename(filename or "processo.pdf")
+    file_path = resolved_storage_dir / f"{processo_id}-{safe_filename}"
+    staged_path.replace(file_path)
+
+    processos.create_pending(
+        processo_id=processo_id,
+        filename=safe_filename,
+        file_path=str(file_path),
+        sha256_digest=sha256_digest,
+    )
+    return ProcessSubmission(
+        processo_id=processo_id,
+        status="pendente",
+        reused=False,
+        should_process=True,
+    )
+
+
 def process_pdf(processo_id: str) -> None:
     with _PROCESSING_SEMAPHORE:
         _process_pdf_exclusively(processo_id)

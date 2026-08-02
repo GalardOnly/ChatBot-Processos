@@ -308,7 +308,7 @@ As decisoes ainda sem evidencia suficiente sao a utilidade real da preparacao gu
 - **Razao**: o conjunto melhorou cobertura em relacao aos modelos isolados no benchmark disponivel.
 - **Avaliacao**: **revisar agora**. O Legal-BERTimbau e voltado a similaridade textual, enquanto o JurisBERT usa mean pooling generico e ainda precisa provar sua contribuicao em uma comparacao equivalente. A fusao pode esconder consultas nas quais um componente reduz a qualidade do outro.
 - **Alternativa**: um embedding unico mais um reranker pode entregar qualidade semelhante com menor custo de indexacao e consulta.
-- **Acao**: executar uma ablacao justa com as mesmas perguntas para JurisBERT, Legal-BERTimbau, ensemble e recuperacao lexical hibrida. Medir hit rate, MRR, latencia, armazenamento e degradacoes por tipo de pergunta antes de manter o ensemble como padrao.
+- **Acao**: o ensemble permanece somente como baseline da PoC, nao como escolha aprovada para piloto. Ate `02/08/2026`, executar uma ablacao justa com as mesmas perguntas para JurisBERT, Legal-BERTimbau, ensemble e recuperacao lexical hibrida. Medir hit rate, MRR, latencia, armazenamento e degradacoes por tipo de pergunta. O ensemble so permanece padrao se nao degradar nenhum grupo juridicamente relevante acima de 5%, melhorar MRR ou hit rate de forma mensuravel e mantiver latencia compativel com o chat. Sem esse resultado, promover o melhor recuperador isolado e conservar o ensemble apenas para experimento.
 
 ### D31. Acrescentar busca lexical FTS5 ao recuperador semantico
 
@@ -350,7 +350,7 @@ As decisoes ainda sem evidencia suficiente sao a utilidade real da preparacao gu
 - **Razao**: oferece continuidade quando o principal falha e teve boa velocidade nos testes.
 - **Avaliacao**: **manter**.
 - **Alternativa**: segundo modelo do mesmo provedor simplifica contrato, mas reduz resiliencia a falha do fornecedor.
-- **Acao**: definir quais erros permitem fallback, limite de tentativas, timeout e politica de custo.
+- **Acao**: definir quais erros permitem fallback, limite de tentativas, timeout e politica de custo. Quando os dois provedores falham, aplicar a politica da D65: nenhuma resposta e inventada ou enfileirada automaticamente.
 
 ### D37. Testar Ollama e depois remove-lo
 
@@ -466,7 +466,7 @@ As decisoes ainda sem evidencia suficiente sao a utilidade real da preparacao gu
 - **Razao**: reduziu infraestrutura enquanto apenas o desenvolvedor usava a ferramenta.
 - **Avaliacao**: **manter somente em desenvolvimento** e **substituir antes de qualquer piloto**.
 - **Alternativa**: autenticacao, autorizacao por processo, tenant, auditoria e sessoes seguras desde o inicio.
-- **Acao**: bloquear upload de processos reais por terceiros ate existir controle de acesso e exclusao.
+- **Acao**: bloquear upload de processos reais por terceiros ate existir controle de acesso, exclusao e rate limiting compartilhado conforme a D66.
 
 ### D53. Adiar LGPD, multi-tenant e billing
 
@@ -515,14 +515,14 @@ As decisoes ainda sem evidencia suficiente sao a utilidade real da preparacao gu
 - **Razao**: OCR pode retornar algum texto e ainda assim errar nomes, datas, valores ou a ordem da leitura. Aceitar qualquer saida como equivalente a texto confiavel compromete recuperacao e citacao.
 - **Avaliacao**: **revisar agora**. Uma citacao formalmente correta para uma pagina extraida com baixa qualidade pode transmitir confianca indevida.
 - **Alternativa**: descartar toda pagina com OCR imperfeito. Evita texto ruim, mas elimina informacao que ainda pode ser util com aviso e revisao.
-- **Acao**: registrar metodo, confianca e alertas por pagina; detectar saida vazia, corrompida ou muito curta; tentar rotacao e segundo passe quando justificavel; marcar fontes de baixa confianca na recuperacao e na interface; impedir conclusoes fortes quando a unica evidencia vier de OCR abaixo do limiar.
+- **Acao**: a politica inicial foi implementada. Texto nativo legivel recebe confianca alta; OCR substancial sem medida nativa do motor recebe confianca media e exige conferencia visual; OCR vazio, muito curto ou esparso recebe confianca baixa. A confianca acompanha pagina, chunk, indice e fonte. `Desconhecida` equivale operacionalmente a baixa: o chunk e excluido do contexto da LLM. Se nao restar fonte alta ou media, a resposta e bloqueada e indica as paginas para conferencia. Se houver outras fontes confiaveis, a resposta usa somente elas e avisa quais paginas foram descartadas. O status identifica processos legados e a rota `POST /processo/{id}/reprocessar` refaz extracao, chunks e indices a partir do PDF original. Todo legado deve ser reprocessado antes da proxima validacao externa; se o original nao existir, o processo permanece bloqueado ate novo upload. O proximo incremento deve capturar a confianca numerica do motor, testar rotacao e calibrar os limiares em paginas reais.
 
 ### D60. Tratar o conteudo recuperado como dado nao confiavel contra prompt injection
 
 - **Razao**: processos podem conter instrucoes, peticoes, anexos ou texto malicioso dizendo ao modelo para ignorar regras, revelar dados ou executar outra tarefa. O documento recuperado e evidencia, nao instrucao.
 - **Avaliacao**: **revisar agora**. Restringir o prompt as fontes reduz alucinacao, mas nao neutraliza instrucoes contidas nas proprias fontes.
 - **Alternativa**: confiar apenas no prompt de sistema. E insuficiente porque o modelo ainda recebe texto adversarial no contexto.
-- **Acao**: a separacao basica foi implementada: o sistema declara as fontes como evidencia nao confiavel, delimita cada trecho e proibe seguir instrucoes encontradas nele. Ainda faltam testes adversariais com PDFs, deteccao de ataques e bloqueio ou sinalizacao deterministica. Nao usar uma LLM como unica barreira.
+- **Acao**: alem da separacao no prompt, existe agora uma barreira deterministica antes da LLM para padroes fortes de alteracao de regras, revelacao de segredo e mudanca de papel. Trechos sinalizados sao excluidos; se forem as unicas fontes, a resposta e bloqueada e as paginas sao indicadas para conferencia. A taxonomia versionada em `docs/29-taxonomia-prompt-injection.md` define tres niveis com cinco exemplos iniciais por nivel. Critico tenta substituir regras, fabricar fato, remover citacao, mudar papel ou extrair segredo e exige bloqueio de 100%. Medio cobre ataques indiretos, estruturais, em outro idioma ou ofuscados e exige ao menos 80% de sinalizacao, sem alteracao silenciosa da resposta. Baixo mede texto legitimo e exige falso positivo abaixo de 5% no corpus ampliado. Ate `02/08/2026`, executar a taxonomia em PDFs publicos e sinteticos renderizados, incluindo peticoes, cabecalhos, anexos e OCR. Nenhuma validacao externa com upload real deve ocorrer antes de todos os criterios serem atendidos.
 
 ### D61. Versionar embeddings e planejar reindexacao
 
@@ -530,6 +530,41 @@ As decisoes ainda sem evidencia suficiente sao a utilidade real da preparacao gu
 - **Avaliacao**: **revisar agora no contrato de dados**. Mesmo na PoC, os modelos continuam sendo comparados e podem mudar.
 - **Alternativa**: apagar e reconstruir toda a base manualmente a cada troca. Funciona em laboratorio pequeno, mas causa indisponibilidade, perda de rastreabilidade e risco operacional.
 - **Acao**: versionar `modelo`, `revisao`, `pooling`, `dimensao`, `normalizacao`, `chunking` e versao do pipeline em cada indice. Criar reindexacao idempotente e observavel, manter versoes paralelas durante migracao e promover a nova versao somente depois do benchmark e da verificacao de cobertura.
+
+### D62. Fazer validacao de produto antes de concluir toda a engenharia do piloto
+
+- **Razao**: resolver riscos tecnicos conhecidos antes do piloto evita feedback contaminado, mas adiar todo contato com defensores pode levar o projeto a aperfeicoar uma preparacao de audiencia que nao corresponde ao trabalho real.
+- **Avaliacao**: **fazer agora em duas etapas**. Descoberta de produto e piloto tecnico nao sao a mesma coisa.
+- **Alternativa**: concluir todas as pendencias tecnicas e somente depois mostrar o produto. Reduz exposicao, mas aumenta o risco de construir a funcionalidade errada.
+- **Acao**: em `26/07/2026`, o acesso a dois defensores ainda esta **nao confirmado**, portanto `30/07/2026` deixa de ser apresentado como data garantida da sessao e passa a ser gate de agendamento. Ate essa data devem existir dois convites enviados e pelo menos uma resposta com janela concreta. A primeira sessao deve ocorrer em ate sete dias corridos apos a primeira confirmacao. Se nenhum acesso for confirmado, o desenvolvimento das seis secoes nao avanca alem de manutencao e seguranca; o esforco migra para recrutamento, entrevista remota ou teste de roteiro com um defensor disponivel. A sessao dura 30 a 45 minutos, usa material publico, anonimizado ou clicavel e observa localizar fato com pagina, compreender evento temporal e preparar pontos para audiencia. Upload sigiloso continua proibido ate os gates tecnicos.
+
+### D63. Definir exclusao completa e retencao por caso
+
+- **Razao**: PDF, texto, vetores e conversa deixam de ser necessarios quando o caso e encerrado ou quando o titular solicita exclusao. Retencao indefinida amplia o impacto de incidente e conflita com minimizacao de dados.
+- **Avaliacao**: **decidir antes do piloto e implementar antes do segundo usuario real**.
+- **Alternativa**: manter tudo por conveniencia operacional. Facilita reuso, mas nao e justificavel para dados juridicos potencialmente sigilosos.
+- **Acao**: oferecer exclusao explicita por processo e politica configuravel de retencao. Uma exclusao deve remover arquivo original, chunks, indices lexicais, todas as colecoes vetoriais versionadas, mensagens, avaliacoes, preparacoes e artefatos temporarios; depois deve gerar comprovante tecnico sem conteudo sensivel. Logs e traces nao devem registrar texto, nome de arquivo, pergunta, trecho ou `processo_id` bruto; usar identificador de correlacao ou HMAC rotativo com retencao maxima definida. O teste de aceite deve procurar o identificador e dados marcadores tambem em logs, traces, filas, cache, temporarios e telemetria. Backups devem ter expiracao documentada e impedir restauracao seletiva de caso ja excluido sem nova base legal.
+
+### D64. Declarar limite de cobertura quando a pergunta exige o processo inteiro
+
+- **Razao**: RAG seleciona trechos e reduz o contexto, mas pode omitir relacoes espalhadas por muitas paginas. Uma resposta parcial pode parecer completa se o sistema nao declarar o limite.
+- **Avaliacao**: **manter como limitacao conhecida e tratar explicitamente**.
+- **Alternativa**: enviar o processo inteiro para a LLM. Isso falha em processos grandes, aumenta custo e ainda nao garante atencao uniforme.
+- **Acao**: perguntas como `resumo completo`, `todos os fatos` ou `processo inteiro` recebem aviso deterministico de que a resposta cobre apenas os trechos recuperados. Para oferecer analise integral no futuro, criar pipeline hierarquico por documento e secao, gerar resumos verificaveis com cobertura de paginas, recuperar esses resumos e informar cobertura medida. Ate la, o sistema nao deve chamar uma resposta RAG de analise completa.
+
+### D65. Tratar indisponibilidade simultanea de Gemini e Groq
+
+- **Razao**: fallback reduz falhas, mas nao elimina indisponibilidade de rede, cota, credencial ou dos dois provedores.
+- **Avaliacao**: **politica inicial implementada**.
+- **Alternativa**: enfileirar a pergunta e responder depois. Isso pode gerar resposta fora do contexto temporal do defensor e exige notificacao, validade e cancelamento que a PoC ainda nao possui.
+- **Acao**: depois de uma tentativa controlada no Gemini e outra no Groq, a API retorna `503` com mensagem recuperavel e nao fabrica resposta. A pergunta e a falha ficam registradas, sem segredo no erro. A interface entra em modo somente consulta e mostra os trechos recuperados como material para conferencia manual, deixando claro que nao houve resposta da LLM. O processo continua acessivel e o usuario pode reenviar a pergunta. Retentativa automatica e fila so entram quando houver job persistente, prazo de validade, cancelamento e notificacao.
+
+### D66. Aplicar rate limiting e limite de concorrencia antes do piloto
+
+- **Razao**: upload, OCR e embeddings consomem CPU, memoria, disco e chamadas externas. Autenticacao identifica o usuario, mas nao impede abuso ou esgotamento acidental.
+- **Avaliacao**: **obrigatorio antes de expor a API**.
+- **Alternativa**: depender apenas do limite local configuravel e do semaforo local. Isso limita um processo por instancia, mas permite fila ilimitada e nao funciona entre replicas.
+- **Acao**: no piloto, usar contador compartilhado em Redis ou gateway, nunca apenas memoria do processo. Baseline inicial: upload com tres requisicoes por minuto por usuario e dez por hora por organizacao; no maximo um processamento ativo por usuario e tres por organizacao; chat com 30 requisicoes por minuto por usuario e 120 por organizacao. Excedentes retornam `429` com `Retry-After`, sem ler o arquivo inteiro nem iniciar background task. A fila deve ser limitada e observavel. Os valores so podem mudar com teste de carga e registro da decisao.
 
 ## Decisoes que mudaram ao longo do projeto
 
@@ -549,7 +584,7 @@ As decisoes ainda sem evidencia suficiente sao a utilidade real da preparacao gu
 
 ### Enquanto ainda e PoC
 
-Manter FastAPI, Streamlit, SQLite, ChromaDB local e Gemini com Groq fallback. O indice lexical ja foi persistido e a interface agora declara que cada pergunta e independente. Antes de validar com mais de um defensor, isolar a deduplicacao por tenant e tornar a preparacao retomavel. Manter o `legal-ensemble` apenas como baseline provisoria ate a ablacao equivalente. Tambem incorporar validacao de PDF, confianca do OCR e versionamento de embeddings ao contrato tecnico da PoC, e ampliar a defesa contra prompt injection.
+Manter FastAPI, Streamlit, SQLite, ChromaDB local e Gemini com Groq fallback. O indice lexical ja foi persistido, a interface declara que cada pergunta e independente e o chat aplica a politica conservadora de OCR e a barreira inicial de prompt injection. Fazer descoberta de produto agora somente com material publico, anonimizado ou sintetico. Antes de qualquer upload sigiloso ou piloto com mais de um usuario, isolar a deduplicacao por tenant, implementar exclusao completa, tornar a preparacao retomavel e concluir os gates de seguranca. Manter o `legal-ensemble` apenas como baseline provisoria ate a ablacao equivalente.
 
 ### Para um piloto controlado
 
@@ -562,15 +597,16 @@ Usar frontend dedicado, contratos de API versionados, limites de uso, monitorame
 ## Ordem recomendada das proximas decisoes
 
 1. **Concluido:** persistir a busca lexical por processo e preservar a regressao de relevancia.
-2. Corrigir a deduplicacao para que o reaproveitamento seja limitado por tenant e permissao.
-3. Persistir a preparacao de audiencia por secao, com retomada, cache e retentativa idempotente.
-4. Implementar validacao de entrada do PDF, estado de confianca do OCR e contrato de versao dos embeddings; ampliar os testes de prompt injection.
-5. Manter explicito que as perguntas sao independentes e somente implementar memoria multi-turno com contrato e testes proprios.
-6. Executar a ablacao do ensemble e comparar chunking atual com chunking estrutural usando conjuntos separados de desenvolvimento e teste.
-7. Revisar e aprovar a suite multidominio, acrescentando respostas de referencia.
-8. Validar com defensores se chat e preparacao guiada resolvem tarefas reais, agora sem misturar feedback de uso com problemas de engenharia ja conhecidos.
-9. Definir a arquitetura do piloto com autenticacao, tenant, PostgreSQL, fila e armazenamento seguro.
-10. Somente depois investir na interface comercial e em billing.
+2. Confirmar ate `30/07/2026` o agendamento da validacao minima; realizar a primeira sessao em ate sete dias da primeira confirmacao.
+3. Concluir ate `02/08/2026` a ablacao do ensemble e o primeiro corpus adversarial, mantendo ambos como gates de piloto.
+4. Corrigir a deduplicacao para que o reaproveitamento seja limitado por tenant e permissao.
+5. Implementar exclusao completa por processo, incluindo logs e traces, e definir retencao antes do segundo usuario real.
+6. Persistir a preparacao de audiencia por secao, com retomada, cache e retentativa idempotente, caso a validacao confirme o formato.
+7. Implementar validacao de entrada do PDF e contrato de versao dos embeddings; calibrar confianca do OCR com paginas reais.
+8. Manter explicito que as perguntas sao independentes e somente implementar memoria multi-turno com contrato e testes proprios.
+9. Revisar e aprovar a suite multidominio, acrescentando respostas de referencia e cobertura de perguntas amplas.
+10. Definir a arquitetura do piloto com autenticacao, tenant, rate limiting compartilhado, PostgreSQL, fila e armazenamento seguro.
+11. Somente depois investir na interface comercial e em billing.
 
 ## Conclusao
 
