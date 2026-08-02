@@ -1,7 +1,10 @@
 import json
 
 from preparador_audiencia.llm import LLMAnswer
-from preparador_audiencia.nullity_analysis import analyze_recognition_nullity
+from preparador_audiencia.nullity_analysis import (
+    analyze_recognition_nullity,
+    analyze_recognition_sources,
+)
 from preparador_audiencia.search import SearchResult
 
 
@@ -229,6 +232,60 @@ def test_analysis_does_not_call_llm_without_recognition_evidence(monkeypatch) ->
 
     assert result.conclusion == "reconhecimento_nao_localizado"
     assert result.model == "sistema"
+
+
+def test_identification_of_known_person_reaches_applicability_analysis(
+    monkeypatch,
+) -> None:
+    source = SearchResult(
+        text=(
+            "A vitima conhecia o acusado havia dois anos e indicou seu nome. "
+            "A fotografia posterior serviu somente para confirmar os dados."
+        ),
+        page_number=6,
+        chunk_index=0,
+        document_type="depoimento_vitima",
+        score=0.9,
+    )
+    payload = json.dumps(
+        {
+            "aplicabilidade": "sim",
+            "justificativa_aplicabilidade": "Campo geral contraditorio de proposito.",
+            "confianca": "alta",
+            "resumo": "O rito formal nao se aplica a mera identificacao.",
+            "requisitos": [
+                {
+                    "id": "pessoa_desconhecida",
+                    "resultado": "nao_observado",
+                    "justificativa": "A vitima informou conhecimento anterior.",
+                    "paginas": [6],
+                    "fontes_juridicas": ["stj_tema_1258"],
+                }
+            ],
+            "impacto_processual": "nao_aplicavel",
+            "justificativa_impacto": "Nao houve reconhecimento de desconhecido.",
+            "paginas_impacto": [],
+            "providencias": [],
+            "lacunas": [],
+        }
+    )
+    client = FakeClient(LLMAnswer("gemini:test", payload, 4))
+    monkeypatch.setattr(
+        "preparador_audiencia.nullity_analysis.llm_client_from_spec",
+        lambda spec: client,
+    )
+
+    result = analyze_recognition_sources(
+        [source],
+        primary_model="gemini:test",
+        fallback_model="groq:test",
+    )
+
+    assert result.conclusion == "rito_formal_nao_aplicavel"
+    assert result.procedural_impact == "nao_aplicavel"
+    assert "previamente conhecida" in result.summary
+    assert result.applicability_summary == "A vitima informou conhecimento anterior."
+    assert len(client.prompts) == 1
 
 
 def test_analysis_blocks_adversarial_and_low_confidence_sources(monkeypatch) -> None:

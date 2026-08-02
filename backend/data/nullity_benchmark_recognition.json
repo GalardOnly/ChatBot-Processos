@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "id": "reconhecimento-pessoas-controlado-v1",
+  "description": "Casos sinteticos e anonimizados para medir a classificacao juridica do reconhecimento de pessoas. Revisao profissional ainda pendente.",
+  "legal_review_status": "pending",
+  "cases": [
+    {
+      "id": "fotografia-isolada-sem-prova-independente",
+      "title": "Fotografia isolada e autoria dependente do reconhecimento",
+      "sources": [
+        {
+          "page": 4,
+          "chunk_index": 0,
+          "document_type": "depoimento_vitima",
+          "source_confidence": "alta",
+          "text": "A vitima declarou que nao conhecia o autor. Antes do reconhecimento descreveu um homem alto, de casaco escuro. Na delegacia, a autoridade mostrou somente uma fotografia do investigado e perguntou se era ele. Nenhuma outra pessoa ou fotografia foi apresentada. A vitima confirmou a imagem mostrada."
+        },
+        {
+          "page": 8,
+          "chunk_index": 0,
+          "document_type": "denuncia",
+          "source_confidence": "alta",
+          "text": "A acusacao atribui a autoria exclusivamente ao reconhecimento fotografico. Nao houve apreensao de objeto, exame pericial, imagem de camera, confissao ou outra testemunha capaz de identificar o acusado."
+        }
+      ],
+      "expected": {
+        "conclusion": "forte_fundamento_para_alegar_invalidade",
+        "procedural_impact": "reconhecimento_determinante_sem_prova_independente",
+        "requirement_results": {
+          "pessoa_desconhecida": "observado",
+          "descricao_previa": "observado",
+          "alinhamento_semelhantes": "nao_observado",
+          "procedimento_nao_sugestivo": "nao_observado",
+          "termo_pormenorizado": "nao_localizado"
+        },
+        "requirement_pages": {
+          "pessoa_desconhecida": [4],
+          "descricao_previa": [4],
+          "alinhamento_semelhantes": [4],
+          "procedimento_nao_sugestivo": [4]
+        },
+        "impact_pages": [8]
+      }
+    },
+    {
+      "id": "procedimento-regular-com-prova-independente",
+      "title": "Rito documentado e prova independente",
+      "sources": [
+        {
+          "page": 12,
+          "chunk_index": 0,
+          "document_type": "auto_reconhecimento",
+          "source_confidence": "alta",
+          "text": "A primeira vitima, que nao conhecia o autor antes do fato, descreveu espontaneamente altura, idade aproximada, cabelo e tatuagem antes de ver qualquer imagem. Foram apresentadas seis fotografias de pessoas com caracteristicas semelhantes, em ordem aleatoria, sem indicacao do suspeito pela equipe. A identificacao foi registrada em termo detalhado, assinado pela autoridade, pela reconhecedora e por duas testemunhas presenciais. Nao havia relato de ameaca ou risco de intimidacao."
+        },
+        {
+          "page": 13,
+          "chunk_index": 0,
+          "document_type": "auto_reconhecimento",
+          "source_confidence": "alta",
+          "text": "A segunda vitima realizou o reconhecimento em sala separada, sem contato ou comunicacao com a primeira. Ela tambem forneceu descricao previa e recebeu o mesmo conjunto de seis fotografias em nova ordem. O ato foi reduzido a termo e recebeu as assinaturas da autoridade, da reconhecedora e de duas testemunhas."
+        },
+        {
+          "page": 22,
+          "chunk_index": 0,
+          "document_type": "laudo_pericial",
+          "source_confidence": "alta",
+          "text": "O laudo registrou impressao digital do acusado no objeto abandonado no local. Gravacao de camera tambem mostra a tatuagem descrita pelas vitimas, constituindo elementos de autoria independentes dos atos de reconhecimento."
+        }
+      ],
+      "expected": {
+        "conclusion": "procedimento_aparentemente_regular",
+        "procedural_impact": "ha_indicios_de_prova_independente",
+        "requirement_results": {
+          "pessoa_desconhecida": "observado",
+          "descricao_previa": "observado",
+          "alinhamento_semelhantes": "observado",
+          "procedimento_nao_sugestivo": "observado",
+          "protecao_reconhecedor": "nao_aplicavel",
+          "termo_pormenorizado": "observado",
+          "separacao_reconhecedores": "observado",
+          "prova_independente": "observado"
+        },
+        "requirement_pages": {
+          "pessoa_desconhecida": [12],
+          "descricao_previa": [12, 13],
+          "alinhamento_semelhantes": [12, 13],
+          "procedimento_nao_sugestivo": [12, 13],
+          "termo_pormenorizado": [12, 13],
+          "separacao_reconhecedores": [13],
+          "prova_independente": [22]
+        },
+        "impact_pages": [22]
+      }
+    },
+    {
+      "id": "identificacao-de-pessoa-conhecida",
+      "title": "Identificacao de pessoa previamente conhecida",
+      "sources": [
+        {
+          "page": 6,
+          "chunk_index": 0,
+          "document_type": "depoimento_vitima",
+          "source_confidence": "alta",
+          "text": "A vitima afirmou que conhecia o acusado havia dois anos porque ambos trabalhavam no mesmo deposito. Indicou seu nome e apelido no primeiro relato. A fotografia juntada depois foi usada somente para confirmar os dados da pessoa ja nominalmente identificada."
+        }
+      ],
+      "expected": {
+        "conclusion": "rito_formal_nao_aplicavel",
+        "procedural_impact": "nao_aplicavel",
+        "requirement_results": {
+          "pessoa_desconhecida": "nao_observado"
+        },
+        "requirement_pages": {
+          "pessoa_desconhecida": [6]
+        },
+        "impact_pages": []
+      }
+    },
+    {
+      "id": "reconhecimento-sem-documentacao-do-rito",
+      "title": "Reconhecimento mencionado sem detalhes suficientes",
+      "sources": [
+        {
+          "page": 9,
+          "chunk_index": 0,
+          "document_type": "depoimento_vitima",
+          "source_confidence": "alta",
+          "text": "A vitima declarou que nao conhecia o autor antes do fato e informou que realizou reconhecimento na delegacia. O trecho nao descreve como as pessoas ou fotografias foram apresentadas, se houve descricao previa, quantos reconhecedores participaram nem se foi lavrado termo."
+        }
+      ],
+      "expected": {
+        "conclusion": "inconclusivo",
+        "procedural_impact": "inconclusivo",
+        "requirement_results": {
+          "pessoa_desconhecida": "observado",
+          "descricao_previa": "nao_localizado",
+          "alinhamento_semelhantes": "nao_localizado",
+          "procedimento_nao_sugestivo": "nao_localizado",
+          "termo_pormenorizado": "nao_localizado"
+        },
+        "requirement_pages": {
+          "pessoa_desconhecida": [9]
+        },
+        "impact_pages": []
+      }
+    },
+    {
+      "id": "fotografia-isolada-com-prova-independente",
+      "title": "Reconhecimento falho acompanhado de prova autonoma",
+      "sources": [
+        {
+          "page": 15,
+          "chunk_index": 0,
+          "document_type": "depoimento_vitima",
+          "source_confidence": "alta",
+          "text": "A vitima nao conhecia o investigado. O policial exibiu diretamente uma unica fotografia retirada da rede social e perguntou se aquele era o autor. Nao houve descricao previa nem apresentacao de outras pessoas semelhantes."
+        },
+        {
+          "page": 31,
+          "chunk_index": 0,
+          "document_type": "laudo_pericial",
+          "source_confidence": "alta",
+          "text": "Exame de DNA encontrou perfil do acusado no material biologico recolhido no objeto usado no crime. A coleta ocorreu antes do reconhecimento e o laudo informa cadeia de custodia propria, sem derivacao da identificacao fotografica."
+        }
+      ],
+      "expected": {
+        "conclusion": "forte_fundamento_para_alegar_invalidade",
+        "procedural_impact": "ha_indicios_de_prova_independente",
+        "requirement_results": {
+          "pessoa_desconhecida": "observado",
+          "descricao_previa": "nao_observado",
+          "alinhamento_semelhantes": "nao_observado",
+          "procedimento_nao_sugestivo": "nao_observado",
+          "prova_independente": "observado"
+        },
+        "requirement_pages": {
+          "pessoa_desconhecida": [15],
+          "descricao_previa": [15],
+          "alinhamento_semelhantes": [15],
+          "procedimento_nao_sugestivo": [15],
+          "prova_independente": [31]
+        },
+        "impact_pages": [31]
+      }
+    },
+    {
+      "id": "processo-sem-reconhecimento",
+      "title": "Processo sem ato de reconhecimento de pessoa",
+      "sources": [
+        {
+          "page": 3,
+          "chunk_index": 0,
+          "document_type": "laudo_pericial",
+          "source_confidence": "alta",
+          "text": "O laudo descreve o objeto apreendido, o exame de impressao digital e o resultado da pericia. A autoria foi investigada a partir do vestigio material e da confissao registrada em interrogatorio."
+        }
+      ],
+      "expected": {
+        "conclusion": "reconhecimento_nao_localizado",
+        "procedural_impact": "inconclusivo",
+        "requirement_results": {},
+        "requirement_pages": {},
+        "impact_pages": []
+      }
+    }
+  ]
+}

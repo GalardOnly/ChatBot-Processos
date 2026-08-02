@@ -21,7 +21,7 @@ from preparador_audiencia.retrieval import (
 )
 from preparador_audiencia.search import SearchResult
 from preparador_audiencia.settings import (
-    fallback_llm_from_environment,
+    nullity_fallback_llm_from_environment,
     primary_llm_from_environment,
 )
 
@@ -128,6 +128,22 @@ def analyze_recognition_nullity(
         queries=[(query, 1.0) for query in topic.search_queries],
         top_k=top_k,
     )
+    return analyze_recognition_sources(
+        retrieved_sources,
+        primary_model=primary_model,
+        fallback_model=fallback_model,
+        topic=topic,
+    )
+
+
+def analyze_recognition_sources(
+    retrieved_sources: list[SearchResult],
+    *,
+    primary_model: str | None = None,
+    fallback_model: str | None = None,
+    topic: LegalTopic | None = None,
+) -> NullityAnalysisResult:
+    resolved_topic = topic or load_legal_topic(RECOGNITION_TOPIC_ID)
     safe_sources, flagged_sources = partition_adversarial_sources(retrieved_sources)
     reliable_sources = [
         source
@@ -150,29 +166,28 @@ def analyze_recognition_nullity(
             if retrieved_sources
             else "Nao foram encontrados trechos sobre reconhecimento de pessoas."
         )
-        return _system_result(topic, conclusion, summary, warnings)
+        return _system_result(resolved_topic, conclusion, summary, warnings)
 
     if not any(_contains_recognition_evidence(source.text) for source in reliable_sources):
         return _system_result(
-            topic,
+            resolved_topic,
             "reconhecimento_nao_localizado",
             "Nao foram localizados indicios de reconhecimento de pessoas nos trechos recuperados.",
             warnings,
             process_sources=reliable_sources,
         )
 
-    system_prompt, user_prompt = _analysis_prompts(topic, reliable_sources)
+    system_prompt, user_prompt = _analysis_prompts(resolved_topic, reliable_sources)
     raw, answer, fallback_used = _complete_with_fallback(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         primary_spec=primary_model or primary_llm_from_environment(),
-        fallback_spec=fallback_model or fallback_llm_from_environment(),
+        fallback_spec=fallback_model or nullity_fallback_llm_from_environment(),
     )
-    requirements = _sanitize_requirements(raw, topic, reliable_sources)
-    applicability = _normalize_choice(
-        raw.aplicabilidade,
-        {"sim", "nao", "inconclusiva"},
-        "inconclusiva",
+    requirements = _sanitize_requirements(raw, resolved_topic, reliable_sources)
+    applicability, applicability_summary = _resolve_applicability(
+        raw,
+        requirements,
     )
     conclusion = _resolve_conclusion(applicability, requirements)
     impact = _normalize_choice(
@@ -190,6 +205,16 @@ def analyze_recognition_nullity(
         "rito_formal_nao_aplicavel",
     }:
         impact = "nao_aplicavel"
+    impact_summary = raw.justificativa_impacto.strip()
+    summary = raw.resumo.strip()
+    if conclusion == "rito_formal_nao_aplicavel":
+        summary = (
+            "Os trechos indicam identificacao de pessoa previamente conhecida. "
+            "O rito formal de reconhecimento de desconhecido aparentemente nao se aplica."
+        )
+        impact_summary = (
+            "A analise de invalidade do rito formal nao se aplica a esta identificacao."
+        )
     confidence = _resolve_confidence(
         raw.confianca,
         conclusion,
@@ -197,16 +222,16 @@ def analyze_recognition_nullity(
         reliable_sources,
     )
     return NullityAnalysisResult(
-        topic=topic.id,
-        title=topic.title,
+        topic=resolved_topic.id,
+        title=resolved_topic.title,
         conclusion=conclusion,
         conclusion_label=CONCLUSION_LABELS[conclusion],
         confidence=confidence,
-        summary=raw.resumo.strip(),
+        summary=summary,
         applicability=applicability,
-        applicability_summary=raw.justificativa_aplicabilidade.strip(),
+        applicability_summary=applicability_summary,
         procedural_impact=impact,
-        impact_summary=raw.justificativa_impacto.strip(),
+        impact_summary=impact_summary,
         impact_pages=tuple(
             sorted(
                 {
@@ -222,9 +247,9 @@ def analyze_recognition_nullity(
         model=answer.model,
         fallback_used=fallback_used,
         process_sources=tuple(reliable_sources),
-        legal_sources=topic.sources,
-        legal_catalog_version=topic.version,
-        legal_catalog_verified_at=topic.verified_at,
+        legal_sources=resolved_topic.sources,
+        legal_catalog_version=resolved_topic.version,
+        legal_catalog_verified_at=resolved_topic.verified_at,
         warnings=tuple(
             [
                 *warnings,
@@ -400,6 +425,29 @@ def _resolve_conclusion(
     return "inconclusivo"
 
 
+def _resolve_applicability(
+    raw: _RawNullityAssessment,
+    requirements: tuple[RequirementAssessment, ...],
+) -> tuple[str, str]:
+    applicability_requirement = next(
+        (item for item in requirements if item.id == "pessoa_desconhecida"),
+        None,
+    )
+    if applicability_requirement is not None:
+        if applicability_requirement.result == "observado":
+            return "sim", applicability_requirement.justification
+        if applicability_requirement.result == "nao_observado":
+            return "nao", applicability_requirement.justification
+        if applicability_requirement.result in {"nao_localizado", "nao_aplicavel"}:
+            return "inconclusiva", applicability_requirement.justification
+    applicability = _normalize_choice(
+        raw.aplicabilidade,
+        {"sim", "nao", "inconclusiva"},
+        "inconclusiva",
+    )
+    return applicability, raw.justificativa_aplicabilidade.strip()
+
+
 def _resolve_confidence(
     raw_confidence: str,
     conclusion: Conclusion,
@@ -469,7 +517,21 @@ def _contains_recognition_evidence(text: str) -> bool:
         "autor",
         "identific",
     )
-    return "reconhec" in normalized and any(term in normalized for term in context_terms)
+    if "reconhec" in normalized and any(term in normalized for term in context_terms):
+        return True
+    known_person_terms = (
+        "ja conhecia",
+        "conhecia o acusado",
+        "conhecia o investigado",
+        "conhecia o suspeito",
+        "pessoa previamente conhecida",
+        "indicou seu nome",
+        "indicou o nome",
+    )
+    identification_terms = ("identific", "fotograf", "confirmar os dados")
+    return any(term in normalized for term in known_person_terms) and any(
+        term in normalized for term in identification_terms
+    )
 
 
 def _normalize_choice(value: str, allowed: set[str], fallback: str) -> str:
@@ -547,7 +609,7 @@ def _analysis_prompts(
                     "observado | nao_observado | nao_localizado | nao_aplicavel"
                 ),
                 "justificativa": "comparacao objetiva",
-                "paginas": [1],
+                "paginas": [],
                 "fontes_juridicas": ["id exato da fonte juridica"],
             }
         ],
@@ -556,7 +618,7 @@ def _analysis_prompts(
             "ha_indicios_de_prova_independente | inconclusivo | nao_aplicavel"
         ),
         "justificativa_impacto": "efeito pratico da falha ou regularidade",
-        "paginas_impacto": [1],
+        "paginas_impacto": [],
         "providencias": ["acao objetiva para o defensor"],
         "lacunas": ["peca ou dado que precisa ser conferido"],
     }
@@ -570,7 +632,14 @@ def _analysis_prompts(
                 "Avalie todos os requisitos do catalogo. Separe a validade do ato de seu "
                 "impacto: uma prova independente pode subsistir, mas repeticao posterior do "
                 "mesmo reconhecimento nao corrige automaticamente o ato inicial. Se houver "
-                "mais de uma versao dos fatos, registre a divergencia como lacuna."
+                "mais de uma versao dos fatos, registre a divergencia como lacuna. Quando a "
+                "condicao de um requisito nao existir, use nao_aplicavel, nunca "
+                "nao_observado. Assim, ausencia de risco de intimidacao torna protecao do "
+                "reconhecedor nao aplicavel; uma unica pessoa reconhecedora torna separacao "
+                "entre reconhecedores nao aplicavel. Para observado ou nao_observado, cite "
+                "ao menos uma pagina que contenha a evidencia. Use somente estes numeros de "
+                f"pagina: {sorted({source.page_number for source in sources})}. Nao copie "
+                "numeros ilustrativos do contrato de saida."
             ),
             "Contrato JSON de saida:",
             json.dumps(output_contract, ensure_ascii=False, indent=2),

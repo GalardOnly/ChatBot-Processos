@@ -8,6 +8,7 @@ DEFAULT_CHROMA_DIR = "chroma"
 DEFAULT_EMBEDDING_PROVIDER = "legal-ensemble"
 DEFAULT_PRIMARY_LLM = "gemini:gemini-3-flash-preview"
 DEFAULT_FALLBACK_LLM = "groq:llama-3.1-8b-instant"
+DEFAULT_NULLITY_FALLBACK_LLM = "groq:llama-3.3-70b-versatile"
 DEFAULT_EVALUATOR_LLM = "groq:llama-3.1-8b-instant"
 DEFAULT_OCR_ZOOM = 1.5
 DEFAULT_OCR_WORKERS = 2
@@ -30,6 +31,13 @@ def primary_llm_from_environment() -> str:
 
 def fallback_llm_from_environment() -> str:
     return os.getenv("PREPARADOR_FALLBACK_LLM", DEFAULT_FALLBACK_LLM)
+
+
+def nullity_fallback_llm_from_environment() -> str:
+    return os.getenv(
+        "PREPARADOR_NULLITY_FALLBACK_LLM",
+        DEFAULT_NULLITY_FALLBACK_LLM,
+    )
 
 
 def evaluator_llm_from_environment() -> str:

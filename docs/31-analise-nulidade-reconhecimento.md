@@ -50,8 +50,10 @@ registra o precedente historico sobre reconhecimento fotografico sugestivo.
 
 O recuperador faz varias consultas sobre descricao previa, alinhamento, termo,
 separacao de reconhecedores, apresentacao sugestiva e prova independente. Gemini
-recebe os trechos seguros e o catalogo controlado. Groq e usado quando o Gemini
-falha ou nao devolve o contrato estruturado esperado.
+recebe os trechos seguros e o catalogo controlado. O Groq
+`llama-3.3-70b-versatile` e usado quando o Gemini falha ou nao devolve o contrato
+estruturado esperado. O modelo Groq 8B permanece no chat geral, mas foi reprovado
+para conclusoes de nulidade no benchmark controlado.
 
 Para cada requisito, o modelo so pode responder observado, nao observado, nao
 localizado ou nao aplicavel. Nao observado exige evidencia processual concreta da

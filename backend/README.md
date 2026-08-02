@@ -117,6 +117,13 @@ $env:PREPARADOR_PRIMARY_LLM="gemini:gemini-3-flash-preview"
 $env:PREPARADOR_FALLBACK_LLM="groq:llama-3.1-8b-instant"
 ```
 
+A analise de nulidade usa um fallback proprio porque o Groq 8B nao atingiu o
+gate juridico controlado. O padrao desse endpoint e:
+
+```powershell
+$env:PREPARADOR_NULLITY_FALLBACK_LLM="groq:llama-3.3-70b-versatile"
+```
+
 ## Embeddings e busca vetorial
 
 Por padrao, o fluxo principal usa o recuperador `legal-ensemble`, que indexa e
@@ -329,7 +336,8 @@ automaticamente e esta ignorado pelo Git.
 Decisao atual da PoC:
 
 - principal: `gemini:gemini-3-flash-preview`;
-- fallback: `groq:llama-3.1-8b-instant`.
+- fallback do chat: `groq:llama-3.1-8b-instant`;
+- fallback da analise de nulidade: `groq:llama-3.3-70b-versatile`.
 
 Os IDs de modelos mudam com o tempo. Consulte a lista ativa dos provedores antes
 de rodar uma bateria grande.
