@@ -468,6 +468,12 @@ com confianca baixa ou desconhecida deixam o item com
 `revisao_necessaria: true`. O contrato completo e as limitacoes estao descritos
 em `docs/35-transcricao-estruturada-depoimentos.md`.
 
+Na versao 2.0, cada termo recebe um identificador estavel e um bloco de
+identificacao. Esse bloco informa nome normalizado, metodo, confianca, pagina e
+trecho literal do cabecalho usado como evidencia. Rotulo explicito e nome no
+titulo geram confianca alta; qualificacao indireta gera confianca media e exige
+revisao. A ausencia de nome nunca e preenchida por inferencia de LLM.
+
 
 ## Suite de referencia multidominio
 

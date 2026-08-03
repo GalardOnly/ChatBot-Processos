@@ -46,7 +46,16 @@ def test_builds_integral_testimony_without_repeating_chunk_overlap() -> None:
     assert result.status == "concluido"
     assert len(result.testimonies) == 1
     testimony = result.testimonies[0]
+    assert testimony["id_depoimento"] == "dep-p0010-depoimento_testemunha"
     assert testimony["pessoa"] == "MARIA DA SILVA"
+    assert testimony["identificacao"] == {
+        "status": "identificado",
+        "metodo": "rotulo_cabecalho",
+        "confianca": "alta",
+        "nome_normalizado": "MARIA DA SILVA",
+        "trecho_evidencia": "A TESTEMUNHA: MARIA DA SILVA",
+        "pagina": 10,
+    }
     assert testimony["papel"] == "testemunha"
     assert testimony["fase"] == "inquerito"
     assert testimony["cobertura"] == "integral"
@@ -140,3 +149,39 @@ def test_extracts_interrogated_person_with_gender_marker() -> None:
     result = build_structured_transcription([_chunk(18, 0, text)])
 
     assert result.testimonies[0]["pessoa"] == "FRANCISCO SUDERVAN ANDRADE"
+
+
+def test_classifies_victim_and_informant_testimonies() -> None:
+    victim = (
+        "POLICIA CIVIL\nTERMO DE OITIVA QUE PRESTA A VITIMA: ANA SOUZA\n"
+        "INQUERITO 1\nNada mais declarou. Pag. 1 de 1"
+    )
+    informant = (
+        "POLICIA CIVIL\nTERMO DE DEPOIMENTO QUE PRESTA O INFORMANTE: JOAO LIMA\n"
+        "INQUERITO 1\nNada mais disse. Pag. 1 de 1"
+    )
+
+    result = build_structured_transcription(
+        [_chunk(20, 0, victim), _chunk(21, 0, informant)]
+    )
+
+    assert result.testimonies[0]["tipo_documento"] == "depoimento_vitima"
+    assert result.testimonies[0]["papel"] == "vitima"
+    assert result.testimonies[1]["tipo_documento"] == "depoimento_informante"
+    assert result.testimonies[1]["papel"] == "informante"
+
+
+def test_requires_review_when_identity_comes_from_indirect_qualification() -> None:
+    text = (
+        "POLICIA CIVIL\nTERMO DE DECLARACOES\nINQUERITO 2\n"
+        "Compareceu em cartorio PEDRO HENRIQUE LIMA, nacionalidade brasileira. "
+        "Nada mais declarou. Pag. 1 de 1"
+    )
+
+    result = build_structured_transcription([_chunk(30, 0, text)])
+
+    testimony = result.testimonies[0]
+    assert testimony["pessoa"] == "PEDRO HENRIQUE LIMA"
+    assert testimony["identificacao"]["metodo"] == "qualificacao"
+    assert testimony["identificacao"]["confianca"] == "media"
+    assert testimony["revisao_necessaria"] is True

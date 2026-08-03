@@ -30,7 +30,7 @@ def test_repository_persists_structured_payload(tmp_path) -> None:
 
     assert loaded == saved
     assert loaded is not None
-    assert loaded.schema_version == "1.0"
+    assert loaded.schema_version == "2.0"
     assert loaded.payload["depoimentos"] == [{"ordem": 1}]
     connection.close()
 

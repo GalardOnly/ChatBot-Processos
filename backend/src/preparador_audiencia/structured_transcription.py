@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from preparador_audiencia.pdf_extraction import has_glued_text
 from preparador_audiencia.repositories import ChunkRecord
+from preparador_audiencia.testimony_identification import identify_testimony_person
 
 MAX_TESTIMONIES = 100
 MAX_PAGES_WITHOUT_HINT = 4
@@ -214,12 +215,27 @@ def _detect_document_start(text: str) -> _DocumentStart | None:
         text,
         ("termodedepoimento", "termodeoitiva"),
     ):
-        context = compact[testimony_position : testimony_position + 1400]
+        context = compact[testimony_position : testimony_position + 700]
         if "condutor" in context:
             return _DocumentStart(
                 "depoimento_condutor",
                 "Termo de depoimento do condutor",
                 "condutor",
+            )
+        if any(
+            marker in context
+            for marker in ("prestaavitima", "depoimentodavitima", "oitivadavitima")
+        ):
+            return _DocumentStart(
+                "depoimento_vitima",
+                "Termo de depoimento da vitima",
+                "vitima",
+            )
+        if "informante" in context:
+            return _DocumentStart(
+                "depoimento_informante",
+                "Termo de depoimento de informante",
+                "informante",
             )
         return _DocumentStart(
             "depoimento_testemunha",
@@ -232,8 +248,11 @@ def _detect_document_start(text: str) -> _DocumentStart | None:
         text,
         ("termodedeclaracoes",),
     ):
-        context = compact[declarations_position : declarations_position + 1400]
-        if "vitima" in context:
+        context = compact[declarations_position : declarations_position + 700]
+        if any(
+            marker in context
+            for marker in ("prestaavitima", "declaracoesdavitima", "ofendido", "lesado")
+        ):
             return _DocumentStart(
                 "declaracoes_vitima",
                 "Termo de declaracoes da vitima",
@@ -320,9 +339,18 @@ def _build_testimony(
 ) -> dict[str, object]:
     warnings = list(initial_warnings)
     consolidated = "\n\n".join(page.text for page in pages)
-    person = _find_person(consolidated, detected.role)
+    identification = identify_testimony_person(
+        [(page.number, page.text) for page in pages],
+        detected.role,
+    )
+    person = identification.name
     if person is None:
         warnings.append("A pessoa ouvida nao foi identificada com seguranca.")
+    elif identification.confidence == "media":
+        warnings.append(
+            "A pessoa ouvida foi identificada por qualificacao indireta e precisa "
+            "ser conferida no cabecalho original."
+        )
 
     glued_pages = [page.number for page in pages if page.has_glued_words]
     if glued_pages:
@@ -346,14 +374,26 @@ def _build_testimony(
         warnings.append("A cobertura integral do termo nao pode ser comprovada.")
 
     review_required = bool(
-        coverage == "parcial" or person is None or glued_pages or low_confidence_pages
+        coverage == "parcial"
+        or identification.confidence != "alta"
+        or glued_pages
+        or low_confidence_pages
     )
     return {
+        "id_depoimento": f"dep-p{pages[0].number:04d}-{detected.document_type}",
         "ordem": order,
         "tipo_documento": detected.document_type,
         "titulo": detected.title,
         "pessoa": person,
         "papel": detected.role,
+        "identificacao": {
+            "status": identification.status,
+            "metodo": identification.method,
+            "confianca": identification.confidence,
+            "nome_normalizado": identification.normalized_name,
+            "trecho_evidencia": identification.evidence,
+            "pagina": identification.page_number,
+        },
         "fase": _detect_phase(consolidated),
         "cobertura": coverage,
         "pagina_inicial": pages[0].number,
@@ -379,50 +419,6 @@ def _build_testimony(
         "revisao_necessaria": review_required,
         "avisos": _unique(warnings),
     }
-
-
-def _find_person(text: str, role: str) -> str | None:
-    collapsed = re.sub(r"\s+", " ", text)
-    labels = {
-        "vitima": (r"v[ií]tima",),
-        "testemunha": (r"testemunha",),
-        "condutor": (r"condutor",),
-        "reu": (r"infrator", r"interrogado", r"autuado"),
-        "declarante": (
-            r"declarante",
-            r"compareceu\s*(?:em)?\s*cart[oó]rio",
-        ),
-    }.get(role, ())
-    terminator = (
-        r"(?=(?:,|，|;)\s*(?:nacionalidade|naturalidade|sobreidentidade|brasileir)"
-        r"|\s*inqu[eé]rito)"
-    )
-    for label in labels:
-        pattern = re.compile(
-            label
-            + r"(?:\s*[（(]\s*a\s*[)）])?"
-            + r"[\s:()（）-]*"
-            + r"([a-zA-ZÀ-ÖØ-öø-ÿ][a-zA-ZÀ-ÖØ-öø-ÿ .'-]{3,120}?)"
-            + terminator,
-            re.IGNORECASE,
-        )
-        for match in pattern.finditer(collapsed):
-            candidate = _clean_person(match.group(1))
-            if candidate is not None:
-                return candidate
-    return None
-
-
-def _clean_person(value: str) -> str | None:
-    candidate = re.sub(r"\s+", " ", value).strip(" .,:;-()（）")
-    if len(candidate) < 4 or len(candidate) > 120:
-        return None
-    if len(candidate.split()) > 12:
-        return None
-    compact = _compact(candidate)
-    if compact in {"naoinformado", "null", "naoconsta"}:
-        return None
-    return candidate
 
 
 def _detect_phase(text: str) -> str:

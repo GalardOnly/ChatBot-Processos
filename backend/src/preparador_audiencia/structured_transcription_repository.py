@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from preparador_audiencia.repositories import utc_now_text
 
-TRANSCRIPTION_SCHEMA_VERSION = "1.0"
+TRANSCRIPTION_SCHEMA_VERSION = "2.0"
 
 
 @dataclass(frozen=True)

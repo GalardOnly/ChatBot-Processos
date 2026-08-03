@@ -38,7 +38,12 @@ def test_endpoint_generates_persists_and_loads_transcription(tmp_path, monkeypat
 
     assert generated.status_code == 200
     assert generated.json()["status"] == "concluido"
+    assert generated.json()["versao"] == "2.0"
+    assert generated.json()["depoimentos"][0]["id_depoimento"] == (
+        "dep-p0007-depoimento_testemunha"
+    )
     assert generated.json()["depoimentos"][0]["pessoa"] == "MARIA LIMA"
+    assert generated.json()["depoimentos"][0]["identificacao"]["confianca"] == "alta"
     assert generated.json()["depoimentos"][0]["paginas"][0]["pagina"] == 7
     assert loaded.status_code == 200
     assert loaded.json() == generated.json()
@@ -67,3 +72,30 @@ def test_get_returns_not_found_before_generation(tmp_path, monkeypatch) -> None:
 
     assert response.status_code == 404
     assert response.json()["error"] == "transcription_not_found"
+
+
+def test_get_regenerates_outdated_transcription_schema(tmp_path, monkeypatch) -> None:
+    database_path = tmp_path / "test.sqlite3"
+    monkeypatch.setenv("PREPARADOR_DATABASE_PATH", str(database_path))
+    _process_with_testimony(database_path)
+    client = TestClient(app)
+    generated = client.post(
+        "/processo/proc_1/transcricao-depoimentos",
+        json={"regenerar": False},
+    )
+    assert generated.status_code == 200
+    connection = connect_database(database_path)
+    connection.execute(
+        "UPDATE structured_transcriptions SET schema_version = '1.0' "
+        "WHERE processo_id = 'proc_1'"
+    )
+    connection.commit()
+    connection.close()
+
+    refreshed = client.get("/processo/proc_1/transcricao-depoimentos")
+
+    assert refreshed.status_code == 200
+    assert refreshed.json()["versao"] == "2.0"
+    assert refreshed.json()["depoimentos"][0]["identificacao"]["status"] == (
+        "identificado"
+    )

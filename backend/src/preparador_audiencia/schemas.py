@@ -298,12 +298,36 @@ class TranscriptionPageResponse(BaseModel):
     fallback_ocr: bool = False
 
 
+class TestimonyIdentificationResponse(BaseModel):
+    status: Literal["identificado", "nao_identificado"]
+    metodo: Literal[
+        "rotulo_cabecalho",
+        "titulo_nominal",
+        "qualificacao",
+        "nao_identificado",
+    ]
+    confianca: Literal["alta", "media", "baixa"]
+    nome_normalizado: str | None
+    trecho_evidencia: str | None
+    pagina: int | None
+
+
 class StructuredTestimonyResponse(BaseModel):
+    id_depoimento: str
     ordem: int
     tipo_documento: str
     titulo: str
     pessoa: str | None
-    papel: Literal["vitima", "testemunha", "condutor", "reu", "declarante", "outro"]
+    papel: Literal[
+        "vitima",
+        "testemunha",
+        "condutor",
+        "reu",
+        "declarante",
+        "informante",
+        "outro",
+    ]
+    identificacao: TestimonyIdentificationResponse
     fase: Literal["inquerito", "juizo", "outro"]
     cobertura: Literal["integral", "parcial"]
     pagina_inicial: int

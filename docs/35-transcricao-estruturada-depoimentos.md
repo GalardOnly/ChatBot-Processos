@@ -22,9 +22,11 @@ reutilizado. O valor `true` força uma nova leitura dos chunks atuais.
 persistido. Antes da primeira geracao, a rota devolve `404` com o codigo
 `transcription_not_found`.
 
-Cada item informa tipo do documento, titulo, pessoa, papel, fase, pagina inicial,
-pagina final, texto por pagina, texto consolidado, confianca da fonte, cobertura,
-avisos e necessidade de revisao.
+Cada item informa identificador estavel, tipo do documento, titulo, pessoa,
+papel, fase, pagina inicial, pagina final, texto por pagina, texto consolidado,
+confianca da fonte, cobertura, avisos e necessidade de revisao. A versao 2.0
+tambem informa como a pessoa foi identificada, em qual pagina, qual trecho do
+cabecalho sustenta o nome e qual a confianca estrutural da identificacao.
 
 ## Regras de confiabilidade
 
@@ -63,13 +65,19 @@ No processo publico `0206109-40.2024.8.06.0300`, o detector encontrou seis termo
 Um trecho narrativo da denuncia na pagina 54 mencionava um termo anterior. Ele
 foi usado como teste de falso positivo e nao e tratado como novo depoimento.
 
-Os seis termos atuais continuam com revisao necessaria porque foram indexados
-antes da integracao do EasyOCR e apresentam palavras coladas. Isso e um alerta
-correto do contrato, nao uma tentativa de corrigir o depoimento automaticamente.
+Depois da integracao do EasyOCR, os seis termos foram reprocessados. As seis
+pessoas foram identificadas, os termos ficaram com cobertura integral e nenhum
+item permaneceu em revisao por falha de extracao. Um segundo processo real, com
+outro layout, tambem apresentou seis termos, seis pessoas identificadas e zero
+itens em revisao automatica.
+
+O status limpo indica que as regras estruturais foram atendidas. Ele nao afirma
+que a grafia dos nomes ou o conteudo dos depoimentos receberam revisao juridica
+humana.
 
 ## Limites conhecidos
 
-A primeira versao reconhece termos policiais com cabecalhos identificaveis. Ela
+A versao atual reconhece termos policiais com cabecalhos identificaveis. Ela
 nao transforma ata de audiencia em falas individuais quando o documento nao
 possui transcricao literal. Audio, video, fotografias e depoimentos apenas
 referidos por outra peca continuam fora deste contrato.
