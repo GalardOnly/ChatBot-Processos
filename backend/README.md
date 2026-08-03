@@ -18,7 +18,9 @@ O relatorio preserva numero da pagina, quantidade de caracteres extraidos,
 amostra do texto e alertas de qualidade.
 
 Por padrao, o comando aplica OCR em paginas com imagem e pouco texto nativo
-extraido. Para comparar apenas a extracao do PyMuPDF:
+extraido. O EasyOCR e o motor principal quando a dependencia esta instalada;
+se ele falhar ou nao encontrar texto, o RapidOCR assume apenas aquela pagina.
+Para comparar somente a extracao do PyMuPDF:
 
 ```powershell
 extrair-pdf-processo "C:\caminho\processo.pdf" --no-ocr --output "relatorio-sem-ocr.json"
@@ -64,15 +66,24 @@ mesmo processamento.
 
 Durante um processamento novo, o endpoint de status informa a etapa, a
 mensagem e o percentual concluido. A interface atualiza esses dados
-automaticamente. O OCR trabalha em lotes pequenos com duas sessoes
-independentes e os embeddings sao gerados em lotes para limitar memoria e
-manter a maquina responsiva.
+automaticamente. O leitor do EasyOCR permanece carregado durante a execucao e
+trabalha de forma sequencial na GPU, configuracao que foi mais rapida no
+benchmark local. Os embeddings continuam sendo gerados em lotes para limitar
+memoria e manter a maquina responsiva.
+
+O texto reconhecido e sua proveniencia ficam em um cache local por pagina.
+Reprocessar o mesmo arquivo reaproveita esse resultado sem repetir o OCR. Como
+o cache contem texto do processo, ele deve seguir a mesma politica de exclusao
+e acesso aplicada ao PDF, banco e vetores.
 
 Os valores podem ser ajustados pela configuracao:
 
 ```powershell
 $env:PREPARADOR_OCR_ZOOM="1.5"
-$env:PREPARADOR_OCR_WORKERS="2"
+$env:PREPARADOR_OCR_ENGINE="easyocr"
+$env:PREPARADOR_OCR_DEVICE="gpu"
+$env:PREPARADOR_OCR_CACHE_DIR="cache/ocr"
+$env:PREPARADOR_EASYOCR_BATCH_SIZE="1"
 $env:PREPARADOR_EMBEDDING_BATCH_SIZE="16"
 $env:PREPARADOR_EMBEDDING_DEVICE="auto"
 $env:PREPARADOR_MAX_UPLOAD_MB="200"
@@ -81,6 +92,18 @@ $env:PREPARADOR_MAX_UPLOAD_MB="200"
 Com `auto`, os modelos de embedding usam CUDA quando o PyTorch e uma GPU
 compativel estao disponiveis; caso contrario, continuam na CPU. Use `cpu` para
 forcar o processador ou `cuda:0` para escolher explicitamente a primeira GPU.
+
+Para instalar o motor principal de OCR junto com o ambiente de desenvolvimento:
+
+```powershell
+python -m pip install -e .[dev,models,ocr-easy]
+```
+
+Os pesos podem ficar em um diretorio local definido por
+`PREPARADOR_EASYOCR_MODEL_DIR`. Em producao, deixe
+`PREPARADOR_OCR_ALLOW_MODEL_DOWNLOAD=false` e forneca os pesos durante a
+preparacao do ambiente. Cada chunk e fonte da API informa motor, versao,
+dispositivo, uso de cache e eventual fallback.
 
 Na maquina com GPU NVIDIA, instale a distribuicao CUDA usada pela PoC:
 
@@ -416,9 +439,9 @@ benchmark-ocr `
 
 O gate exige duas familias de OCR, gabarito humano aprovado, recall minimo de 90%
 e nenhuma pagina com palavras coladas. O EasyOCR atingiu 100% das frases e zero
-paginas coladas no primeiro processo. A revisao humana foi recebida e o gate
-passou; ainda falta repetir a avaliacao em outro documento antes de integrar o
-motor as dependencias de producao.
+paginas coladas no primeiro processo. Ele foi integrado ao pipeline com GPU,
+cache persistente e fallback para RapidOCR. Ainda falta repetir o gabarito
+humano em outro documento para ampliar a evidencia entre layouts diferentes.
 
 ## Transcricao estruturada de depoimentos
 

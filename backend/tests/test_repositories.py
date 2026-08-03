@@ -88,6 +88,41 @@ def test_chunk_repository_replaces_chunks(tmp_path) -> None:
     assert chunks.count_for_processo("proc_123") == 1
 
 
+def test_chunk_repository_persists_ocr_provenance(tmp_path) -> None:
+    connection = connect_database(tmp_path / "test.sqlite3")
+    initialize_database(connection)
+    ProcessoRepository(connection).create_pending(
+        processo_id="proc_123",
+        filename="processo.pdf",
+        file_path="storage/processo.pdf",
+        sha256_digest="abc",
+    )
+    chunks = ChunkRepository(connection)
+
+    chunks.replace_for_processo(
+        "proc_123",
+        [
+            TextChunk(
+                page_number=7,
+                chunk_index=0,
+                text="Texto reconhecido",
+                ocr_engine="rapidocr",
+                ocr_engine_version="1.4.4",
+                ocr_device="cpu",
+                ocr_cache_hit=False,
+                ocr_fallback_used=True,
+            )
+        ],
+    )
+
+    stored = chunks.list_for_processo("proc_123")[0]
+    assert stored.ocr_engine == "rapidocr"
+    assert stored.ocr_engine_version == "1.4.4"
+    assert stored.ocr_device == "cpu"
+    assert stored.ocr_cache_hit is False
+    assert stored.ocr_fallback_used is True
+
+
 def test_quality_evaluation_repository_persists_evaluation(tmp_path) -> None:
     connection = connect_database(tmp_path / "test.sqlite3")
     initialize_database(connection)

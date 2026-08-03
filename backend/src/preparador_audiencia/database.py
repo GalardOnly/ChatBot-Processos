@@ -47,6 +47,11 @@ def initialize_database(connection: sqlite3.Connection) -> None:
             text TEXT NOT NULL,
             document_type TEXT,
             source_confidence TEXT NOT NULL DEFAULT 'desconhecida',
+            ocr_engine TEXT,
+            ocr_engine_version TEXT,
+            ocr_device TEXT,
+            ocr_cache_hit INTEGER NOT NULL DEFAULT 0,
+            ocr_fallback_used INTEGER NOT NULL DEFAULT 0,
             vector_id TEXT,
             created_at TEXT NOT NULL,
             UNIQUE (processo_id, page_number, chunk_index)
@@ -188,11 +193,27 @@ def _ensure_chunk_columns(connection: sqlite3.Connection) -> None:
         str(row["name"])
         for row in connection.execute("PRAGMA table_info(chunks)").fetchall()
     }
-    if "source_confidence" not in columns:
-        connection.execute(
+    migrations = {
+        "source_confidence": (
             "ALTER TABLE chunks ADD COLUMN source_confidence "
             "TEXT NOT NULL DEFAULT 'desconhecida'"
-        )
+        ),
+        "ocr_engine": "ALTER TABLE chunks ADD COLUMN ocr_engine TEXT",
+        "ocr_engine_version": (
+            "ALTER TABLE chunks ADD COLUMN ocr_engine_version TEXT"
+        ),
+        "ocr_device": "ALTER TABLE chunks ADD COLUMN ocr_device TEXT",
+        "ocr_cache_hit": (
+            "ALTER TABLE chunks ADD COLUMN ocr_cache_hit INTEGER NOT NULL DEFAULT 0"
+        ),
+        "ocr_fallback_used": (
+            "ALTER TABLE chunks ADD COLUMN ocr_fallback_used "
+            "INTEGER NOT NULL DEFAULT 0"
+        ),
+    }
+    for column, statement in migrations.items():
+        if column not in columns:
+            connection.execute(statement)
 
 
 def _ensure_hearing_dossier_section_columns(connection: sqlite3.Connection) -> None:

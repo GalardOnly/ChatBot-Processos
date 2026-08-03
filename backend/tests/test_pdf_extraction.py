@@ -2,6 +2,7 @@ import json
 
 import fitz
 
+from preparador_audiencia.ocr import OcrResult
 from preparador_audiencia.pdf_extraction import extract_pdf_report, normalize_text
 
 
@@ -13,6 +14,22 @@ class FakeOcrEngine:
     def extract_page_text(self, page: fitz.Page, zoom: float = 2.0) -> str:
         self.calls += 1
         return self.text
+
+
+class FakeBatchOcrEngine:
+    def extract_pages(self, pages, zoom):
+        return [
+            OcrResult(
+                text=" ".join(
+                    ["A vitima prestou declaracao legivel para conferencia."] * 8
+                ),
+                engine="easyocr",
+                engine_version="1.7.2",
+                device="gpu",
+                cache_hit=True,
+            )
+            for _page in pages
+        ]
 
 
 def create_pdf(path) -> None:
@@ -232,3 +249,27 @@ def test_ocr_with_many_glued_words_has_low_confidence(tmp_path) -> None:
     assert extracted.full_text == glued_ocr
     assert extracted.source_confidence == "baixa"
     assert "ocr_com_palavras_coladas" in extracted.quality_notes
+
+
+def test_extraction_records_ocr_engine_device_and_cache(tmp_path) -> None:
+    pdf_path = tmp_path / "pagina-digitalizada.pdf"
+    image_path = tmp_path / "scan.png"
+    pixmap = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 300, 120), 0)
+    pixmap.save(image_path)
+    document = fitz.open()
+    page = document.new_page()
+    page.insert_image(fitz.Rect(72, 120, 372, 240), filename=image_path)
+    document.save(pdf_path)
+    document.close()
+
+    extracted = extract_pdf_report(
+        pdf_path,
+        ocr_engine=FakeBatchOcrEngine(),
+    ).pages[0]
+
+    assert extracted.ocr_engine == "easyocr"
+    assert extracted.ocr_engine_version == "1.7.2"
+    assert extracted.ocr_device == "gpu"
+    assert extracted.ocr_cache_hit is True
+    assert "ocr_motor_easyocr" in extracted.quality_notes
+    assert "ocr_resultado_reutilizado_do_cache" in extracted.quality_notes

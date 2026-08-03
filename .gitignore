@@ -17,6 +17,7 @@ samples/publicos/
 samples/benchmark/
 samples/anonimizados/
 backend/samples/benchmark/
+backend/cache/
 ~$*.docx
 .audiencia*.sqlite3
 .tmp-*.log*

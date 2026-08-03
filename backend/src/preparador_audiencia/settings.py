@@ -11,8 +11,12 @@ DEFAULT_FALLBACK_LLM = "groq:llama-3.1-8b-instant"
 DEFAULT_NULLITY_FALLBACK_LLM = "groq:llama-3.3-70b-versatile"
 DEFAULT_DOSSIER_FALLBACK_LLM = "groq:llama-3.3-70b-versatile"
 DEFAULT_EVALUATOR_LLM = "groq:llama-3.1-8b-instant"
-DEFAULT_OCR_ZOOM = 1.5
+DEFAULT_OCR_ENGINE = "auto"
+DEFAULT_OCR_DEVICE = "auto"
+DEFAULT_OCR_ZOOM = 3.0
 DEFAULT_OCR_WORKERS = 2
+DEFAULT_OCR_CACHE_DIR = "cache/ocr"
+DEFAULT_EASYOCR_BATCH_SIZE = 1
 DEFAULT_EMBEDDING_BATCH_SIZE = 16
 DEFAULT_EMBEDDING_DEVICE = "auto"
 DEFAULT_MAX_UPLOAD_MB = 200
@@ -64,6 +68,48 @@ def ocr_workers_from_environment() -> int:
     return max(1, int(os.getenv("PREPARADOR_OCR_WORKERS", str(DEFAULT_OCR_WORKERS))))
 
 
+def ocr_engine_from_environment() -> str:
+    provider = os.getenv("PREPARADOR_OCR_ENGINE", DEFAULT_OCR_ENGINE).strip().lower()
+    if provider not in {"auto", "easyocr", "rapidocr"}:
+        raise ValueError("PREPARADOR_OCR_ENGINE deve ser auto, easyocr ou rapidocr.")
+    return provider
+
+
+def ocr_device_from_environment() -> str:
+    device = os.getenv("PREPARADOR_OCR_DEVICE", DEFAULT_OCR_DEVICE).strip().lower()
+    if device not in {"auto", "cpu", "gpu", "cuda"}:
+        raise ValueError("PREPARADOR_OCR_DEVICE deve ser auto, cpu, gpu ou cuda.")
+    return device
+
+
+def ocr_allow_model_download_from_environment() -> bool:
+    return _boolean_from_environment("PREPARADOR_OCR_ALLOW_MODEL_DOWNLOAD", False)
+
+
+def ocr_cache_dir_from_environment() -> Path:
+    return Path(os.getenv("PREPARADOR_OCR_CACHE_DIR", DEFAULT_OCR_CACHE_DIR))
+
+
+def easyocr_model_dir_from_environment() -> str | None:
+    return _optional_environment_value("PREPARADOR_EASYOCR_MODEL_DIR")
+
+
+def easyocr_module_dir_from_environment() -> str | None:
+    return _optional_environment_value("PREPARADOR_EASYOCR_MODULE_DIR")
+
+
+def easyocr_batch_size_from_environment() -> int:
+    return max(
+        1,
+        int(
+            os.getenv(
+                "PREPARADOR_EASYOCR_BATCH_SIZE",
+                str(DEFAULT_EASYOCR_BATCH_SIZE),
+            )
+        ),
+    )
+
+
 def embedding_batch_size_from_environment() -> int:
     return max(
         1,
@@ -96,3 +142,20 @@ def max_upload_bytes_from_environment() -> int:
         int(os.getenv("PREPARADOR_MAX_UPLOAD_MB", str(DEFAULT_MAX_UPLOAD_MB))),
     )
     return max_upload_mb * 1024 * 1024
+
+
+def _optional_environment_value(name: str) -> str | None:
+    value = os.getenv(name, "").strip()
+    return value or None
+
+
+def _boolean_from_environment(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "sim", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "nao", "no", "off"}:
+        return False
+    raise ValueError(f"{name} deve ser true ou false.")

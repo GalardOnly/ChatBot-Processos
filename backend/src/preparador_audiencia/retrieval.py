@@ -139,6 +139,11 @@ def search_process_queries_configured(
             document_type=result.document_type,
             score=round(score / maximum_score, 4),
             source_confidence=result.source_confidence,
+            ocr_engine=result.ocr_engine,
+            ocr_engine_version=result.ocr_engine_version,
+            ocr_device=result.ocr_device,
+            ocr_cache_hit=result.ocr_cache_hit,
+            ocr_fallback_used=result.ocr_fallback_used,
         )
         for result, score in ranked[:top_k]
     ]
@@ -183,7 +188,9 @@ def search_process_pattern_anchors(
     try:
         rows = connection.execute(
             """
-            SELECT page_number, chunk_index, text, document_type, source_confidence
+            SELECT page_number, chunk_index, text, document_type, source_confidence,
+                   ocr_engine, ocr_engine_version, ocr_device,
+                   ocr_cache_hit, ocr_fallback_used
             FROM chunks
             WHERE processo_id = ?
             ORDER BY page_number, chunk_index
@@ -224,6 +231,11 @@ def search_process_pattern_anchors(
                         document_type=candidate["document_type"],
                         score=round(1.0 / (len(results) + 1), 4),
                         source_confidence=str(candidate["source_confidence"]),
+                        ocr_engine=candidate["ocr_engine"],
+                        ocr_engine_version=candidate["ocr_engine_version"],
+                        ocr_device=candidate["ocr_device"],
+                        ocr_cache_hit=bool(candidate["ocr_cache_hit"]),
+                        ocr_fallback_used=bool(candidate["ocr_fallback_used"]),
                     )
                 )
                 if len(results) >= top_k:
@@ -289,6 +301,11 @@ def _fuse_ranked_results(
             document_type=result.document_type,
             score=round(score / maximum_score, 4),
             source_confidence=result.source_confidence,
+            ocr_engine=result.ocr_engine,
+            ocr_engine_version=result.ocr_engine_version,
+            ocr_device=result.ocr_device,
+            ocr_cache_hit=result.ocr_cache_hit,
+            ocr_fallback_used=result.ocr_fallback_used,
         )
         for result, score in ranked[:top_k]
     ]

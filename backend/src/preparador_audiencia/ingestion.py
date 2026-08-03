@@ -41,7 +41,10 @@ def create_processo_from_pdf(
     initialize_database(connection)
     processos = ProcessoRepository(connection)
     reusable = processos.find_reusable_by_sha256(digest)
-    if reusable is not None and Path(reusable.file_path).is_file():
+    if reusable is not None and resolve_process_file_path(
+        reusable.file_path,
+        resolved_storage_dir,
+    ).is_file():
         return ProcessSubmission(
             processo_id=reusable.id,
             status=reusable.status,
@@ -81,7 +84,10 @@ def create_processo_from_staged_pdf(
     initialize_database(connection)
     processos = ProcessoRepository(connection)
     reusable = processos.find_reusable_by_sha256(sha256_digest)
-    if reusable is not None and Path(reusable.file_path).is_file():
+    if reusable is not None and resolve_process_file_path(
+        reusable.file_path,
+        resolved_storage_dir,
+    ).is_file():
         staged_path.unlink(missing_ok=True)
         return ProcessSubmission(
             processo_id=reusable.id,
@@ -128,7 +134,7 @@ def _process_pdf_exclusively(processo_id: str) -> None:
     try:
         processos.mark_processing(processo_id)
         report = extract_pdf_report(
-            processo.file_path,
+            resolve_process_file_path(processo.file_path),
             ocr_zoom=ocr_zoom_from_environment(),
             ocr_workers=ocr_workers_from_environment(),
             progress_callback=lambda current, total: _report_extraction_progress(
@@ -226,3 +232,17 @@ def _report_index_progress(
 def _safe_filename(filename: str) -> str:
     cleaned = Path(filename).name.strip().replace("\\", "-").replace("/", "-")
     return cleaned or "processo.pdf"
+
+
+def resolve_process_file_path(
+    file_path: str | Path,
+    storage_dir: Path | None = None,
+) -> Path:
+    stored_path = Path(file_path)
+    if stored_path.is_absolute() or stored_path.is_file():
+        return stored_path
+    resolved_storage_dir = storage_dir or storage_dir_from_environment()
+    legacy_candidate = resolved_storage_dir / stored_path.name
+    if legacy_candidate.is_file():
+        return legacy_candidate
+    return stored_path

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
 
 import fitz
 
-from preparador_audiencia.ocr import OcrEngine, RapidOcrEngine, RapidOcrPool
+from preparador_audiencia.ocr import OcrEngine, OcrResult, get_configured_ocr_engine
 
 DEFAULT_SAMPLE_CHARS = 500
 LOW_TEXT_THRESHOLD = 80
@@ -38,6 +38,11 @@ class PageExtraction:
     is_probably_empty: bool
     quality_notes: list[str]
     source_confidence: str = "alta"
+    ocr_engine: str | None = None
+    ocr_engine_version: str | None = None
+    ocr_device: str | None = None
+    ocr_cache_hit: bool = False
+    ocr_fallback_used: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -91,46 +96,40 @@ def extract_pdf_report(
 
     pages: list[PageExtraction] = []
     resolved_ocr_engine: OcrEngine | None = ocr_engine
-    ocr_pool: RapidOcrPool | None = None
-    try:
-        with fitz.open(path) as document:
-            total_pages = document.page_count
-            if max_pages is not None:
-                total_pages = min(total_pages, max_pages)
-            batch_size = max(DEFAULT_OCR_BATCH_SIZE, max(1, ocr_workers) * 2)
+    with fitz.open(path) as document:
+        total_pages = document.page_count
+        if max_pages is not None:
+            total_pages = min(total_pages, max_pages)
+        batch_size = max(DEFAULT_OCR_BATCH_SIZE, max(1, ocr_workers) * 2)
 
-            for batch_start in range(0, total_pages, batch_size):
-                batch_end = min(batch_start + batch_size, total_pages)
-                drafts = [
-                    _create_page_draft(document[page_index], page_index, ocr_enabled)
-                    for page_index in range(batch_start, batch_end)
-                ]
-                has_ocr = any(draft.should_run_ocr for draft in drafts)
-                if has_ocr and resolved_ocr_engine is None and ocr_pool is None:
-                    if ocr_workers > 1:
-                        ocr_pool = RapidOcrPool(ocr_workers)
-                    else:
-                        resolved_ocr_engine = RapidOcrEngine()
+        for batch_start in range(0, total_pages, batch_size):
+            batch_end = min(batch_start + batch_size, total_pages)
+            drafts = [
+                _create_page_draft(document[page_index], page_index, ocr_enabled)
+                for page_index in range(batch_start, batch_end)
+            ]
+            has_ocr = any(draft.should_run_ocr for draft in drafts)
+            if has_ocr and resolved_ocr_engine is None:
+                resolved_ocr_engine = get_configured_ocr_engine()
 
-                ocr_texts = _extract_ocr_batch(
-                    drafts,
-                    resolved_ocr_engine,
-                    ocr_pool=ocr_pool,
-                    ocr_zoom=ocr_zoom,
-                )
-                for draft, ocr_text in zip(drafts, ocr_texts, strict=True):
-                    pages.append(
-                        _finish_page_extraction(
-                            draft,
-                            ocr_text=normalize_text(ocr_text),
-                            sample_chars=sample_chars,
-                        )
+            ocr_results = _extract_ocr_batch(
+                drafts,
+                resolved_ocr_engine,
+                ocr_zoom=ocr_zoom,
+            )
+            for draft, ocr_result in zip(drafts, ocr_results, strict=True):
+                pages.append(
+                    _finish_page_extraction(
+                        draft,
+                        ocr_result=replace(
+                            ocr_result,
+                            text=normalize_text(ocr_result.text),
+                        ),
+                        sample_chars=sample_chars,
                     )
-                    if progress_callback is not None:
-                        progress_callback(len(pages), total_pages)
-    finally:
-        if ocr_pool is not None:
-            ocr_pool.close()
+                )
+                if progress_callback is not None:
+                    progress_callback(len(pages), total_pages)
 
     return PdfExtractionReport(
         file_name=path.name,
@@ -167,40 +166,51 @@ def _extract_ocr_batch(
     drafts: list[_PageDraft],
     ocr_engine: OcrEngine | None,
     *,
-    ocr_pool: RapidOcrPool | None,
     ocr_zoom: float,
-) -> list[str]:
-    texts = [""] * len(drafts)
+) -> list[OcrResult]:
+    results = [_empty_ocr_result() for _draft in drafts]
     candidates = [
         (index, draft)
         for index, draft in enumerate(drafts)
         if draft.should_run_ocr
     ]
     if not candidates:
-        return texts
-
-    if ocr_pool is not None:
-        images = [
-            RapidOcrEngine.render_page_image(draft.page, ocr_zoom)
-            for _index, draft in candidates
-        ]
-        results = ocr_pool.extract_images(images)
-        for (index, _draft), result in zip(candidates, results, strict=True):
-            texts[index] = result
-        return texts
+        return results
 
     if ocr_engine is not None:
+        extract_pages = getattr(ocr_engine, "extract_pages", None)
+        if callable(extract_pages):
+            batch_results = extract_pages(
+                [draft.page for _index, draft in candidates],
+                ocr_zoom,
+            )
+            if len(batch_results) != len(candidates):
+                raise RuntimeError("Motor OCR devolveu quantidade inesperada de paginas.")
+            for (index, _draft), result in zip(candidates, batch_results, strict=True):
+                results[index] = result
+            return results
         for index, draft in candidates:
-            texts[index] = ocr_engine.extract_page_text(draft.page, zoom=ocr_zoom)
-    return texts
+            text = ocr_engine.extract_page_text(draft.page, zoom=ocr_zoom)
+            results[index] = OcrResult(
+                text=text,
+                engine=str(
+                    getattr(ocr_engine, "name", ocr_engine.__class__.__name__.lower())
+                ),
+                engine_version=_optional_text(
+                    getattr(ocr_engine, "engine_version", None)
+                ),
+                device=_optional_text(getattr(ocr_engine, "device", None)),
+            )
+    return results
 
 
 def _finish_page_extraction(
     draft: _PageDraft,
     *,
-    ocr_text: str,
+    ocr_result: OcrResult,
     sample_chars: int,
 ) -> PageExtraction:
+    ocr_text = ocr_result.text
     ocr_replaced_native = _should_prefer_ocr_text(draft, ocr_text)
     text = (
         ocr_text
@@ -237,8 +247,14 @@ def _finish_page_extraction(
             source_confidence=source_confidence,
             native_layout_issue=draft.native_layout_issue,
             ocr_replaced_native=ocr_replaced_native,
+            ocr_result=ocr_result,
         ),
         source_confidence=source_confidence,
+        ocr_engine=ocr_result.engine,
+        ocr_engine_version=ocr_result.engine_version,
+        ocr_device=ocr_result.device,
+        ocr_cache_hit=ocr_result.cache_hit,
+        ocr_fallback_used=ocr_result.fallback_used,
     )
 
 
@@ -260,6 +276,7 @@ def _quality_notes(
     source_confidence: str = "alta",
     native_layout_issue: bool = False,
     ocr_replaced_native: bool = False,
+    ocr_result: OcrResult | None = None,
 ) -> list[str]:
     notes: list[str] = []
     if native_layout_issue:
@@ -274,6 +291,12 @@ def _quality_notes(
             notes.append("ocr_sem_texto")
         if ocr_replaced_native:
             notes.append("ocr_substituiu_texto_nativo_inadequado")
+        if ocr_result is not None and ocr_result.engine:
+            notes.append(f"ocr_motor_{ocr_result.engine}")
+        if ocr_result is not None and ocr_result.cache_hit:
+            notes.append("ocr_resultado_reutilizado_do_cache")
+        if ocr_result is not None and ocr_result.fallback_used:
+            notes.append("ocr_fallback_rapidocr")
         notes.append(f"confianca_{source_confidence}")
 
     text = native_text
@@ -372,3 +395,14 @@ def _is_substantial_ocr(ocr_text: str) -> bool:
         len(ocr_text) >= OCR_MIN_REVIEW_CHARS
         and len(ocr_text.split()) >= OCR_MIN_REVIEW_WORDS
     )
+
+
+def _empty_ocr_result() -> OcrResult:
+    return OcrResult(text="", engine=None, engine_version=None, device=None)
+
+
+def _optional_text(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None

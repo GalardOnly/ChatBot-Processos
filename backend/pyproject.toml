@@ -32,6 +32,9 @@ models = [
     "torch",
     "transformers>=4.43",
 ]
+ocr-easy = [
+    "easyocr>=1.7.2",
+]
 
 [project.scripts]
 extrair-pdf-processo = "preparador_audiencia.cli:main"

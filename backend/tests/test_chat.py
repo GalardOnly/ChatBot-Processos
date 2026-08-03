@@ -6,6 +6,7 @@ from preparador_audiencia.chat import (
     LOW_CONFIDENCE_OCR_ANSWER,
     NO_SOURCES_ANSWER,
     answer_process_question,
+    sources_to_schema,
 )
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.llm import LLMAnswer
@@ -49,6 +50,29 @@ def fake_sources() -> list[SearchResult]:
             score=0.91,
         )
     ]
+
+
+def test_sources_to_schema_exposes_ocr_provenance() -> None:
+    source = SearchResult(
+        text="Trecho reconhecido",
+        page_number=3,
+        chunk_index=1,
+        document_type="depoimento",
+        score=0.8,
+        ocr_engine="rapidocr",
+        ocr_engine_version="1.4.4",
+        ocr_device="cpu",
+        ocr_cache_hit=True,
+        ocr_fallback_used=True,
+    )
+
+    serialized = sources_to_schema([source])[0]
+
+    assert serialized.motor_ocr == "rapidocr"
+    assert serialized.versao_ocr == "1.4.4"
+    assert serialized.dispositivo_ocr == "cpu"
+    assert serialized.cache_ocr is True
+    assert serialized.fallback_ocr is True
 
 
 def test_answer_process_question_uses_primary_model_and_records_history(

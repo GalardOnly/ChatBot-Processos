@@ -54,9 +54,9 @@ usaram as mesmas seis paginas e o mesmo gabarito corrigido.
 
 | Configuracao | Recall | Paginas coladas | Tempo |
 | --- | ---: | ---: | ---: |
-| RapidOCR zoom 1,5 | 27,8% | 6 de 6 | 44,7 s |
-| RapidOCR zoom 3,0 | 33,3% | 5 de 6 | 53,0 s |
-| EasyOCR em GPU | 100,0% | 0 de 6 | 60,4 s |
+| RapidOCR zoom 1,5 | 27,8% | 6 de 6 | 45,7 s |
+| RapidOCR zoom 3,0 | 33,3% | 5 de 6 | 62,8 s |
+| EasyOCR em GPU | 100,0% | 0 de 6 | 45,4 s |
 
 O RapidOCR continuou insuficiente para transcricao integral. O EasyOCR encontrou
 as 18 frases verificadas, nao gerou paginas classificadas com palavras coladas e
@@ -72,7 +72,14 @@ recall para 100% sem alterar os textos esperados.
 
 O ambiente isolado usou EasyOCR 1.7.2, PyTorch 2.11, torchvision 0.26 e CUDA. A
 versao do torchvision foi alinhada com a matriz oficial de compatibilidade do
-PyTorch. Esses pacotes e pesos continuam fora das dependencias de producao.
+PyTorch. O EasyOCR passou a ser uma dependencia opcional do projeto; os pesos
+continuam fora do Git e devem ser preparados no ambiente de execucao.
+
+Depois da integracao, o mesmo conjunto foi medido pelo gerenciador usado na
+producao. O processamento sequencial na GPU levou 40,8 segundos na primeira
+execucao e 1,65 segundo na segunda, com as seis paginas recuperadas do cache.
+Uma tentativa de lote com duas imagens levou 136,8 segundos e foi descartada
+como padrao por ser mais lenta neste hardware.
 
 Referencias dos motores avaliados:
 
@@ -121,13 +128,12 @@ modelo dominam o tempo total.
 
 ## Decisao desta etapa
 
-O EasyOCR venceu esta comparacao e passa a ser o candidato para substituir ou
-complementar o RapidOCR. O pipeline de producao ainda continua com a politica
-conservadora atual: paginas com OCR colado recebem confianca baixa e nao sustentam
-sozinhas transcricoes ou conclusoes.
+O EasyOCR venceu a comparacao e foi integrado como motor principal das paginas
+escaneadas. O RapidOCR permanece como fallback por pagina. A politica
+conservadora continua valida: paginas com OCR colado recebem confianca baixa e
+nao sustentam sozinhas transcricoes ou conclusoes.
 
-O gate automatizado ficou bloqueado somente porque o gabarito ainda nao possui
-aprovacao humana. Os proximos requisitos sao confirmar as 18 frases com uma
-pessoa e repetir a avaliacao em outro processo, com outros layouts e depoimentos.
-Se o ganho se mantiver, o EasyOCR pode entrar como recuperacao preferencial das
-paginas escaneadas e o dossie deve ser reavaliado com os novos textos.
+O gabarito humano das 18 frases esta aprovado e o primeiro gate passou. O
+proximo requisito de qualidade e repetir a avaliacao em outro processo, com
+outros layouts e depoimentos. Isso nao bloqueia a integracao tecnica, mas
+bloqueia afirmar que o resultado ja generaliza para todos os formatos.

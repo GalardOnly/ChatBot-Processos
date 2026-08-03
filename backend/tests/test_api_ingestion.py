@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from preparador_audiencia.chat import ChatResult
 from preparador_audiencia.database import connect_database, initialize_database
+from preparador_audiencia.ingestion import resolve_process_file_path
 from preparador_audiencia.main import app
 from preparador_audiencia.quality import LegalQualityEvaluation
 from preparador_audiencia.search import SearchResult
@@ -17,6 +18,20 @@ def create_pdf_bytes() -> bytes:
     payload = document.tobytes()
     document.close()
     return payload
+
+
+def test_resolve_process_file_path_supports_legacy_relative_storage(tmp_path) -> None:
+    storage_dir = tmp_path / "storage"
+    storage_dir.mkdir()
+    expected = storage_dir / "proc_123-processo.pdf"
+    expected.write_bytes(create_pdf_bytes())
+
+    resolved = resolve_process_file_path(
+        "storage/proc_123-processo.pdf",
+        storage_dir,
+    )
+
+    assert resolved == expected
 
 
 def test_upload_processes_pdf_and_status_returns_completed(tmp_path, monkeypatch) -> None:

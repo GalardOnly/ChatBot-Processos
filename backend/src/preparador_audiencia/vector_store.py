@@ -22,6 +22,11 @@ class VectorSearchResult:
     distance: float
     score: float
     source_confidence: str = "desconhecida"
+    ocr_engine: str | None = None
+    ocr_engine_version: str | None = None
+    ocr_device: str | None = None
+    ocr_cache_hit: bool = False
+    ocr_fallback_used: bool = False
 
 
 class ChromaVectorStore:
@@ -112,6 +117,15 @@ class ChromaVectorStore:
                     source_confidence=str(
                         typed_metadata.get("source_confidence") or "desconhecida"
                     ),
+                    ocr_engine=_optional_text(typed_metadata.get("ocr_engine")),
+                    ocr_engine_version=_optional_text(
+                        typed_metadata.get("ocr_engine_version")
+                    ),
+                    ocr_device=_optional_text(typed_metadata.get("ocr_device")),
+                    ocr_cache_hit=bool(typed_metadata.get("ocr_cache_hit", False)),
+                    ocr_fallback_used=bool(
+                        typed_metadata.get("ocr_fallback_used", False)
+                    ),
                 )
             )
         return hits
@@ -128,6 +142,11 @@ def _metadata_for_chunk(processo_id: str, chunk: ChunkRecord) -> dict[str, Any]:
         "chunk_index": chunk.chunk_index,
         "document_type": chunk.document_type or "",
         "source_confidence": chunk.source_confidence,
+        "ocr_engine": chunk.ocr_engine or "",
+        "ocr_engine_version": chunk.ocr_engine_version or "",
+        "ocr_device": chunk.ocr_device or "",
+        "ocr_cache_hit": chunk.ocr_cache_hit,
+        "ocr_fallback_used": chunk.ocr_fallback_used,
     }
 
 

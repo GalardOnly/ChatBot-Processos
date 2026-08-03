@@ -19,6 +19,11 @@ class SearchResult:
     document_type: str | None
     score: float
     source_confidence: str = "alta"
+    ocr_engine: str | None = None
+    ocr_engine_version: str | None = None
+    ocr_device: str | None = None
+    ocr_cache_hit: bool = False
+    ocr_fallback_used: bool = False
 
 
 def index_process_chunks(
@@ -73,4 +78,9 @@ def _result_from_hit(hit: VectorSearchResult) -> SearchResult:
         document_type=hit.document_type,
         score=hit.score,
         source_confidence=hit.source_confidence,
+        ocr_engine=hit.ocr_engine,
+        ocr_engine_version=hit.ocr_engine_version,
+        ocr_device=hit.ocr_device,
+        ocr_cache_hit=hit.ocr_cache_hit,
+        ocr_fallback_used=hit.ocr_fallback_used,
     )

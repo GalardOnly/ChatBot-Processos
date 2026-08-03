@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import argparse
-from collections.abc import Sequence
-from io import BytesIO
 from pathlib import Path
 
-from preparador_audiencia.ocr import RapidOcrEngine
+from preparador_audiencia.ocr import (
+    EasyOcrEngine,
+    RapidOcrEngine,
+    easyocr_text_without_marginal_artifacts,
+)
 from preparador_audiencia.ocr_benchmark import (
     OcrBenchmarkEngineSpec,
     load_ocr_benchmark_suite,
@@ -13,8 +15,7 @@ from preparador_audiencia.ocr_benchmark import (
     write_ocr_benchmark_report,
 )
 
-EasyOcrBox = Sequence[Sequence[float]]
-EasyOcrResult = tuple[EasyOcrBox, str, float]
+_easyocr_text_without_marginal_artifacts = easyocr_text_without_marginal_artifacts
 
 
 class RapidOcrBenchmarkAdapter:
@@ -34,50 +35,14 @@ class EasyOcrBenchmarkAdapter:
         allow_model_download: bool,
         model_dir: str | None,
     ) -> None:
-        try:
-            import easyocr
-            import numpy as np
-            from PIL import Image
-        except ImportError as exc:
-            raise RuntimeError(
-                "EasyOCR nao esta instalado no ambiente do benchmark."
-            ) from exc
-
-        self._np = np
-        self._image_type = Image
-        self._reader = easyocr.Reader(
-            ["pt", "en"],
-            gpu=gpu,
-            model_storage_directory=model_dir,
-            download_enabled=allow_model_download,
-            verbose=False,
+        self.engine = EasyOcrEngine(
+            device="gpu" if gpu else "cpu",
+            allow_model_download=allow_model_download,
+            model_dir=model_dir,
         )
 
     def extract_page_text(self, page) -> str:
-        image_bytes = RapidOcrEngine.render_page_image(page, zoom=3.0)
-        image = self._image_type.open(BytesIO(image_bytes)).convert("RGB")
-        results = self._reader.readtext(
-            self._np.asarray(image),
-            detail=1,
-            paragraph=False,
-        )
-        return _easyocr_text_without_marginal_artifacts(results, image.width)
-
-
-def _easyocr_text_without_marginal_artifacts(
-    results: Sequence[EasyOcrResult],
-    image_width: int,
-) -> str:
-    readable: list[str] = []
-    left_limit = image_width * 0.05
-    right_limit = image_width * 0.95
-    for box, text, _confidence in results:
-        center_x = sum(float(point[0]) for point in box) / len(box)
-        if center_x <= left_limit or center_x >= right_limit:
-            continue
-        if text.strip():
-            readable.append(text)
-    return "\n".join(readable)
+        return self.engine.extract_page_text(page, zoom=3.0)
 
 
 def main() -> None:

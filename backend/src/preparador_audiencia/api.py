@@ -10,7 +10,11 @@ from fastapi.responses import JSONResponse
 
 from preparador_audiencia.chat import answer_process_question, sources_to_schema
 from preparador_audiencia.database import connect_database, initialize_database
-from preparador_audiencia.ingestion import create_processo_from_staged_pdf, process_pdf
+from preparador_audiencia.ingestion import (
+    create_processo_from_staged_pdf,
+    process_pdf,
+    resolve_process_file_path,
+)
 from preparador_audiencia.lexical_search import search_process_lexical
 from preparador_audiencia.nullity_analysis import analyze_recognition_nullity
 from preparador_audiencia.question_bank import list_question_templates
@@ -223,7 +227,7 @@ def reprocess_process(
             "process_already_running",
             "O processo ja esta na fila ou em processamento.",
         )
-    if not Path(processo.file_path).is_file():
+    if not resolve_process_file_path(processo.file_path).is_file():
         return error_response(
             409,
             "source_file_missing",

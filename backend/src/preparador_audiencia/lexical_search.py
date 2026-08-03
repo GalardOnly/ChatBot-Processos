@@ -93,6 +93,8 @@ def search_persisted_lexical(
         f"""
         SELECT chunks.text, chunks.page_number, chunks.chunk_index,
                chunks.document_type, chunks.source_confidence,
+               chunks.ocr_engine, chunks.ocr_engine_version, chunks.ocr_device,
+               chunks.ocr_cache_hit, chunks.ocr_fallback_used,
                bm25({table_name}) AS lexical_rank
         FROM {table_name}
         JOIN chunks ON chunks.id = {table_name}.rowid
@@ -110,6 +112,11 @@ def search_persisted_lexical(
             document_type=row["document_type"],
             score=round(1.0 / rank, 4),
             source_confidence=str(row["source_confidence"]),
+            ocr_engine=row["ocr_engine"],
+            ocr_engine_version=row["ocr_engine_version"],
+            ocr_device=row["ocr_device"],
+            ocr_cache_hit=bool(row["ocr_cache_hit"]),
+            ocr_fallback_used=bool(row["ocr_fallback_used"]),
         )
         for rank, row in enumerate(rows, start=1)
     ]
@@ -160,6 +167,11 @@ def search_chunks_lexical(
                 document_type=chunk.document_type,
                 score=round(1.0 / rank, 4),
                 source_confidence=chunk.source_confidence,
+                ocr_engine=chunk.ocr_engine,
+                ocr_engine_version=chunk.ocr_engine_version,
+                ocr_device=chunk.ocr_device,
+                ocr_cache_hit=chunk.ocr_cache_hit,
+                ocr_fallback_used=chunk.ocr_fallback_used,
             )
         )
     return results

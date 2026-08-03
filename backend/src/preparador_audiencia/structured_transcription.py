@@ -53,6 +53,11 @@ class _PageText:
     text: str
     source_confidence: str
     has_glued_words: bool
+    ocr_engine: str | None
+    ocr_engine_version: str | None
+    ocr_device: str | None
+    ocr_cache_hit: bool
+    ocr_fallback_used: bool
 
 
 @dataclass(frozen=True)
@@ -149,6 +154,13 @@ def _reconstruct_pages(chunks: list[ChunkRecord]) -> dict[int, _PageText]:
             text=text,
             source_confidence=confidence,
             has_glued_words=_has_glued_layout(text),
+            ocr_engine=_first_text([chunk.ocr_engine for chunk in ordered]),
+            ocr_engine_version=_first_text(
+                [chunk.ocr_engine_version for chunk in ordered]
+            ),
+            ocr_device=_first_text([chunk.ocr_device for chunk in ordered]),
+            ocr_cache_hit=any(chunk.ocr_cache_hit for chunk in ordered),
+            ocr_fallback_used=any(chunk.ocr_fallback_used for chunk in ordered),
         )
     return pages
 
@@ -352,6 +364,11 @@ def _build_testimony(
                 "texto": page.text,
                 "confianca_fonte": page.source_confidence,
                 "palavras_coladas": page.has_glued_words,
+                "motor_ocr": page.ocr_engine,
+                "versao_ocr": page.ocr_engine_version,
+                "dispositivo_ocr": page.ocr_device,
+                "cache_ocr": page.ocr_cache_hit,
+                "fallback_ocr": page.ocr_fallback_used,
             }
             for page in pages
         ],
@@ -453,7 +470,12 @@ def _has_form_context(compact: str) -> bool:
 
 
 def _has_heading_marker(text: str, markers: tuple[str, ...]) -> bool:
-    for line in text.splitlines():
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    candidates = [
+        *lines,
+        *(f"{left} {right}" for left, right in zip(lines, lines[1:], strict=False)),
+    ]
+    for line in candidates:
         compact_line = _compact(line)
         if not any(marker in compact_line for marker in markers):
             continue
@@ -507,3 +529,7 @@ def _compact(text: str) -> str:
 
 def _unique(values: list[str]) -> list[str]:
     return list(dict.fromkeys(value for value in values if value))
+
+
+def _first_text(values: list[str | None]) -> str | None:
+    return next((value for value in values if value), None)

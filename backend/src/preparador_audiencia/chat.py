@@ -267,6 +267,11 @@ def _retrieved_chunks(sources: list[SearchResult]) -> list[dict[str, object]]:
             "tipo_documento": source.document_type,
             "score": source.score,
             "confianca_fonte": source.source_confidence,
+            "motor_ocr": source.ocr_engine,
+            "versao_ocr": source.ocr_engine_version,
+            "dispositivo_ocr": source.ocr_device,
+            "cache_ocr": source.ocr_cache_hit,
+            "fallback_ocr": source.ocr_fallback_used,
         }
         for source in sources
     ]
@@ -281,6 +286,11 @@ def sources_to_schema(sources: list[SearchResult]) -> list[SearchSource]:
             score=source.score,
             trecho=source.text,
             confianca_fonte=source.source_confidence,
+            motor_ocr=source.ocr_engine,
+            versao_ocr=source.ocr_engine_version,
+            dispositivo_ocr=source.ocr_device,
+            cache_ocr=source.ocr_cache_hit,
+            fallback_ocr=source.ocr_fallback_used,
         )
         for source in sources
     ]

@@ -42,6 +42,11 @@ class ChunkRecord:
     source_confidence: str
     vector_id: str | None
     created_at: str
+    ocr_engine: str | None = None
+    ocr_engine_version: str | None = None
+    ocr_device: str | None = None
+    ocr_cache_hit: bool = False
+    ocr_fallback_used: bool = False
 
 
 @dataclass(frozen=True)
@@ -94,6 +99,11 @@ def _chunk_from_row(row: sqlite3.Row) -> ChunkRecord:
         source_confidence=str(row["source_confidence"]),
         vector_id=row["vector_id"],
         created_at=str(row["created_at"]),
+        ocr_engine=row["ocr_engine"],
+        ocr_engine_version=row["ocr_engine_version"],
+        ocr_device=row["ocr_device"],
+        ocr_cache_hit=bool(row["ocr_cache_hit"]),
+        ocr_fallback_used=bool(row["ocr_fallback_used"]),
     )
 
 
@@ -308,9 +318,10 @@ class ChunkRepository:
             """
             INSERT INTO chunks (
                 processo_id, page_number, chunk_index, text, document_type,
-                source_confidence, vector_id, created_at
+                source_confidence, ocr_engine, ocr_engine_version, ocr_device,
+                ocr_cache_hit, ocr_fallback_used, vector_id, created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, NULL, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)
             """,
             [
                 (
@@ -320,6 +331,11 @@ class ChunkRepository:
                     chunk.text,
                     chunk.document_type,
                     chunk.source_confidence,
+                    chunk.ocr_engine,
+                    chunk.ocr_engine_version,
+                    chunk.ocr_device,
+                    int(chunk.ocr_cache_hit),
+                    int(chunk.ocr_fallback_used),
                     now,
                 )
                 for chunk in chunks

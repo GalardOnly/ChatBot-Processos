@@ -15,6 +15,11 @@ class TextChunk:
     text: str
     document_type: str | None = None
     source_confidence: str = "alta"
+    ocr_engine: str | None = None
+    ocr_engine_version: str | None = None
+    ocr_device: str | None = None
+    ocr_cache_hit: bool = False
+    ocr_fallback_used: bool = False
 
 
 def chunk_extracted_pages(
@@ -36,6 +41,11 @@ def chunk_extracted_pages(
                     text=chunk_text,
                     document_type=detect_document_type(chunk_text),
                     source_confidence=page.source_confidence,
+                    ocr_engine=page.ocr_engine,
+                    ocr_engine_version=page.ocr_engine_version,
+                    ocr_device=page.ocr_device,
+                    ocr_cache_hit=page.ocr_cache_hit,
+                    ocr_fallback_used=page.ocr_fallback_used,
                 )
             )
     return chunks

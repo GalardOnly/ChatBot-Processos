@@ -80,6 +80,20 @@ def test_marks_glued_ocr_for_review_without_rewriting_text() -> None:
     assert glued in testimony["texto_consolidado"]
 
 
+def test_recognizes_declaration_heading_split_by_ocr_line_break() -> None:
+    text = (
+        "POLICIA CIVIL\nTERMO DE\nDECLARACOES EM AUTO DE PRISAO EM FLAGRANTE "
+        "QUE PRESTA A VITIMA: ANA SOUZA\nINQUERITO 9\n"
+        "A declarante confirmou os fatos. Nada mais declarou. Pag. 1 de 1"
+    )
+
+    result = build_structured_transcription([_chunk(5, 0, text)])
+
+    assert len(result.testimonies) == 1
+    assert result.testimonies[0]["tipo_documento"] == "declaracoes_vitima"
+    assert result.testimonies[0]["pessoa"] == "ANA SOUZA"
+
+
 def test_does_not_claim_integral_coverage_without_formal_ending() -> None:
     text = (
         "TERMO DE INTERROGATORIO DO INFRATOR: JOAO PEREIRA\n"

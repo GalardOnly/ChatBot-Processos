@@ -81,6 +81,11 @@ class SearchSource(BaseModel):
     score: float
     trecho: str
     confianca_fonte: str = "alta"
+    motor_ocr: str | None = None
+    versao_ocr: str | None = None
+    dispositivo_ocr: str | None = None
+    cache_ocr: bool = False
+    fallback_ocr: bool = False
 
 
 class SearchResponse(BaseModel):
@@ -286,6 +291,11 @@ class TranscriptionPageResponse(BaseModel):
     texto: str
     confianca_fonte: str
     palavras_coladas: bool
+    motor_ocr: str | None = None
+    versao_ocr: str | None = None
+    dispositivo_ocr: str | None = None
+    cache_ocr: bool = False
+    fallback_ocr: bool = False
 
 
 class StructuredTestimonyResponse(BaseModel):
