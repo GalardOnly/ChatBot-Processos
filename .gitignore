@@ -12,6 +12,7 @@ build/
 chroma/
 reports/
 logs/
+tmp/
 samples/publicos/
 samples/benchmark/
 samples/anonimizados/
