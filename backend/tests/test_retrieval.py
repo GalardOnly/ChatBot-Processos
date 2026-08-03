@@ -1,6 +1,9 @@
+from preparador_audiencia.database import connect_database, initialize_database
+from preparador_audiencia.repositories import ProcessoRepository, utc_now_text
 from preparador_audiencia.retrieval import (
     index_process_chunks_configured,
     search_process_configured,
+    search_process_pattern_anchors,
     search_process_queries_configured,
 )
 from preparador_audiencia.search import SearchResult
@@ -186,3 +189,51 @@ def test_search_process_queries_includes_routed_exact_result(
     )
 
     assert 22 in [result.page_number for result in results]
+
+
+def test_pattern_anchors_find_markers_when_pdf_text_has_no_spaces(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    database_path = tmp_path / "test.sqlite3"
+    connection = connect_database(database_path)
+    initialize_database(connection)
+    ProcessoRepository(connection).create_pending(
+        "proc_123",
+        "processo.pdf",
+        "storage/processo.pdf",
+        "abc",
+    )
+    now = utc_now_text()
+    connection.executemany(
+        """
+        INSERT INTO chunks (
+            processo_id, page_number, chunk_index, text, document_type,
+            source_confidence, vector_id, created_at
+        ) VALUES (?, ?, ?, ?, NULL, 'alta', NULL, ?)
+        """,
+        [
+            (
+                "proc_123",
+                5,
+                0,
+                "TERMODEDECLARACOESEMAUTODEPRISAOQUEPRESTAAVITIMA",
+                now,
+            ),
+            ("proc_123", 5, 1, "QUEavitimarelatouosfatos", now),
+        ],
+    )
+    connection.commit()
+    connection.close()
+    monkeypatch.setenv("PREPARADOR_DATABASE_PATH", str(database_path))
+
+    results = search_process_pattern_anchors(
+        "proc_123",
+        (("termo de declaracoes", 1),),
+        top_k=4,
+    )
+
+    assert [(result.page_number, result.chunk_index) for result in results] == [
+        (5, 0),
+        (5, 1),
+    ]

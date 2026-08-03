@@ -566,6 +566,13 @@ As decisoes ainda sem evidencia suficiente sao a utilidade real da preparacao gu
 - **Alternativa**: depender apenas do limite local configuravel e do semaforo local. Isso limita um processo por instancia, mas permite fila ilimitada e nao funciona entre replicas.
 - **Acao**: no piloto, usar contador compartilhado em Redis ou gateway, nunca apenas memoria do processo. Baseline inicial: upload com tres requisicoes por minuto por usuario e dez por hora por organizacao; no maximo um processamento ativo por usuario e tres por organizacao; chat com 30 requisicoes por minuto por usuario e 120 por organizacao. Excedentes retornam `429` com `Retry-After`, sem ler o arquivo inteiro nem iniciar background task. A fila deve ser limitada e observavel. Os valores so podem mudar com teste de carga e registro da decisao.
 
+### D67. Transformar a preparacao em dossie estruturado e persistente
+
+- **Razao**: o feedback de uso real mostrou que resumo, datas, transcricoes e contradicoes apareciam separados em ferramentas diferentes. As consultas independentes da interface tambem perdiam todo o resultado quando a sessao era encerrada.
+- **Avaliacao**: **fundacao implementada no backend**.
+- **Alternativa**: manter seis perguntas sequenciais no chat e guardar somente o texto no Streamlit. Essa opcao e simples, mas repete chamadas, dificulta a retomada e nao oferece um contrato confiavel para calculo de prescricao ou perguntas por depoente.
+- **Acao**: criar um dossie versionado com as secoes `marcos_essenciais`, `depoimentos` e `contradicoes`. Cada secao e salva separadamente no SQLite e uma nova tentativa processa apenas as que ainda nao terminaram. Datas e falas precisam coincidir literalmente com um chunk confiavel; paginas e indices sao derivados pelo servidor. Contradicoes sao sempre apresentadas como potenciais. A primeira entrega permanece apenas no backend para ser validada antes da nova interface.
+
 ## Decisoes que mudaram ao longo do projeto
 
 | Antes | Depois | Avaliacao |
@@ -601,7 +608,7 @@ Usar frontend dedicado, contratos de API versionados, limites de uso, monitorame
 3. Concluir ate `02/08/2026` a ablacao do ensemble e o primeiro corpus adversarial, mantendo ambos como gates de piloto.
 4. Corrigir a deduplicacao para que o reaproveitamento seja limitado por tenant e permissao.
 5. Implementar exclusao completa por processo, incluindo logs e traces, e definir retencao antes do segundo usuario real.
-6. Persistir a preparacao de audiencia por secao, com retomada, cache e retentativa idempotente, caso a validacao confirme o formato.
+6. **Concluido na fundacao do backend:** persistir marcos, depoimentos e contradicoes por secao, com cache e retomada apenas dos blocos incompletos.
 7. Implementar validacao de entrada do PDF e contrato de versao dos embeddings; calibrar confianca do OCR com paginas reais.
 8. Manter explicito que as perguntas sao independentes e somente implementar memoria multi-turno com contrato e testes proprios.
 9. Revisar e aprovar a suite multidominio, acrescentando respostas de referencia e cobertura de perguntas amplas.

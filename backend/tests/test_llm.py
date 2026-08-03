@@ -1,9 +1,11 @@
+import httpx
 import pytest
 
 from preparador_audiencia.llm import (
     GeminiChatClient,
     OpenAICompatibleChatClient,
     _safe_error,
+    _safe_http_error,
     _system_prompt,
     _user_prompt,
     llm_client_from_spec,
@@ -45,6 +47,28 @@ def test_safe_error_redacts_query_key_and_env_secret(monkeypatch) -> None:
 
     assert "secret-value" not in message
     assert "key=[REDACTED]" in message
+
+
+def test_safe_http_error_omits_url_key_and_organization_identifier() -> None:
+    request = httpx.Request("POST", "https://example.test/generate?key=secret-value")
+    response = httpx.Response(
+        429,
+        request=request,
+        json={
+            "error": {
+                "message": "Quota exceeded for organization org_123secret. Retry later."
+            }
+        },
+    )
+
+    message = _safe_http_error(
+        httpx.HTTPStatusError("erro com key=secret-value", request=request, response=response)
+    )
+
+    assert message == (
+        "HTTP 429: Quota exceeded for organization [ORGANIZACAO]. Retry later."
+    )
+    assert "secret-value" not in message
 
 
 def test_user_prompt_discourages_decorative_separators() -> None:

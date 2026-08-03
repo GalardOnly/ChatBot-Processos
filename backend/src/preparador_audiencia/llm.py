@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import time
@@ -236,5 +237,16 @@ def _safe_error(exc: Exception) -> str:
 
 
 def _safe_http_error(exc: httpx.HTTPStatusError) -> str:
-    body = exc.response.text[:500]
-    return _safe_error(RuntimeError(f"{exc}; body={body}"))
+    detail = "Falha na chamada ao provedor."
+    try:
+        payload = exc.response.json()
+        if isinstance(payload, dict):
+            error = payload.get("error", payload)
+            if isinstance(error, dict):
+                detail = str(error.get("message") or error.get("code") or detail)
+    except (json.JSONDecodeError, ValueError):
+        if exc.response.text.strip():
+            detail = exc.response.text.strip()
+    detail = re.sub(r"org_[A-Za-z0-9]+", "[ORGANIZACAO]", detail)
+    detail = " ".join(detail.split())[:400]
+    return _safe_error(RuntimeError(f"HTTP {exc.response.status_code}: {detail}"))

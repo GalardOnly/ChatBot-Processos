@@ -1,0 +1,1 @@
+"""Rotas especializadas da API."""

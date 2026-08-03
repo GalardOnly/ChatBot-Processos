@@ -8,7 +8,7 @@ Nesta versao inicial, o defensor envia o PDF completo do processo, o sistema ext
 
 O projeto esta em fase de Prova de Conceito. A intencao neste momento nao e entregar um produto final, mas validar se a ideia principal funciona na pratica: receber um processo real, extrair o texto com referencias de pagina, recuperar os trechos mais importantes e responder perguntas de forma util para a preparacao de audiencia.
 
-A PoC ja funciona localmente com upload de PDF, extracao de texto por pagina usando PyMuPDF, OCR para paginas escaneadas ou com pouco texto, divisao do conteudo em chunks, armazenamento local em SQLite, indexacao vetorial com ChromaDB, recuperacao semantica com ensemble juridico, chat com Gemini como modelo principal, Groq como fallback, triagem juridica interna das perguntas, interface simples em Streamlit e testes automatizados.
+A PoC ja funciona localmente com upload de PDF, extracao de texto por pagina usando PyMuPDF, OCR para paginas escaneadas ou com pouco texto, divisao do conteudo em chunks, armazenamento local em SQLite, indexacao vetorial com ChromaDB, recuperacao semantica com ensemble juridico, chat com Gemini como modelo principal, Groq como fallback, triagem juridica interna das perguntas, dossie persistente de preparacao da audiencia, interface simples em Streamlit e testes automatizados.
 
 Em um teste local com um PDF real de aproximadamente 14 MB, a aplicacao processou 105 paginas e gerou 149 chunks pesquisaveis.
 
@@ -66,6 +66,8 @@ backend/
     database.py
     embeddings.py
     ensemble.py
+    hearing_dossier.py
+    hearing_dossier_repository.py
     ingestion.py
     lexical_search.py
     llm.py
@@ -141,4 +143,4 @@ Esta PoC ainda nao e um produto pronto para producao. A interface ainda e simple
 
 ## Proximo passo
 
-O proximo passo recomendado e revisar com um profissional os dez casos da suite multidominio e acrescentar respostas de referencia. Depois disso, o benchmark deve avaliar as respostas geradas por fidelidade as fontes, completude, utilidade para audiencia e risco de alucinacao, sem usar a LLM como unica avaliadora.
+O proximo passo recomendado e executar o novo dossie em processos publicos ja usados na PoC e conferir se as datas, atribuicoes de fala e contradicoes correspondem as paginas. Depois dessa verificacao tecnica, a proxima secao do backend deve gerar perguntas por depoente, sempre vinculando pergunta, objetivo, contradicao explorada e fonte processual. O calculo de prescricao continua separado e devera ser deterministico, recebendo apenas marcos previamente confirmados.

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 ProcessStatus = Literal["pendente", "processando", "concluido", "erro"]
 SearchMode = Literal["indisponivel", "lexical", "hibrida"]
+DossierStatus = Literal["pendente", "processando", "parcial", "concluido", "erro"]
+DossierSectionStatus = Literal["pendente", "processando", "concluido", "erro"]
 
 
 class UploadResponse(BaseModel):
@@ -177,6 +179,101 @@ class NullityAnalysisResponse(BaseModel):
     versao_catalogo_juridico: str
     catalogo_verificado_em: str
     avisos: list[str]
+
+
+class HearingDossierGenerateRequest(BaseModel):
+    top_k: int = 18
+    regenerar: bool = False
+
+
+class DossierSourceResponse(BaseModel):
+    pagina: int
+    chunk_index: int
+    tipo_documento: str | None = None
+    confianca_fonte: str
+    trecho: str
+
+
+class DossierSectionBase(BaseModel):
+    status: DossierSectionStatus
+    modelo: str | None = None
+    fallback_usado: bool = False
+    recuperacao_ms: int | None = None
+    geracao_ms: int | None = None
+    erro: str | None = None
+    atualizado_em: str
+    avisos: list[str] = Field(default_factory=list)
+
+
+class DossierKeyEventResponse(BaseModel):
+    tipo: str
+    rotulo: str
+    valor: str
+    pessoa: str | None = None
+    descricao: str | None = None
+    fontes: list[DossierSourceResponse]
+
+
+class DossierMissingFieldResponse(BaseModel):
+    campo: str
+    rotulo: str
+    motivo: str
+
+
+class DossierKeyEventsSectionResponse(DossierSectionBase):
+    itens: list[DossierKeyEventResponse] = Field(default_factory=list)
+    campos_para_confirmar: list[DossierMissingFieldResponse] = Field(default_factory=list)
+
+
+class DossierTestimonyExcerptResponse(BaseModel):
+    texto: str
+    fonte: DossierSourceResponse
+
+
+class DossierTestimonyResponse(BaseModel):
+    pessoa: str
+    papel: str
+    fase: str
+    cobertura: Literal["parcial", "integral"]
+    trechos: list[DossierTestimonyExcerptResponse]
+
+
+class DossierTestimoniesSectionResponse(DossierSectionBase):
+    itens: list[DossierTestimonyResponse] = Field(default_factory=list)
+    lacunas: list[str] = Field(default_factory=list)
+
+
+class DossierClaimResponse(BaseModel):
+    texto: str
+    fonte: DossierSourceResponse
+
+
+class DossierContradictionResponse(BaseModel):
+    titulo: str
+    pessoa_a: str
+    afirmacao_a: DossierClaimResponse
+    pessoa_b: str
+    afirmacao_b: DossierClaimResponse
+    explicacao: str
+    relevancia_audiencia: str
+    estado: Literal["potencial"]
+
+
+class DossierContradictionsSectionResponse(DossierSectionBase):
+    itens: list[DossierContradictionResponse] = Field(default_factory=list)
+    lacunas: list[str] = Field(default_factory=list)
+
+
+class HearingDossierResponse(BaseModel):
+    processo_id: str
+    status: DossierStatus
+    versao: str
+    erro: str | None = None
+    criado_em: str
+    atualizado_em: str
+    marcos_essenciais: DossierKeyEventsSectionResponse
+    depoimentos: DossierTestimoniesSectionResponse
+    contradicoes: DossierContradictionsSectionResponse
 
 
 class ErrorResponse(BaseModel):

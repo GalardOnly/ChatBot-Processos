@@ -1,0 +1,88 @@
+Revisão humana do gabarito de OCR
+
+Processo usado
+0206109-40.2024.8.06.0300
+
+Objetivo
+Confirmar se cada frase abaixo aparece na página indicada do PDF. Não é preciso
+avaliar a conclusão jurídica nem o restante do depoimento. Basta conferir o
+texto visível no documento original.
+
+Como revisar
+Ao lado de cada frase, escreva CONFERE quando o texto estiver correto. Se houver
+diferença, escreva a forma exata que aparece no PDF. Maiúsculas e pontuação não
+precisam ser idênticas, mas as palavras e seu sentido precisam coincidir.
+
+Página 3 - Declaração inicial
+
+1. Termo de declaração
+Resultado:
+
+2. DISSE: QUE
+Resultado:
+
+3. ameaçando de matar
+Resultado:
+
+Página 5 - Declarações da vítima
+
+4. Termo de declarações em auto de prisão em flagrante
+Resultado:
+
+5. EU VOU TE MATAR!
+Resultado:
+
+6. VOCÊ VAI MORRER!
+Resultado:
+
+Página 11 - Depoimento de testemunha
+
+7. Termo de depoimento em auto de prisão em flagrante
+Resultado:
+
+8. DISSE: QUE
+Resultado:
+
+9. ameaçando-a de morte
+Resultado:
+
+Página 13 - Depoimento de testemunha
+
+10. Termo de depoimento em auto de prisão em flagrante
+Resultado:
+
+11. DISSE: QUE
+Resultado:
+
+12. ameaçando-a de morte
+Resultado:
+
+Página 15 - Depoimento do condutor
+
+13. Termo de depoimento em auto de prisão em flagrante
+Resultado:
+
+14. DISSE: QUE
+Resultado:
+
+15. ameaçando-a de morte
+Resultado:
+
+Página 18 - Interrogatório
+
+16. Termo de interrogatório em auto de prisão em flagrante delito
+Resultado:
+
+17. interrogado
+Resultado:
+
+18. nega que tenha ameaçado sua companheira
+Resultado:
+
+Conclusão da revisão
+
+Nome de quem revisou:
+
+Data:
+
+Todas as 18 frases conferem?

@@ -84,13 +84,44 @@ def initialize_database(connection: sqlite3.Connection) -> None:
             error TEXT,
             created_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS hearing_dossiers (
+            processo_id TEXT PRIMARY KEY REFERENCES processos(id) ON DELETE CASCADE,
+            schema_version TEXT NOT NULL,
+            status TEXT NOT NULL,
+            error_message TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS hearing_dossier_sections (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            processo_id TEXT NOT NULL REFERENCES hearing_dossiers(processo_id)
+                ON DELETE CASCADE,
+            section_key TEXT NOT NULL,
+            status TEXT NOT NULL,
+            payload_json TEXT,
+            model TEXT,
+            fallback_used INTEGER NOT NULL DEFAULT 0,
+            retrieval_ms INTEGER,
+            generation_ms INTEGER,
+            error_message TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (processo_id, section_key)
+        );
         """
     )
     _ensure_process_columns(connection)
     _ensure_chunk_columns(connection)
     _ensure_chat_message_columns(connection)
+    _ensure_hearing_dossier_section_columns(connection)
     connection.execute(
         "CREATE INDEX IF NOT EXISTS idx_processos_sha256_status ON processos (sha256, status)"
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_dossier_sections_processo_status "
+        "ON hearing_dossier_sections (processo_id, status)"
     )
     connection.execute(
         """
@@ -153,3 +184,23 @@ def _ensure_chunk_columns(connection: sqlite3.Connection) -> None:
             "ALTER TABLE chunks ADD COLUMN source_confidence "
             "TEXT NOT NULL DEFAULT 'desconhecida'"
         )
+
+
+def _ensure_hearing_dossier_section_columns(connection: sqlite3.Connection) -> None:
+    columns = {
+        str(row["name"])
+        for row in connection.execute(
+            "PRAGMA table_info(hearing_dossier_sections)"
+        ).fetchall()
+    }
+    migrations = {
+        "retrieval_ms": (
+            "ALTER TABLE hearing_dossier_sections ADD COLUMN retrieval_ms INTEGER"
+        ),
+        "generation_ms": (
+            "ALTER TABLE hearing_dossier_sections ADD COLUMN generation_ms INTEGER"
+        ),
+    }
+    for column, statement in migrations.items():
+        if column not in columns:
+            connection.execute(statement)

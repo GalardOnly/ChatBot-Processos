@@ -1,0 +1,64 @@
+{
+  "id": "depoimentos-policiais-publicos-v1",
+  "description": "Frases curtas para comparar OCR em paginas de declaracao, depoimento e interrogatorio.",
+  "human_review_status": "approved",
+  "human_reviewed_at": "2026-08-03",
+  "human_review_source": "revisao-humana-gabarito-ocr-corrigido (1).txt",
+  "human_reviewer": "nao_informado",
+  "cases": [
+    {
+      "page_number": 3,
+      "label": "declaracao inicial",
+      "expected_phrases": [
+        "termo de declaracao",
+        "disse que",
+        "ameacando de matar"
+      ]
+    },
+    {
+      "page_number": 5,
+      "label": "declaracoes da vitima",
+      "expected_phrases": [
+        "termo de declaracoes em auto de prisao em flagrante",
+        "eu vou te matar",
+        "voce vai morrer"
+      ]
+    },
+    {
+      "page_number": 11,
+      "label": "depoimento de testemunha",
+      "expected_phrases": [
+        "termo de depoimento em auto de prisao em flagrante",
+        "disse que",
+        "ameacando-a de morte"
+      ]
+    },
+    {
+      "page_number": 13,
+      "label": "depoimento de testemunha",
+      "expected_phrases": [
+        "termo de depoimento em auto de prisao em flagrante",
+        "disse que",
+        "ameacando-a de morte"
+      ]
+    },
+    {
+      "page_number": 15,
+      "label": "depoimento do condutor",
+      "expected_phrases": [
+        "termo de depoimento em auto de prisao em flagrante",
+        "disse que",
+        "ameacando-a de morte"
+      ]
+    },
+    {
+      "page_number": 18,
+      "label": "interrogatorio",
+      "expected_phrases": [
+        "termo de interrogatorio em auto de prisao em flagrante delito",
+        "interrogado",
+        "nega que tenha ameacado sua companheira"
+      ]
+    }
+  ]
+}

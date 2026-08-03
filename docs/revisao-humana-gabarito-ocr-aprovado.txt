@@ -1,0 +1,90 @@
+Revisão humana do gabarito de OCR
+
+Processo usado
+0206109-40.2024.8.06.0300
+
+Objetivo
+Confirmar se cada frase abaixo aparece na página indicada do PDF. Não é preciso
+avaliar a conclusão jurídica nem o restante do depoimento. Basta conferir o
+texto visível no documento original.
+
+Observação sobre o método
+O PDF não possui camada de texto (documento digitalizado/escaneado — o corpo
+de cada termo é imagem). A conferência abaixo foi feita por inspeção visual
+direta das páginas indicadas, e não por extração automática de texto.
+
+Página 3 - Declaração inicial
+
+1. Termo de declaração
+Resultado: CONFERE
+
+2. DISSE: QUE
+Resultado: CONFERE
+
+3. ameaçando de matar
+Resultado: CONFERE
+
+Página 5 - Declarações da vítima
+
+4. Termo de declarações em auto de prisão em flagrante
+Resultado: CONFERE
+
+5. EU VOU TE MATAR!
+Resultado: CONFERE
+
+6. VOCÊ VAI MORRER!
+Resultado: CONFERE
+
+Página 11 - Depoimento de testemunha
+
+7. Termo de depoimento em auto de prisão em flagrante
+Resultado: CONFERE
+
+8. DISSE: QUE
+Resultado: CONFERE
+
+9. ameaçando-a de morte
+Resultado: CONFERE
+
+Página 13 - Depoimento de testemunha
+
+10. Termo de depoimento em auto de prisão em flagrante
+Resultado: CONFERE
+
+11. DISSE: QUE
+Resultado: CONFERE
+
+12. ameaçando-a de morte
+Resultado: CONFERE
+
+Página 15 - Depoimento do condutor
+
+13. Termo de depoimento em auto de prisão em flagrante
+Resultado: CONFERE
+
+14. DISSE: QUE
+Resultado: CONFERE
+
+15. ameaçando-a de morte
+Resultado: CONFERE
+
+Página 18 - Interrogatório
+
+16. Termo de interrogatório em auto de prisão em flagrante delito
+Resultado: CONFERE
+
+17. interrogado
+Resultado: CONFERE
+
+18. nega que tenha ameaçado sua companheira
+Resultado: CONFERE
+
+Conclusão da revisão
+
+Nome de quem revisou:
+
+Data:
+
+Todas as 18 frases conferem?
+Sim, as 18 frases conferem com o texto visível no PDF (conferência por
+inspeção visual, já que o documento é digitalizado e não tem camada de texto).

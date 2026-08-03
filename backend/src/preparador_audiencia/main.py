@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from preparador_audiencia.api import router
+from preparador_audiencia.api import router as api_router
 from preparador_audiencia.environment import load_environment
+from preparador_audiencia.routes.hearing_dossier import router as hearing_dossier_router
 
 load_environment()
 
 app = FastAPI(title="Preparador de Audiencia API", version="0.1.0")
-app.include_router(router)
+app.include_router(api_router)
+app.include_router(hearing_dossier_router)

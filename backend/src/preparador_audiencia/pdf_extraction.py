@@ -15,6 +15,10 @@ IMAGE_WITH_SPARSE_TEXT_THRESHOLD = 500
 DEFAULT_OCR_BATCH_SIZE = 4
 OCR_MIN_REVIEW_CHARS = 160
 OCR_MIN_REVIEW_WORDS = 20
+GLUED_TEXT_MIN_CHARS = 1_000
+GLUED_TEXT_MAX_SPACE_RATIO = 0.07
+GLUED_TEXT_LONG_TOKEN_CHARS = 40
+GLUED_TEXT_MIN_LONG_TOKENS = 3
 
 ExtractionProgressCallback = Callable[[int, int], None]
 
@@ -66,6 +70,7 @@ class _PageDraft:
     native_text: str
     image_count: int
     should_run_ocr: bool
+    native_layout_issue: bool
 
 
 def extract_pdf_report(
@@ -146,12 +151,15 @@ def _create_page_draft(
 ) -> _PageDraft:
     native_text = normalize_text(page.get_text("text"))
     image_count = len(page.get_images(full=True))
+    native_layout_issue = has_glued_text(native_text)
     return _PageDraft(
         page=page,
         page_number=page_index + 1,
         native_text=native_text,
         image_count=image_count,
-        should_run_ocr=ocr_enabled and _should_run_ocr(native_text, image_count),
+        should_run_ocr=ocr_enabled
+        and (_should_run_ocr(native_text, image_count) or native_layout_issue),
+        native_layout_issue=native_layout_issue,
     )
 
 
@@ -193,11 +201,17 @@ def _finish_page_extraction(
     ocr_text: str,
     sample_chars: int,
 ) -> PageExtraction:
-    text = _merge_native_and_ocr_text(draft.native_text, ocr_text)
+    ocr_replaced_native = _should_prefer_ocr_text(draft, ocr_text)
+    text = (
+        ocr_text
+        if ocr_replaced_native
+        else _merge_native_and_ocr_text(draft.native_text, ocr_text)
+    )
     source_confidence = _source_confidence(
         draft.native_text,
         ocr_applied=draft.should_run_ocr,
         ocr_text=ocr_text,
+        native_layout_issue=draft.native_layout_issue,
     )
     return PageExtraction(
         page_number=draft.page_number,
@@ -207,7 +221,11 @@ def _finish_page_extraction(
         image_count=draft.image_count,
         ocr_applied=draft.should_run_ocr,
         ocr_char_count=len(ocr_text),
-        extraction_method=_extraction_method(draft.native_text, ocr_text),
+        extraction_method=_extraction_method(
+            draft.native_text,
+            ocr_text,
+            ocr_replaced_native=ocr_replaced_native,
+        ),
         full_text=text,
         text_sample=text[:sample_chars],
         is_probably_empty=_is_probably_empty(text),
@@ -217,6 +235,8 @@ def _finish_page_extraction(
             ocr_applied=draft.should_run_ocr,
             ocr_text=ocr_text,
             source_confidence=source_confidence,
+            native_layout_issue=draft.native_layout_issue,
+            ocr_replaced_native=ocr_replaced_native,
         ),
         source_confidence=source_confidence,
     )
@@ -238,14 +258,22 @@ def _quality_notes(
     ocr_applied: bool = False,
     ocr_text: str = "",
     source_confidence: str = "alta",
+    native_layout_issue: bool = False,
+    ocr_replaced_native: bool = False,
 ) -> list[str]:
     notes: list[str] = []
+    if native_layout_issue:
+        notes.append("texto_nativo_com_palavras_coladas")
     if ocr_applied:
         notes.append("ocr_aplicado")
         if ocr_text.strip():
             notes.append("ocr_com_texto")
+            if has_glued_text(ocr_text):
+                notes.append("ocr_com_palavras_coladas")
         else:
             notes.append("ocr_sem_texto")
+        if ocr_replaced_native:
+            notes.append("ocr_substituiu_texto_nativo_inadequado")
         notes.append(f"confianca_{source_confidence}")
 
     text = native_text
@@ -270,12 +298,42 @@ def _should_run_ocr(native_text: str, image_count: int) -> bool:
     return not native_text.strip() or len(native_text) < IMAGE_WITH_SPARSE_TEXT_THRESHOLD
 
 
+def has_glued_text(text: str) -> bool:
+    if len(text) < GLUED_TEXT_MIN_CHARS:
+        return False
+    space_ratio = text.count(" ") / len(text)
+    if space_ratio > GLUED_TEXT_MAX_SPACE_RATIO:
+        return False
+    long_tokens = sum(
+        len(token) >= GLUED_TEXT_LONG_TOKEN_CHARS
+        for token in text.replace("\n", " ").split()
+    )
+    return long_tokens >= GLUED_TEXT_MIN_LONG_TOKENS
+
+
+def _should_prefer_ocr_text(draft: _PageDraft, ocr_text: str) -> bool:
+    if not _is_substantial_ocr(ocr_text):
+        return False
+    native_is_sparse_image_layer = (
+        bool(draft.image_count)
+        and len(draft.native_text) < IMAGE_WITH_SPARSE_TEXT_THRESHOLD
+    )
+    return draft.native_layout_issue or native_is_sparse_image_layer
+
+
 def _merge_native_and_ocr_text(native_text: str, ocr_text: str) -> str:
     parts = [part for part in (native_text, ocr_text) if part.strip()]
     return "\n\n".join(parts)
 
 
-def _extraction_method(native_text: str, ocr_text: str) -> str:
+def _extraction_method(
+    native_text: str,
+    ocr_text: str,
+    *,
+    ocr_replaced_native: bool = False,
+) -> str:
+    if ocr_replaced_native:
+        return "ocr_recovery"
     has_native = bool(native_text.strip())
     has_ocr = bool(ocr_text.strip())
     if has_native and has_ocr:
@@ -292,14 +350,25 @@ def _source_confidence(
     *,
     ocr_applied: bool,
     ocr_text: str,
+    native_layout_issue: bool = False,
 ) -> str:
     if not ocr_applied:
         return "alta" if native_text.strip() else "baixa"
+    if native_layout_issue:
+        return (
+            "media"
+            if _is_substantial_ocr(ocr_text) and not has_glued_text(ocr_text)
+            else "baixa"
+        )
     if len(native_text) >= IMAGE_WITH_SPARSE_TEXT_THRESHOLD:
         return "alta"
-    if (
-        len(ocr_text) >= OCR_MIN_REVIEW_CHARS
-        and len(ocr_text.split()) >= OCR_MIN_REVIEW_WORDS
-    ):
+    if _is_substantial_ocr(ocr_text) and not has_glued_text(ocr_text):
         return "media"
     return "baixa"
+
+
+def _is_substantial_ocr(ocr_text: str) -> bool:
+    return (
+        len(ocr_text) >= OCR_MIN_REVIEW_CHARS
+        and len(ocr_text.split()) >= OCR_MIN_REVIEW_WORDS
+    )

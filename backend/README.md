@@ -36,6 +36,8 @@ Rotas implementadas:
 - `GET /processo/{id}/status`
 - `POST /processo/{id}/buscar`
 - `POST /processo/{id}/chat`
+- `POST /processo/{id}/dossie-audiencia`
+- `GET /processo/{id}/dossie-audiencia`
 
 ## Rodar interface Streamlit
 
@@ -333,11 +335,41 @@ $env:GROQ_API_KEY="sua-chave"
 Se preferir, coloque as chaves em `backend/.env`; ele e carregado
 automaticamente e esta ignorado pelo Git.
 
+## Dossie de preparacao da audiencia
+
+O backend pode organizar tres blocos persistentes para um processo concluido:
+marcos essenciais, depoimentos e contradicoes potenciais. A geracao usa no
+maximo tres chamadas principais de LLM, salva cada bloco assim que termina e
+reaproveita os blocos concluidos quando uma nova tentativa e necessaria.
+
+```powershell
+curl -X POST http://127.0.0.1:8910/processo/proc_xxxxx/dossie-audiencia `
+  -H "Content-Type: application/json" `
+  -d '{"top_k":18,"regenerar":false}'
+```
+
+Para carregar o resultado salvo sem nova chamada de LLM:
+
+```powershell
+curl http://127.0.0.1:8910/processo/proc_xxxxx/dossie-audiencia
+```
+
+Datas e falas literais so entram na resposta quando o valor indicado pelo
+modelo existe no chunk recuperado. As paginas sao sempre derivadas desses
+chunks pelo servidor. A secao de contradicoes recebe o estado `potencial` e
+precisa ser conferida no contexto integral das fontes.
+
+Na versao `0.2` do dossie, datas processuais objetivas tambem passam por regras
+deterministicas. A recuperacao preserva resultados por tipo de consulta e busca
+marcadores processuais mesmo em texto com espacos defeituosos. Trechos curtos ou
+interrompidos nao sao aceitos como transcricao util.
+
 Decisao atual da PoC:
 
 - principal: `gemini:gemini-3-flash-preview`;
 - fallback do chat: `groq:llama-3.1-8b-instant`;
 - fallback da analise de nulidade: `groq:llama-3.3-70b-versatile`.
+- fallback do dossie de audiencia: `groq:llama-3.3-70b-versatile`.
 
 Os IDs de modelos mudam com o tempo. Consulte a lista ativa dos provedores antes
 de rodar uma bateria grande.
@@ -366,6 +398,28 @@ python -m preparador_audiencia.benchmark_cli pdfs ..\samples\benchmark\*.pdf --f
 PDFs reais anonimizados devem ficar em `samples/anonimizados/` e usar
 `benchmark_cases.anonimizado.example.json` como ponto de partida para perguntas
 e paginas esperadas.
+
+## Benchmark de OCR em depoimentos
+
+O comparador de OCR avalia paginas especificas contra frases curtas verificaveis
+sem chamar LLM, embeddings ou banco vetorial. O texto integral extraido nao e
+salvo no relatorio.
+
+```powershell
+benchmark-ocr `
+  --pdf "C:\caminho\processo.pdf" `
+  --engines rapidocr:1.5 rapidocr:3.0 easyocr `
+  --device gpu `
+  --model-dir "C:\caminho\modelos-easyocr" `
+  --output reports/benchmark-ocr-depoimentos.json
+```
+
+O gate exige duas familias de OCR, gabarito humano aprovado, recall minimo de 90%
+e nenhuma pagina com palavras coladas. O EasyOCR atingiu 100% das frases e zero
+paginas coladas no primeiro processo. A revisao humana foi recebida e o gate
+passou; ainda falta repetir a avaliacao em outro documento antes de integrar o
+motor as dependencias de producao.
+
 
 ## Suite de referencia multidominio
 

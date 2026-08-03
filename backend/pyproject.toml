@@ -44,6 +44,8 @@ perguntas-promocao = "preparador_audiencia.question_promotion_cli:main"
 benchmark-roteamento = "preparador_audiencia.routing_benchmark_cli:main"
 suite-referencia = "preparador_audiencia.reference_suite_cli:main"
 benchmark-nulidades = "preparador_audiencia.nullity_benchmark_cli:main"
+validar-dossie = "preparador_audiencia.dossier_validation_cli:main"
+benchmark-ocr = "preparador_audiencia.ocr_benchmark_cli:main"
 
 [build-system]
 requires = ["setuptools>=69"]

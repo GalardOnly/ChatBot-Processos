@@ -162,3 +162,73 @@ def test_ocr_with_substantial_text_is_marked_for_review(tmp_path) -> None:
 
     assert report.pages[0].source_confidence == "media"
     assert "confianca_media" in report.pages[0].quality_notes
+
+
+def test_ocr_replaces_long_native_text_with_glued_words(tmp_path) -> None:
+    pdf_path = tmp_path / "texto-colado.pdf"
+    glued_lines = "\n".join(["palavracolada" * 10] * 12)
+    ocr_text = " ".join(
+        ["A vitima declarou os fatos de forma legivel e completa para conferencia."]
+        * 5
+    )
+    fake_ocr = FakeOcrEngine(ocr_text)
+    document = fitz.open()
+    page = document.new_page()
+    page.insert_text((20, 20), glued_lines, fontsize=5)
+    document.save(pdf_path)
+    document.close()
+
+    report = extract_pdf_report(pdf_path, ocr_engine=fake_ocr)
+    extracted = report.pages[0]
+
+    assert fake_ocr.calls == 1
+    assert extracted.full_text == ocr_text
+    assert extracted.extraction_method == "ocr_recovery"
+    assert extracted.source_confidence == "media"
+    assert "texto_nativo_com_palavras_coladas" in extracted.quality_notes
+    assert "ocr_substituiu_texto_nativo_inadequado" in extracted.quality_notes
+
+
+def test_substantial_ocr_replaces_sparse_native_image_layer(tmp_path) -> None:
+    pdf_path = tmp_path / "pagina-digitalizada.pdf"
+    image_path = tmp_path / "scan.png"
+    pixmap = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 300, 120), 0)
+    pixmap.save(image_path)
+    ocr_text = " ".join(
+        ["A testemunha prestou declaracao completa durante o inquerito policial."]
+        * 5
+    )
+    fake_ocr = FakeOcrEngine(ocr_text)
+    document = fitz.open()
+    page = document.new_page()
+    page.insert_image(fitz.Rect(72, 120, 372, 240), filename=image_path)
+    page.insert_text((72, 72), "Camada nativa incompleta")
+    document.save(pdf_path)
+    document.close()
+
+    extracted = extract_pdf_report(pdf_path, ocr_engine=fake_ocr).pages[0]
+
+    assert extracted.full_text == ocr_text
+    assert extracted.extraction_method == "ocr_recovery"
+    assert extracted.source_confidence == "media"
+
+
+def test_ocr_with_many_glued_words_has_low_confidence(tmp_path) -> None:
+    pdf_path = tmp_path / "ocr-ainda-ilegivel.pdf"
+    image_path = tmp_path / "scan.png"
+    pixmap = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 300, 120), 0)
+    pixmap.save(image_path)
+    glued_ocr = "\n".join(["depoimentosemespacos" * 4] * 25)
+    fake_ocr = FakeOcrEngine(glued_ocr)
+    document = fitz.open()
+    page = document.new_page()
+    page.insert_image(fitz.Rect(72, 120, 372, 240), filename=image_path)
+    page.insert_text((72, 72), "Camada nativa incompleta")
+    document.save(pdf_path)
+    document.close()
+
+    extracted = extract_pdf_report(pdf_path, ocr_engine=fake_ocr).pages[0]
+
+    assert extracted.full_text == glued_ocr
+    assert extracted.source_confidence == "baixa"
+    assert "ocr_com_palavras_coladas" in extracted.quality_notes

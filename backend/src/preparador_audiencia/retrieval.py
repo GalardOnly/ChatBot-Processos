@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import re
+import unicodedata
+
+from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.embeddings import embedding_provider_from_spec
 from preparador_audiencia.ensemble import (
     EnsembleIndexProgressCallback,
@@ -166,6 +170,67 @@ def search_process_queries_lexical(
     return _fuse_ranked_results(weighted_results, top_k)
 
 
+def search_process_pattern_anchors(
+    processo_id: str,
+    anchors: tuple[tuple[str, int], ...],
+    top_k: int = 10,
+) -> list[SearchResult]:
+    """Localiza marcadores processuais mesmo quando o PDF perdeu os espacos."""
+    if top_k <= 0 or not anchors:
+        return []
+    connection = connect_database()
+    initialize_database(connection)
+    try:
+        rows = connection.execute(
+            """
+            SELECT page_number, chunk_index, text, document_type, source_confidence
+            FROM chunks
+            WHERE processo_id = ?
+            ORDER BY page_number, chunk_index
+            """,
+            (processo_id,),
+        ).fetchall()
+    finally:
+        connection.close()
+
+    indexed_rows = {
+        (int(row["page_number"]), int(row["chunk_index"])): row for row in rows
+    }
+    normalized_rows = [(row, _compact_text(str(row["text"]))) for row in rows]
+    results: list[SearchResult] = []
+    seen: set[tuple[int, int]] = set()
+    for anchor, match_limit in anchors:
+        normalized_anchor = _compact_text(anchor)
+        if not normalized_anchor or match_limit <= 0:
+            continue
+        matches = [
+            row for row, normalized in normalized_rows if normalized_anchor in normalized
+        ][:match_limit]
+        for row in matches:
+            page = int(row["page_number"])
+            chunk = int(row["chunk_index"])
+            for candidate in (row, indexed_rows.get((page, chunk + 1))):
+                if candidate is None:
+                    continue
+                key = (int(candidate["page_number"]), int(candidate["chunk_index"]))
+                if key in seen:
+                    continue
+                seen.add(key)
+                results.append(
+                    SearchResult(
+                        text=str(candidate["text"]),
+                        page_number=key[0],
+                        chunk_index=key[1],
+                        document_type=candidate["document_type"],
+                        score=round(1.0 / (len(results) + 1), 4),
+                        source_confidence=str(candidate["source_confidence"]),
+                    )
+                )
+                if len(results) >= top_k:
+                    return results
+    return results
+
+
 def _search_process_hybrid_configured(
     processo_id: str,
     pergunta: str,
@@ -272,3 +337,11 @@ def _vector_store_for_single_spec(spec: str) -> ChromaVectorStore:
     if spec.strip().lower() == "hash":
         return ChromaVectorStore()
     return ChromaVectorStore(collection_name=safe_collection_name("processo_chunks", spec))
+
+
+def _compact_text(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value.casefold())
+    without_accents = "".join(
+        character for character in normalized if not unicodedata.combining(character)
+    )
+    return re.sub(r"[^a-z0-9]+", "", without_accents)
