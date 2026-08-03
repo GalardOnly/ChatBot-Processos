@@ -8,6 +8,7 @@ ProcessStatus = Literal["pendente", "processando", "concluido", "erro"]
 SearchMode = Literal["indisponivel", "lexical", "hibrida"]
 DossierStatus = Literal["pendente", "processando", "parcial", "concluido", "erro"]
 DossierSectionStatus = Literal["pendente", "processando", "concluido", "erro"]
+TranscriptionStatus = Literal["concluido", "revisao_necessaria", "sem_depoimentos"]
 
 
 class UploadResponse(BaseModel):
@@ -274,6 +275,44 @@ class HearingDossierResponse(BaseModel):
     marcos_essenciais: DossierKeyEventsSectionResponse
     depoimentos: DossierTestimoniesSectionResponse
     contradicoes: DossierContradictionsSectionResponse
+
+
+class StructuredTranscriptionGenerateRequest(BaseModel):
+    regenerar: bool = False
+
+
+class TranscriptionPageResponse(BaseModel):
+    pagina: int
+    texto: str
+    confianca_fonte: str
+    palavras_coladas: bool
+
+
+class StructuredTestimonyResponse(BaseModel):
+    ordem: int
+    tipo_documento: str
+    titulo: str
+    pessoa: str | None
+    papel: Literal["vitima", "testemunha", "condutor", "reu", "declarante", "outro"]
+    fase: Literal["inquerito", "juizo", "outro"]
+    cobertura: Literal["integral", "parcial"]
+    pagina_inicial: int
+    pagina_final: int
+    paginas: list[TranscriptionPageResponse]
+    texto_consolidado: str
+    confianca_fonte: str
+    revisao_necessaria: bool
+    avisos: list[str] = Field(default_factory=list)
+
+
+class StructuredTranscriptionResponse(BaseModel):
+    processo_id: str
+    status: TranscriptionStatus
+    versao: str
+    depoimentos: list[StructuredTestimonyResponse] = Field(default_factory=list)
+    avisos: list[str] = Field(default_factory=list)
+    gerado_em: str
+    atualizado_em: str
 
 
 class ErrorResponse(BaseModel):

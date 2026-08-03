@@ -299,6 +299,10 @@ class ChunkRepository:
 
     def replace_for_processo(self, processo_id: str, chunks: list[TextChunk]) -> None:
         now = utc_now_text()
+        self.connection.execute(
+            "DELETE FROM structured_transcriptions WHERE processo_id = ?",
+            (processo_id,),
+        )
         self.connection.execute("DELETE FROM chunks WHERE processo_id = ?", (processo_id,))
         self.connection.executemany(
             """

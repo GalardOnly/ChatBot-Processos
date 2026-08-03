@@ -110,6 +110,15 @@ def initialize_database(connection: sqlite3.Connection) -> None:
             updated_at TEXT NOT NULL,
             UNIQUE (processo_id, section_key)
         );
+
+        CREATE TABLE IF NOT EXISTS structured_transcriptions (
+            processo_id TEXT PRIMARY KEY REFERENCES processos(id) ON DELETE CASCADE,
+            schema_version TEXT NOT NULL,
+            status TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         """
     )
     _ensure_process_columns(connection)

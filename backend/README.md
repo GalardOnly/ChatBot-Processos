@@ -420,6 +420,31 @@ paginas coladas no primeiro processo. A revisao humana foi recebida e o gate
 passou; ainda falta repetir a avaliacao em outro documento antes de integrar o
 motor as dependencias de producao.
 
+## Transcricao estruturada de depoimentos
+
+O backend organiza termos policiais sem pedir para uma LLM resumir ou reescrever
+as falas. A geracao reconstroi o texto de cada pagina, remove somente a
+sobreposicao tecnica dos chunks, identifica o tipo do termo, a pessoa ouvida, o
+papel processual, a fase e as paginas de origem. O resultado fica persistido e e
+invalidado automaticamente quando o processo e reprocessado.
+
+```http
+POST /processo/{processo_id}/transcricao-depoimentos
+Content-Type: application/json
+
+{"regenerar": false}
+```
+
+```http
+GET /processo/{processo_id}/transcricao-depoimentos
+```
+
+A cobertura so recebe `integral` quando o inicio, o encerramento e a continuidade
+das paginas podem ser comprovados. Palavras coladas, identidade ausente e fontes
+com confianca baixa ou desconhecida deixam o item com
+`revisao_necessaria: true`. O contrato completo e as limitacoes estao descritos
+em `docs/35-transcricao-estruturada-depoimentos.md`.
+
 
 ## Suite de referencia multidominio
 
