@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from preparador_audiencia.pdf_extraction import has_glued_text
 from preparador_audiencia.repositories import ChunkRecord
+from preparador_audiencia.testimony_body import extract_testimony_body
 from preparador_audiencia.testimony_identification import identify_testimony_person
 
 MAX_TESTIMONIES = 100
@@ -343,6 +344,8 @@ def _build_testimony(
         [(page.number, page.text) for page in pages],
         detected.role,
     )
+    body = extract_testimony_body([(page.number, page.text) for page in pages])
+    warnings.extend(body.warnings)
     person = identification.name
     if person is None:
         warnings.append("A pessoa ouvida nao foi identificada com seguranca.")
@@ -376,6 +379,7 @@ def _build_testimony(
     review_required = bool(
         coverage == "parcial"
         or identification.confidence != "alta"
+        or body.review_required
         or glued_pages
         or low_confidence_pages
     )
@@ -396,6 +400,20 @@ def _build_testimony(
         },
         "fase": _detect_phase(consolidated),
         "cobertura": coverage,
+        "fala": {
+            "status": body.status,
+            "confianca": body.confidence,
+            "marcador_inicio": body.start_marker,
+            "marcador_fim": body.end_marker,
+            "pagina_inicial": body.start_page,
+            "pagina_final": body.end_page,
+            "segmentos": [
+                {"pagina": segment.page_number, "texto": segment.text}
+                for segment in body.segments
+            ],
+            "texto_literal": body.text,
+            "avisos": body.warnings,
+        },
         "pagina_inicial": pages[0].number,
         "pagina_final": pages[-1].number,
         "paginas": [

@@ -40,6 +40,16 @@ Rotas implementadas:
 - `POST /processo/{id}/chat`
 - `POST /processo/{id}/dossie-audiencia`
 - `GET /processo/{id}/dossie-audiencia`
+- `POST /processo/{id}/transcricao-depoimentos`
+- `POST /processo/{id}/comparacao-depoimentos`
+- `POST /processo/{id}/depoimentos/{depoimento_id}/perguntas-audiencia`
+- `GET /processo/{id}/prescricao/dados`
+- `POST /processo/{id}/prescricao/calcular`
+- `GET /processo/{id}/prescricao/calculos/{calculo_id}`
+- `POST /processo/{id}/estrutura-sentenca`
+- `GET /processo/{id}/estrutura-sentenca`
+- `POST /processo/{id}/teses-defensivas`
+- `GET /processo/{id}/teses-defensivas`
 
 ## Rodar interface Streamlit
 

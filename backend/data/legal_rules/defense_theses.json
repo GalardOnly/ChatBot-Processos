@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "catalog": {
+    "id": "teses_defensivas_criminais",
+    "version": "1.0.0",
+    "verified_at": "2026-08-04",
+    "scope": "Triagem inicial de teses defensivas criminais com suporte em fatos e paginas do processo.",
+    "search_queries": [
+      "autoria reconhecimento identificacao alibi participacao do acusado",
+      "materialidade laudo pericia apreensao exame vestigios",
+      "depoimento contradicao versao duvida prova insuficiente",
+      "confissao tentativa consumacao desclassificacao atipicidade",
+      "pena-base atenuante agravante regime substituicao dosimetria",
+      "prescricao extincao punibilidade data do fato denuncia sentenca"
+    ],
+    "sources": [
+      {
+        "id": "cpp_art_386",
+        "authority": "Presidencia da Republica",
+        "title": "Codigo de Processo Penal",
+        "reference": "Art. 386, incisos I a VII",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm"
+      },
+      {
+        "id": "cpp_art_383",
+        "authority": "Presidencia da Republica",
+        "title": "Codigo de Processo Penal",
+        "reference": "Art. 383",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm"
+      },
+      {
+        "id": "cp_art_14",
+        "authority": "Presidencia da Republica",
+        "title": "Codigo Penal",
+        "reference": "Art. 14, inciso II e paragrafo unico",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm"
+      },
+      {
+        "id": "cp_excludentes",
+        "authority": "Presidencia da Republica",
+        "title": "Codigo Penal",
+        "reference": "Arts. 20, 21, 22, 23, 26 e art. 28, paragrafo 1",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm"
+      },
+      {
+        "id": "cp_dosimetria",
+        "authority": "Presidencia da Republica",
+        "title": "Codigo Penal",
+        "reference": "Arts. 59 e 68",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm"
+      },
+      {
+        "id": "cp_confissao",
+        "authority": "Presidencia da Republica",
+        "title": "Codigo Penal",
+        "reference": "Art. 65, inciso III, alinea d",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm"
+      },
+      {
+        "id": "cp_regime_substituicao",
+        "authority": "Presidencia da Republica",
+        "title": "Codigo Penal",
+        "reference": "Arts. 33, 44 e 59",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm"
+      },
+      {
+        "id": "cp_prescricao",
+        "authority": "Presidencia da Republica",
+        "title": "Codigo Penal",
+        "reference": "Arts. 107, inciso IV, e 109 a 119",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm"
+      }
+    ],
+    "theses": [
+      {
+        "id": "inexistencia_fato",
+        "title": "Inexistencia do fato",
+        "category": "merito_absolutorio",
+        "question": "As provas demonstram que o fato imputado nao ocorreu?",
+        "legal_source_ids": ["cpp_art_386"]
+      },
+      {
+        "id": "falta_materialidade",
+        "title": "Ausencia de prova da materialidade",
+        "category": "merito_absolutorio",
+        "question": "Falta prova segura da existencia material do fato?",
+        "legal_source_ids": ["cpp_art_386"]
+      },
+      {
+        "id": "atipicidade",
+        "title": "Atipicidade do fato",
+        "category": "merito_absolutorio",
+        "question": "A conduta descrita nao constitui infracao penal?",
+        "legal_source_ids": ["cpp_art_386"]
+      },
+      {
+        "id": "negativa_autoria_comprovada",
+        "title": "Autoria afastada pelas provas",
+        "category": "merito_absolutorio",
+        "question": "As provas demonstram que o reu nao participou do fato?",
+        "legal_source_ids": ["cpp_art_386"]
+      },
+      {
+        "id": "duvida_autoria",
+        "title": "Insuficiencia de prova de autoria",
+        "category": "merito_absolutorio",
+        "question": "Nao existe prova suficiente de que o reu participou do fato?",
+        "legal_source_ids": ["cpp_art_386"]
+      },
+      {
+        "id": "excludente_ou_isencao",
+        "title": "Excludente do crime ou isencao de pena",
+        "category": "merito_absolutorio",
+        "question": "Ha prova ou duvida fundada sobre excludente do crime ou causa de isencao?",
+        "legal_source_ids": ["cpp_art_386", "cp_excludentes"]
+      },
+      {
+        "id": "desclassificacao",
+        "title": "Definicao juridica menos gravosa",
+        "category": "tipificacao",
+        "question": "Os mesmos fatos admitem definicao juridica diversa e menos gravosa?",
+        "legal_source_ids": ["cpp_art_383"]
+      },
+      {
+        "id": "tentativa",
+        "title": "Reconhecimento da tentativa",
+        "category": "tipificacao",
+        "question": "A execucao foi iniciada, mas o resultado nao se consumou por circunstancias alheias ao agente?",
+        "legal_source_ids": ["cp_art_14"]
+      },
+      {
+        "id": "dosimetria_favoravel",
+        "title": "Revisao favoravel da dosimetria",
+        "category": "pena",
+        "question": "As circunstancias judiciais, agravantes, atenuantes e causas foram aplicadas de modo favoravel e fundamentado?",
+        "legal_source_ids": ["cp_dosimetria"]
+      },
+      {
+        "id": "confissao_atenuante",
+        "title": "Atenuante da confissao",
+        "category": "pena",
+        "question": "Existe confissao relevante para o reconhecimento da atenuante legal?",
+        "legal_source_ids": ["cp_confissao"]
+      },
+      {
+        "id": "regime_mais_brando",
+        "title": "Regime inicial mais brando",
+        "category": "pena",
+        "question": "A pena e as circunstancias registradas permitem discutir regime inicial mais brando?",
+        "legal_source_ids": ["cp_regime_substituicao"]
+      },
+      {
+        "id": "substituicao_restritivas",
+        "title": "Substituicao por penas restritivas de direitos",
+        "category": "pena",
+        "question": "Os dados do caso permitem verificar os requisitos de substituicao da pena privativa de liberdade?",
+        "legal_source_ids": ["cp_regime_substituicao"]
+      },
+      {
+        "id": "prescricao",
+        "title": "Extincao da punibilidade pela prescricao",
+        "category": "extincao_punibilidade",
+        "question": "As datas e a pena aplicavel indicam prazo prescricional esgotado?",
+        "legal_source_ids": ["cp_prescricao"]
+      }
+    ]
+  }
+}

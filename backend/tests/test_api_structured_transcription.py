@@ -38,12 +38,16 @@ def test_endpoint_generates_persists_and_loads_transcription(tmp_path, monkeypat
 
     assert generated.status_code == 200
     assert generated.json()["status"] == "concluido"
-    assert generated.json()["versao"] == "2.0"
+    assert generated.json()["versao"] == "3.0"
     assert generated.json()["depoimentos"][0]["id_depoimento"] == (
         "dep-p0007-depoimento_testemunha"
     )
     assert generated.json()["depoimentos"][0]["pessoa"] == "MARIA LIMA"
     assert generated.json()["depoimentos"][0]["identificacao"]["confianca"] == "alta"
+    assert generated.json()["depoimentos"][0]["fala"]["status"] == "segmentada"
+    assert generated.json()["depoimentos"][0]["fala"]["texto_literal"].startswith(
+        "DISSE QUE"
+    )
     assert generated.json()["depoimentos"][0]["paginas"][0]["pagina"] == 7
     assert loaded.status_code == 200
     assert loaded.json() == generated.json()
@@ -95,7 +99,7 @@ def test_get_regenerates_outdated_transcription_schema(tmp_path, monkeypatch) ->
     refreshed = client.get("/processo/proc_1/transcricao-depoimentos")
 
     assert refreshed.status_code == 200
-    assert refreshed.json()["versao"] == "2.0"
+    assert refreshed.json()["versao"] == "3.0"
     assert refreshed.json()["depoimentos"][0]["identificacao"]["status"] == (
         "identificado"
     )

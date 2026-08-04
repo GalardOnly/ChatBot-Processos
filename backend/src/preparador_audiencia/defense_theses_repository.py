@@ -6,26 +6,29 @@ from dataclasses import dataclass
 
 from preparador_audiencia.repositories import utc_now_text
 
-TRANSCRIPTION_SCHEMA_VERSION = "3.0"
+DEFENSE_THESES_SCHEMA_VERSION = "1.0"
 
 
 @dataclass(frozen=True)
-class StructuredTranscriptionRecord:
+class DefenseThesesRecord:
     processo_id: str
     schema_version: str
+    catalog_version: str
     status: str
     payload: dict[str, object]
+    model: str
+    fallback_used: bool
     created_at: str
     updated_at: str
 
 
-class StructuredTranscriptionRepository:
+class DefenseThesesRepository:
     def __init__(self, connection: sqlite3.Connection) -> None:
         self.connection = connection
 
-    def get(self, processo_id: str) -> StructuredTranscriptionRecord | None:
+    def get(self, processo_id: str) -> DefenseThesesRecord | None:
         row = self.connection.execute(
-            "SELECT * FROM structured_transcriptions WHERE processo_id = ?",
+            "SELECT * FROM defense_theses WHERE processo_id = ?",
             (processo_id,),
         ).fetchone()
         return _record_from_row(row)
@@ -34,27 +37,37 @@ class StructuredTranscriptionRepository:
         self,
         processo_id: str,
         *,
+        catalog_version: str,
         status: str,
         payload: dict[str, object],
-    ) -> StructuredTranscriptionRecord:
+        model: str,
+        fallback_used: bool,
+    ) -> DefenseThesesRecord:
         now = utc_now_text()
         self.connection.execute(
             """
-            INSERT INTO structured_transcriptions (
-                processo_id, schema_version, status, payload_json, created_at, updated_at
+            INSERT INTO defense_theses (
+                processo_id, schema_version, catalog_version, status,
+                payload_json, model, fallback_used, created_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(processo_id) DO UPDATE SET
                 schema_version = excluded.schema_version,
+                catalog_version = excluded.catalog_version,
                 status = excluded.status,
                 payload_json = excluded.payload_json,
+                model = excluded.model,
+                fallback_used = excluded.fallback_used,
                 updated_at = excluded.updated_at
             """,
             (
                 processo_id,
-                TRANSCRIPTION_SCHEMA_VERSION,
+                DEFENSE_THESES_SCHEMA_VERSION,
+                catalog_version,
                 status,
                 json.dumps(payload, ensure_ascii=False),
+                model,
+                int(fallback_used),
                 now,
                 now,
             ),
@@ -62,28 +75,24 @@ class StructuredTranscriptionRepository:
         self.connection.commit()
         record = self.get(processo_id)
         if record is None:
-            raise RuntimeError("transcricao salva nao pode ser carregada")
+            raise RuntimeError("analise de teses salva nao pode ser carregada")
         return record
 
-    def delete(self, processo_id: str) -> None:
-        self.connection.execute(
-            "DELETE FROM structured_transcriptions WHERE processo_id = ?",
-            (processo_id,),
-        )
-        self.connection.commit()
 
-
-def _record_from_row(row: sqlite3.Row | None) -> StructuredTranscriptionRecord | None:
+def _record_from_row(row: sqlite3.Row | None) -> DefenseThesesRecord | None:
     if row is None:
         return None
     payload = json.loads(str(row["payload_json"]))
     if not isinstance(payload, dict):
-        raise ValueError("payload da transcricao estruturada deve ser um objeto")
-    return StructuredTranscriptionRecord(
+        raise ValueError("payload das teses defensivas deve ser um objeto")
+    return DefenseThesesRecord(
         processo_id=str(row["processo_id"]),
         schema_version=str(row["schema_version"]),
+        catalog_version=str(row["catalog_version"]),
         status=str(row["status"]),
         payload=payload,
+        model=str(row["model"]),
+        fallback_used=bool(row["fallback_used"]),
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
     )

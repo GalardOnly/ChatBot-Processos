@@ -59,6 +59,11 @@ def test_builds_integral_testimony_without_repeating_chunk_overlap() -> None:
     assert testimony["papel"] == "testemunha"
     assert testimony["fase"] == "inquerito"
     assert testimony["cobertura"] == "integral"
+    assert testimony["fala"]["status"] == "segmentada"
+    assert testimony["fala"]["pagina_inicial"] == 10
+    assert testimony["fala"]["pagina_final"] == 11
+    assert testimony["fala"]["texto_literal"].startswith("DISSE QUE")
+    assert "Nada mais disse" not in testimony["fala"]["texto_literal"]
     assert testimony["pagina_inicial"] == 10
     assert testimony["pagina_final"] == 11
     assert testimony["texto_consolidado"].count("trecho compartilhado") == 1

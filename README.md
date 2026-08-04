@@ -8,7 +8,7 @@ Nesta versao inicial, o defensor envia o PDF completo do processo, o sistema ext
 
 O projeto esta em fase de Prova de Conceito. A intencao neste momento nao e entregar um produto final, mas validar se a ideia principal funciona na pratica: receber um processo real, extrair o texto com referencias de pagina, recuperar os trechos mais importantes e responder perguntas de forma util para a preparacao de audiencia.
 
-A PoC ja funciona localmente com upload de PDF, extracao de texto por pagina usando PyMuPDF, OCR para paginas escaneadas ou com pouco texto, divisao do conteudo em chunks, armazenamento local em SQLite, indexacao vetorial com ChromaDB, recuperacao semantica com ensemble juridico, chat com Gemini como modelo principal, Groq como fallback, triagem juridica interna das perguntas, dossie persistente de preparacao da audiencia, interface simples em Streamlit e testes automatizados.
+A PoC ja funciona localmente com upload de PDF, extracao de texto por pagina usando PyMuPDF, OCR para paginas escaneadas ou com pouco texto, divisao do conteudo em chunks, armazenamento local em SQLite, indexacao vetorial com ChromaDB, recuperacao semantica com ensemble juridico, chat com Gemini como modelo principal, Groq como fallback, triagem juridica interna das perguntas, transcricao literal estruturada, comparacao de depoimentos, perguntas por depoente, memoria deterministica de prescricao, estrutura de sentenca e pena, teses defensivas fundamentadas, dossie persistente de preparacao da audiencia, interface simples em Streamlit e testes automatizados.
 
 Em um teste local com um PDF real de aproximadamente 14 MB, a aplicacao processou 105 paginas e gerou 149 chunks pesquisaveis.
 
@@ -143,4 +143,6 @@ Esta PoC ainda nao e um produto pronto para producao. A interface ainda e simple
 
 ## Proximo passo
 
-O proximo passo recomendado e executar o novo dossie em processos publicos ja usados na PoC e conferir se as datas, atribuicoes de fala e contradicoes correspondem as paginas. Depois dessa verificacao tecnica, a proxima secao do backend deve gerar perguntas por depoente, sempre vinculando pergunta, objetivo, contradicao explorada e fonte processual. O calculo de prescricao continua separado e devera ser deterministico, recebendo apenas marcos previamente confirmados.
+O proximo passo recomendado e ampliar a analise de possiveis nulidades para outros temas, sempre vinculada a legislacao e precedentes verificaveis. Reconhecimento de pessoas ja possui um modulo especifico; os proximos temas devem ser escolhidos por impacto e frequencia nos processos reais.
+
+O calculo de prescricao permanece separado das LLMs. A extracao sugere datas e artigos, o profissional confirma os dados e um motor deterministico produz uma memoria por delito. O escopo atual e a prescricao da pretensao punitiva pela pena maxima em abstrato; modalidades dependentes de pena aplicada e transito em julgado ainda nao sao calculadas.

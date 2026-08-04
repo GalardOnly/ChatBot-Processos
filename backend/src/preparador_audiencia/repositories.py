@@ -310,6 +310,26 @@ class ChunkRepository:
     def replace_for_processo(self, processo_id: str, chunks: list[TextChunk]) -> None:
         now = utc_now_text()
         self.connection.execute(
+            "DELETE FROM defense_theses WHERE processo_id = ?",
+            (processo_id,),
+        )
+        self.connection.execute(
+            "DELETE FROM judgment_structures WHERE processo_id = ?",
+            (processo_id,),
+        )
+        self.connection.execute(
+            "DELETE FROM prescription_calculations WHERE processo_id = ?",
+            (processo_id,),
+        )
+        self.connection.execute(
+            "DELETE FROM testimony_question_guides WHERE processo_id = ?",
+            (processo_id,),
+        )
+        self.connection.execute(
+            "DELETE FROM testimony_comparisons WHERE processo_id = ?",
+            (processo_id,),
+        )
+        self.connection.execute(
             "DELETE FROM structured_transcriptions WHERE processo_id = ?",
             (processo_id,),
         )

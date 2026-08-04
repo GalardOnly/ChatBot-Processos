@@ -124,6 +124,66 @@ def initialize_database(connection: sqlite3.Connection) -> None:
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS testimony_comparisons (
+            id TEXT PRIMARY KEY,
+            processo_id TEXT NOT NULL REFERENCES processos(id) ON DELETE CASCADE,
+            testimony_a_id TEXT NOT NULL,
+            testimony_b_id TEXT NOT NULL,
+            transcription_schema_version TEXT NOT NULL,
+            schema_version TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            model TEXT NOT NULL,
+            fallback_used INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS testimony_question_guides (
+            id TEXT PRIMARY KEY,
+            processo_id TEXT NOT NULL REFERENCES processos(id) ON DELETE CASCADE,
+            testimony_id TEXT NOT NULL,
+            transcription_schema_version TEXT NOT NULL,
+            comparison_fingerprint TEXT NOT NULL,
+            schema_version TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            model TEXT NOT NULL,
+            fallback_used INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS prescription_calculations (
+            id TEXT PRIMARY KEY,
+            processo_id TEXT NOT NULL REFERENCES processos(id) ON DELETE CASCADE,
+            schema_version TEXT NOT NULL,
+            legal_ruleset_version TEXT NOT NULL,
+            input_json TEXT NOT NULL,
+            result_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS judgment_structures (
+            processo_id TEXT PRIMARY KEY REFERENCES processos(id) ON DELETE CASCADE,
+            schema_version TEXT NOT NULL,
+            status TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS defense_theses (
+            processo_id TEXT PRIMARY KEY REFERENCES processos(id) ON DELETE CASCADE,
+            schema_version TEXT NOT NULL,
+            catalog_version TEXT NOT NULL,
+            status TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            model TEXT NOT NULL,
+            fallback_used INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         """
     )
     _ensure_process_columns(connection)
@@ -136,6 +196,18 @@ def initialize_database(connection: sqlite3.Connection) -> None:
     connection.execute(
         "CREATE INDEX IF NOT EXISTS idx_dossier_sections_processo_status "
         "ON hearing_dossier_sections (processo_id, status)"
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_testimony_comparisons_process "
+        "ON testimony_comparisons (processo_id, testimony_a_id, testimony_b_id)"
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_testimony_question_guides_process "
+        "ON testimony_question_guides (processo_id, testimony_id)"
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_prescription_calculations_process "
+        "ON prescription_calculations (processo_id, created_at DESC)"
     )
     connection.execute(
         """
