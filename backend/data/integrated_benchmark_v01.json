@@ -1,0 +1,229 @@
+{
+  "schema_version": "1.0",
+  "id": "preparador-audiencia-integrado-v0.1",
+  "description": "Suite inicial para calibrar a avaliacao conjunta dos motores. Os casos sao sinteticos e nao constituem validacao juridica.",
+  "gates": {
+    "default": {
+      "min_label_accuracy": 0.9,
+      "min_page_precision": 0.9,
+      "min_page_recall": 0.9,
+      "max_error_rate": 0.0,
+      "max_p95_latency_ms": 5000,
+      "max_average_llm_calls": 2.0
+    },
+    "engines": {
+      "chat": {
+        "min_citation_fidelity": 1.0,
+        "max_average_llm_calls": 1.0
+      },
+      "transcricao_depoimentos": {
+        "min_item_recall": 0.9
+      },
+      "estrutura_sentenca": {
+        "min_item_recall": 0.9
+      },
+      "prescricao": {
+        "min_item_recall": 1.0,
+        "max_average_llm_calls": 0.0
+      },
+      "comparacao_depoimentos": {
+        "min_item_recall": 0.9,
+        "max_false_positive_case_rate": 0.0
+      },
+      "perguntas_audiencia": {
+        "min_item_recall": 0.9
+      },
+      "teses_defensivas": {
+        "min_item_recall": 0.9,
+        "max_false_positive_case_rate": 0.0
+      },
+      "nulidade_reconhecimento": {
+        "min_item_recall": 0.9,
+        "max_false_positive_case_rate": 0.0
+      },
+      "nulidades_processuais": {
+        "min_item_recall": 0.9,
+        "min_abstention_accuracy": 1.0,
+        "max_false_positive_case_rate": 0.0
+      },
+      "preparacao_audiencia": {
+        "min_item_recall": 0.9
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "dev-recuperacao-autoria",
+      "engine": "recuperacao_hibrida",
+      "split": "development",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Recupera a pagina que descreve o reconhecimento do suspeito.",
+      "tags": ["recuperacao", "autoria"],
+      "expected": {
+        "label": "fontes_localizadas",
+        "relevant_pages": [27]
+      }
+    },
+    {
+      "id": "dev-chat-pessoas",
+      "engine": "chat",
+      "split": "development",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Responde sobre as pessoas do caso com citacao apoiada nas fontes.",
+      "tags": ["chat", "citacao"],
+      "expected": {
+        "label": "respondida_com_fontes",
+        "relevant_pages": [27, 32]
+      }
+    },
+    {
+      "id": "dev-transcricao-vitima",
+      "engine": "transcricao_depoimentos",
+      "split": "development",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Identifica a vitima e preserva sua fala literal.",
+      "tags": ["depoimento", "literalidade"],
+      "expected": {
+        "label": "segmentada",
+        "relevant_pages": [10, 11],
+        "required_items": ["pessoa_identificada", "fala_literal", "tipo_vitima"]
+      }
+    },
+    {
+      "id": "dev-estrutura-sentenca",
+      "engine": "estrutura_sentenca",
+      "split": "development",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Extrai resultado, pena e transito em julgado.",
+      "tags": ["sentenca", "pena"],
+      "expected": {
+        "label": "concluido",
+        "relevant_pages": [20, 21, 22],
+        "required_items": ["resultado_condenatorio", "pena_definitiva", "transito_em_julgado"]
+      }
+    },
+    {
+      "id": "dev-prescricao-esgotada",
+      "engine": "prescricao",
+      "split": "development",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Calcula prazo esgotado com datas confirmadas.",
+      "tags": ["prescricao", "datas"],
+      "expected": {
+        "label": "prazo_esgotado_no_calculo",
+        "relevant_pages": [4, 12],
+        "required_items": ["data_fato", "recebimento_denuncia", "prazo_final"]
+      }
+    },
+    {
+      "id": "dev-nulidade-cadeia-inconclusiva",
+      "engine": "nulidades_processuais",
+      "split": "development",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Abstem-se quando falta documentacao confiavel da cadeia de custodia.",
+      "tags": ["nulidade", "cadeia_custodia"],
+      "expected": {
+        "label": "inconclusiva",
+        "relevant_pages": [8],
+        "required_items": ["integridade_nao_comprovada"],
+        "forbidden_items": ["nulidade_definitiva_sem_prejuizo"],
+        "should_abstain": true
+      }
+    },
+    {
+      "id": "test-comparacao-horario",
+      "engine": "comparacao_depoimentos",
+      "split": "test",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Compara dois relatos e marca divergencia de horario como potencial.",
+      "tags": ["depoimento", "contradicao"],
+      "expected": {
+        "label": "contradicoes_potenciais",
+        "relevant_pages": [10, 11],
+        "required_items": ["horario_divergente", "dois_trechos_literais"],
+        "forbidden_items": ["contradicao_definitiva"]
+      }
+    },
+    {
+      "id": "test-perguntas-depoente",
+      "engine": "perguntas_audiencia",
+      "split": "test",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Gera roteiro ligado aos pontos que precisam de confirmacao.",
+      "tags": ["audiencia", "perguntas"],
+      "expected": {
+        "label": "roteiro_gerado",
+        "relevant_pages": [10, 11],
+        "required_items": ["objetivo_da_pergunta", "apoio_literal", "pergunta_aberta"]
+      }
+    },
+    {
+      "id": "test-tese-autoria",
+      "engine": "teses_defensivas",
+      "split": "test",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Sustenta duvida de autoria com fatos favoraveis e contrarios.",
+      "tags": ["tese", "autoria"],
+      "expected": {
+        "label": "teses_localizadas",
+        "relevant_pages": [27, 32],
+        "required_items": ["duvida_autoria", "fonte_favoravel", "fonte_contraria"],
+        "forbidden_items": ["tese_sem_fonte"]
+      }
+    },
+    {
+      "id": "test-nulidade-reconhecimento",
+      "engine": "nulidade_reconhecimento",
+      "split": "test",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Avalia rito de reconhecimento e prova independente.",
+      "tags": ["nulidade", "reconhecimento"],
+      "expected": {
+        "label": "forte_fundamento_para_alegar_invalidade",
+        "relevant_pages": [15, 31],
+        "required_items": ["descricao_previa_nao_observada", "alinhamento_nao_observado", "prova_independente"],
+        "forbidden_items": ["invalidade_sem_ato_localizado"]
+      }
+    },
+    {
+      "id": "test-preparacao-audiencia",
+      "engine": "preparacao_audiencia",
+      "split": "test",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Consolida os blocos essenciais da preparacao sem perder paginas.",
+      "tags": ["dossie", "audiencia"],
+      "expected": {
+        "label": "concluido",
+        "relevant_pages": [4, 10, 11, 20, 21],
+        "required_items": ["resumo", "marcos_essenciais", "depoimentos", "contradicoes", "perguntas"]
+      }
+    },
+    {
+      "id": "test-nulidade-busca",
+      "engine": "nulidades_processuais",
+      "split": "test",
+      "provenance": "synthetic",
+      "review_status": "technical_review",
+      "description": "Classifica indicios de busca domiciliar sem mandado e com prejuizo ainda incompleto.",
+      "tags": ["nulidade", "busca_domiciliar"],
+      "expected": {
+        "label": "indicios_suficientes",
+        "relevant_pages": [6, 7],
+        "required_items": ["ingresso_sem_mandado", "consentimento_nao_documentado", "prejuizo_nao_demonstrado"],
+        "forbidden_items": ["nulidade_configurada_sem_prejuizo"],
+        "should_abstain": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "topic": {
+    "id": "cadeia_custodia",
+    "title": "Cadeia de custodia",
+    "version": "2026.08.04",
+    "verified_at": "2026-08-04",
+    "scope": "Rastreabilidade, integridade e confiabilidade de vestigios materiais e digitais.",
+    "search_queries": [
+      "cadeia de custodia vestigio coleta acondicionamento lacre pericia",
+      "apreensao embalagem inviolucro identificacao transporte armazenamento",
+      "recebimento processamento manuseio descarte central de custodia",
+      "divergencia peso quantidade material periciado material apreendido",
+      "prova digital hash espelhamento arquivo original integridade"
+    ],
+    "evidence_terms": [
+      "cadeia de custodia",
+      "custodia",
+      "vestigio",
+      "lacre",
+      "apreendido",
+      "pericia",
+      "involucro",
+      "integridade",
+      "hash"
+    ],
+    "sources": [
+      {
+        "id": "cpp_arts_158a_158f",
+        "authority": "Presidencia da Republica",
+        "kind": "legislacao",
+        "title": "Codigo de Processo Penal, artigos 158-A a 158-F",
+        "reference": "Decreto-Lei 3.689/1941, arts. 158-A a 158-F",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm",
+        "summary": "Define cadeia de custodia e disciplina reconhecimento, isolamento, coleta, acondicionamento, transporte, recebimento, processamento, armazenamento e descarte do vestigio."
+      },
+      {
+        "id": "cpp_art_563",
+        "authority": "Presidencia da Republica",
+        "kind": "legislacao",
+        "title": "Codigo de Processo Penal, artigo 563",
+        "reference": "Decreto-Lei 3.689/1941, art. 563",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm",
+        "summary": "Exige prejuizo para a declaracao de nulidade processual."
+      },
+      {
+        "id": "stj_cadeia_custodia_2023",
+        "authority": "Superior Tribunal de Justica",
+        "kind": "jurisprudencia_institucional",
+        "title": "Entendimentos do STJ sobre cadeia de custodia",
+        "reference": "Jurisprudencia do STJ, noticia especial de 23/04/2023",
+        "url": "https://www.stj.jus.br/sites/portalp/Paginas/Comunicacao/Noticias/2023/23042023-A-cadeia-de-custodia-no-processo-penal-do-Pacote-Anticrime-a-jurisprudencia-do-STJ.aspx",
+        "summary": "A quebra nao invalida automaticamente a prova; integridade, confiabilidade, prejuizo e demais provas devem ser avaliados no caso concreto."
+      }
+    ],
+    "requirements": [
+      {
+        "id": "vestigio_relevante",
+        "category": "aplicabilidade",
+        "label": "Vestigio relevante para a acusacao",
+        "question": "Existe vestigio material ou digital apreendido, periciado ou usado para sustentar a acusacao?",
+        "condition": "A analise se aplica quando a identificacao e o caminho do vestigio influenciam sua confiabilidade.",
+        "legal_source_ids": ["cpp_arts_158a_158f"]
+      },
+      {
+        "id": "registro_cronologico",
+        "category": "validade",
+        "label": "Registro cronologico do vestigio",
+        "question": "O processo documenta a origem do vestigio e as etapas relevantes desde o reconhecimento ate o descarte?",
+        "condition": "Aplicavel ao vestigio submetido a coleta, guarda, transporte ou pericia.",
+        "legal_source_ids": ["cpp_arts_158a_158f"]
+      },
+      {
+        "id": "acondicionamento_lacre",
+        "category": "validade",
+        "label": "Acondicionamento e lacre",
+        "question": "O vestigio foi acondicionado de forma individualizada, identificado e lacrado quando exigivel?",
+        "condition": "Aplicavel conforme a natureza do vestigio e o procedimento realizado.",
+        "legal_source_ids": ["cpp_arts_158a_158f", "stj_cadeia_custodia_2023"]
+      },
+      {
+        "id": "rastreabilidade_manuseio",
+        "category": "validade",
+        "label": "Rastreabilidade de posse e manuseio",
+        "question": "Recebimentos, aberturas, transferencias, processamento e armazenamento foram identificados?",
+        "condition": "Aplicavel enquanto o vestigio estiver sob custodia estatal.",
+        "legal_source_ids": ["cpp_arts_158a_158f"]
+      },
+      {
+        "id": "integridade_comprometida",
+        "category": "prejuizo",
+        "label": "Comprometimento concreto da integridade",
+        "question": "As falhas impedem confirmar que o material periciado e o mesmo apreendido ou indicam alteracao, mistura, perda ou contaminacao?",
+        "condition": "A irregularidade precisa ser relacionada a confiabilidade da prova no caso concreto.",
+        "legal_source_ids": ["cpp_art_563", "stj_cadeia_custodia_2023"]
+      },
+      {
+        "id": "prova_independente_integridade",
+        "category": "contrapeso",
+        "label": "Confirmacao por prova independente",
+        "question": "Ha confissao, testemunho, registro ou outra prova independente que confirme a identidade e a integridade do vestigio?",
+        "condition": "A prova independente pode reduzir o efeito processual da falha formal.",
+        "legal_source_ids": ["stj_cadeia_custodia_2023"]
+      }
+    ]
+  }
+}

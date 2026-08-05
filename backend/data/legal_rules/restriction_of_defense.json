@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "topic": {
+    "id": "cerceamento_defesa",
+    "title": "Cerceamento de defesa",
+    "version": "2026.08.04",
+    "verified_at": "2026-08-04",
+    "scope": "Acesso a prova, producao probatoria, participacao em atos e manifestacao defensiva em tempo util.",
+    "search_queries": [
+      "defesa requereu prova diligencia pericia testemunha indeferido",
+      "cerceamento de defesa acesso autos midia laudo documento",
+      "pedido defensivo indeferimento fundamentacao irrelevante impertinente protelatorio",
+      "testemunha pergunta contradita participacao audiencia impedida",
+      "alegacoes finais prazo defesa prejuizo condenacao falta prova"
+    ],
+    "evidence_terms": [
+      "cerceamento de defesa",
+      "pedido indeferido",
+      "diligencia indeferida",
+      "prova indeferida",
+      "sem acesso",
+      "acesso aos autos",
+      "alegacoes finais",
+      "prova protelatoria",
+      "indeferiu",
+      "negado acesso",
+      "nao teve acesso"
+    ],
+    "sources": [
+      {
+        "id": "cf_art_5_lv",
+        "authority": "Presidencia da Republica",
+        "kind": "constituicao",
+        "title": "Constituicao Federal, artigo 5, inciso LV",
+        "reference": "Constituicao Federal de 1988, art. 5, LV",
+        "url": "https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm",
+        "summary": "Assegura contraditorio e ampla defesa, com os meios e recursos inerentes."
+      },
+      {
+        "id": "cpp_arts_184_400_402_563",
+        "authority": "Presidencia da Republica",
+        "kind": "legislacao",
+        "title": "Codigo de Processo Penal, artigos 184, 400, 402 e 563",
+        "reference": "Decreto-Lei 3.689/1941, arts. 184, 400, 402 e 563",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm",
+        "summary": "Permite indeferir prova desnecessaria, irrelevante, impertinente ou protelatoria, disciplina diligencias finais e exige prejuizo para nulidade."
+      },
+      {
+        "id": "stj_rhc_201935_pa",
+        "authority": "Superior Tribunal de Justica",
+        "kind": "precedente",
+        "title": "AgRg no RHC 201.935/PA",
+        "reference": "Sexta Turma, DJe 16/12/2024",
+        "url": "https://processo.stj.jus.br/SCON/GetInteiroTeorDoAcordao?dt_publicacao=16%2F12%2F2024&num_registro=202402808792",
+        "summary": "O indeferimento fundamentado de prova nao caracteriza cerceamento por si so; a alegacao exige demonstracao de relevancia e prejuizo."
+      }
+    ],
+    "requirements": [
+      {
+        "id": "restricao_defensiva_localizada",
+        "category": "aplicabilidade",
+        "label": "Restricao concreta localizada",
+        "question": "O processo registra negativa de acesso, pergunta, prova, diligencia, prazo ou manifestacao requerida pela defesa?",
+        "condition": "A analise exige identificar o pedido ou oportunidade e a decisao correspondente.",
+        "legal_source_ids": ["cf_art_5_lv", "cpp_arts_184_400_402_563"]
+      },
+      {
+        "id": "acesso_integral_provas",
+        "category": "validade",
+        "label": "Acesso integral e oportuno as provas",
+        "question": "A defesa recebeu acesso ao conteudo probatorio relevante antes do ato em que precisava utiliza-lo?",
+        "condition": "Inclui documentos, laudos, audios, videos e midias mencionados pela acusacao.",
+        "legal_source_ids": ["cf_art_5_lv"]
+      },
+      {
+        "id": "pedido_prova_apreciado",
+        "category": "validade",
+        "label": "Apreciacao do pedido defensivo",
+        "question": "O pedido de prova ou diligencia foi apreciado de modo individualizado e em tempo util?",
+        "condition": "Aplicavel quando a defesa formulou pedido concreto.",
+        "legal_source_ids": ["cf_art_5_lv", "cpp_arts_184_400_402_563"]
+      },
+      {
+        "id": "indeferimento_fundamentado",
+        "category": "validade",
+        "label": "Fundamentacao do indeferimento",
+        "question": "A negativa explicou por que a prova era desnecessaria, irrelevante, impertinente ou protelatoria?",
+        "condition": "Aplicavel quando houve indeferimento.",
+        "legal_source_ids": ["cpp_arts_184_400_402_563", "stj_rhc_201935_pa"]
+      },
+      {
+        "id": "participacao_atos",
+        "category": "validade",
+        "label": "Participacao efetiva nos atos",
+        "question": "A defesa pode formular perguntas, contraditar, requerer esclarecimentos e se manifestar nos atos relevantes?",
+        "condition": "Aplicavel a audiencia, pericia e producao de prova com participacao das partes.",
+        "legal_source_ids": ["cf_art_5_lv"]
+      },
+      {
+        "id": "prejuizo_resultado_defensivo",
+        "category": "prejuizo",
+        "label": "Prejuizo concreto a estrategia defensiva",
+        "question": "A restricao impediu demonstrar fato relevante ou foi seguida de decisao desfavoravel baseada justamente na falta daquela prova ou manifestacao?",
+        "condition": "O prejuizo deve ser explicado a partir do processo.",
+        "legal_source_ids": ["cpp_arts_184_400_402_563", "stj_rhc_201935_pa"]
+      },
+      {
+        "id": "prova_sem_utilidade_demonstrada",
+        "category": "contrapeso",
+        "label": "Ausencia de utilidade concreta",
+        "question": "O pedido era generico, repetitivo ou nao explicava como a prova poderia alterar uma questao relevante?",
+        "condition": "Pode justificar o indeferimento quando a decisao e fundamentada.",
+        "legal_source_ids": ["cpp_arts_184_400_402_563", "stj_rhc_201935_pa"]
+      }
+    ]
+  }
+}

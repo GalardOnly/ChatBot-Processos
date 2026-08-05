@@ -113,6 +113,10 @@ def test_answer_process_question_uses_primary_model_and_records_history(
     assert history[1].model == "gemini:gemini-3-flash-preview"
     assert history[1].retrieved_pages == [2]
     assert history[1].retrieved_chunks[0]["chunk_index"] == 0
+    assert result.tempos is not None
+    assert result.tempos.recuperacao_ms >= 0
+    assert result.tempos.geracao_ms >= 0
+    assert result.tempos.total_ms >= result.tempos.geracao_ms
 
 
 def test_answer_process_question_uses_lexical_retrieval_when_requested(
@@ -201,6 +205,7 @@ def test_answer_process_question_routes_question_internally(tmp_path, monkeypatc
     assert search_queries[0] == pergunta
     assert search_queries[1] != pergunta
     assert "prisao" in search_queries[1].lower()
+    assert pergunta not in search_queries[1]
     assert llm_questions
     assert pergunta in llm_questions[0]
     assert "Triagem interna" in llm_questions[0]

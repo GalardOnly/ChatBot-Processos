@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "topic": {
+    "id": "prova_ilicita_derivada",
+    "title": "Prova ilicita e provas derivadas",
+    "version": "2026.08.04",
+    "verified_at": "2026-08-04",
+    "scope": "Origem ilicita da prova, nexo causal e existencia de fonte independente.",
+    "search_queries": [
+      "prova ilicita desentranhamento artigo 157 CPP",
+      "prova derivada frutos arvore envenenada nexo causal",
+      "fonte independente descoberta inevitavel investigacao autonomamente",
+      "interceptacao acesso celular dados sem autorizacao judicial",
+      "prova obtida violacao domicilio sigilo coercao ilegal"
+    ],
+    "evidence_terms": [
+      "prova ilicita",
+      "prova derivada",
+      "fonte independente",
+      "sem autorizacao judicial",
+      "acesso ao celular",
+      "interceptacao",
+      "desentranhamento",
+      "frutos da arvore",
+      "ilicita",
+      "quebra de sigilo",
+      "dados do telefone"
+    ],
+    "sources": [
+      {
+        "id": "cf_art_5_lvi",
+        "authority": "Presidencia da Republica",
+        "kind": "constituicao",
+        "title": "Constituicao Federal, artigo 5, inciso LVI",
+        "reference": "Constituicao Federal de 1988, art. 5, LVI",
+        "url": "https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm",
+        "summary": "Declara inadmissiveis no processo as provas obtidas por meios ilicitos."
+      },
+      {
+        "id": "cpp_art_157",
+        "authority": "Presidencia da Republica",
+        "kind": "legislacao",
+        "title": "Codigo de Processo Penal, artigo 157",
+        "reference": "Decreto-Lei 3.689/1941, art. 157",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm",
+        "summary": "Determina o desentranhamento da prova ilicita e disciplina nexo causal e fonte independente para provas derivadas."
+      },
+      {
+        "id": "stj_informativo_854",
+        "authority": "Superior Tribunal de Justica",
+        "kind": "informativo_jurisprudencia",
+        "title": "Informativo de Jurisprudencia 854 do STJ",
+        "reference": "Informativo 854, publicado em 17/06/2025",
+        "url": "https://processo.stj.jus.br/jurisprudencia/externo/informativo/?acao=pesquisar&aplicacao=informativo&b=INFJ&i=1&l=20&livre=revista+intima&p=true&refinar=S.DISP.",
+        "summary": "A contaminacao exige avaliar o nexo causal; fonte independente ou descoberta inevitavel podem afastar a derivacao ilicita."
+      }
+    ],
+    "requirements": [
+      {
+        "id": "prova_questionada_localizada",
+        "category": "aplicabilidade",
+        "label": "Prova e meio de obtencao identificados",
+        "question": "O processo permite identificar a prova questionada e como ela foi obtida?",
+        "condition": "Nao se conclui ilicitude apenas pela ausencia de descricao nos trechos recuperados.",
+        "legal_source_ids": ["cf_art_5_lvi", "cpp_art_157"]
+      },
+      {
+        "id": "origem_licita",
+        "category": "validade",
+        "label": "Origem licita da prova",
+        "question": "A obtencao respeitou direitos fundamentais, reserva de jurisdicao e limites da autorizacao aplicavel?",
+        "condition": "Deve ser avaliada conforme o meio concreto de obtencao.",
+        "legal_source_ids": ["cf_art_5_lvi", "cpp_art_157"]
+      },
+      {
+        "id": "limites_autorizacao",
+        "category": "validade",
+        "label": "Respeito aos limites da autorizacao",
+        "question": "Quando houve ordem judicial ou consentimento, a diligencia permaneceu dentro do objeto, periodo e pessoas autorizados?",
+        "condition": "Aplicavel quando a licitude depende de autorizacao delimitada.",
+        "legal_source_ids": ["cf_art_5_lvi", "cpp_art_157"]
+      },
+      {
+        "id": "nexo_causal_derivacao",
+        "category": "prejuizo",
+        "label": "Nexo causal com provas posteriores",
+        "question": "A prova originaria questionada conduziu concretamente a outras provas usadas contra o acusado?",
+        "condition": "Necessario para avaliar a contaminacao das provas derivadas.",
+        "legal_source_ids": ["cpp_art_157", "stj_informativo_854"]
+      },
+      {
+        "id": "uso_processual_prova",
+        "category": "prejuizo",
+        "label": "Uso processual relevante",
+        "question": "A prova ilicita ou derivada sustentou flagrante, denuncia, cautelar, pronuncia ou condenacao?",
+        "condition": "Relaciona a ilicitude ao prejuizo produzido no processo.",
+        "legal_source_ids": ["cf_art_5_lvi", "cpp_art_157"]
+      },
+      {
+        "id": "fonte_independente",
+        "category": "contrapeso",
+        "label": "Fonte independente",
+        "question": "A mesma prova foi obtida por caminho autonomo, licito e sem nexo causal com a origem questionada?",
+        "condition": "A independencia precisa estar documentada no processo.",
+        "legal_source_ids": ["cpp_art_157", "stj_informativo_854"]
+      },
+      {
+        "id": "descoberta_inevitavel",
+        "category": "contrapeso",
+        "label": "Descoberta inevitavel",
+        "question": "Uma linha licita de investigacao ja em curso conduziria inevitavelmente a prova?",
+        "condition": "Exige fatos concretos sobre a linha investigativa, nao mera hipotese retrospectiva.",
+        "legal_source_ids": ["cpp_art_157", "stj_informativo_854"]
+      }
+    ]
+  }
+}

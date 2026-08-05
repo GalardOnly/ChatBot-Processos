@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "topic": {
+    "id": "busca_pessoal_domiciliar",
+    "title": "Busca pessoal ou domiciliar",
+    "version": "2026.08.04",
+    "verified_at": "2026-08-04",
+    "scope": "Justa causa, mandado, consentimento e efeitos probatorios de buscas pessoais ou domiciliares.",
+    "search_queries": [
+      "busca pessoal revista fundada suspeita abordagem policial apreensao",
+      "busca domiciliar entrada residencia casa mandado consentimento morador",
+      "flagrante delito fundadas razoes ingresso domicilio denuncia anonima",
+      "autorizacao entrada domicilio termo consentimento gravacao testemunha",
+      "prova apreendida busca ilegal prova derivada fonte independente"
+    ],
+    "evidence_terms": [
+      "busca pessoal",
+      "revista pessoal",
+      "busca domiciliar",
+      "entrou na residencia",
+      "ingresso no domicilio",
+      "mandado de busca",
+      "consentimento do morador",
+      "fundada suspeita",
+      "abordagem policial",
+      "revist",
+      "ingressaram no imovel",
+      "entrada franqueada"
+    ],
+    "sources": [
+      {
+        "id": "cf_art_5_xi",
+        "authority": "Presidencia da Republica",
+        "kind": "constituicao",
+        "title": "Constituicao Federal, artigo 5, inciso XI",
+        "reference": "Constituicao Federal de 1988, art. 5, XI",
+        "url": "https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm",
+        "summary": "Protege a inviolabilidade do domicilio e enumera as hipoteses constitucionais de ingresso."
+      },
+      {
+        "id": "cpp_arts_240_245",
+        "authority": "Presidencia da Republica",
+        "kind": "legislacao",
+        "title": "Codigo de Processo Penal, artigos 240 a 245",
+        "reference": "Decreto-Lei 3.689/1941, arts. 240 a 245",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm",
+        "summary": "Disciplina finalidade, mandado, fundada suspeita e execucao das buscas pessoal e domiciliar."
+      },
+      {
+        "id": "stf_tema_280",
+        "authority": "Supremo Tribunal Federal",
+        "kind": "repercussao_geral",
+        "title": "Tema 280 do STF",
+        "reference": "RE 603.616, Plenario, transito em julgado em 21/06/2016",
+        "url": "https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=280",
+        "summary": "A entrada forcada sem mandado exige fundadas razoes anteriores, justificadas depois, de flagrante no interior da casa."
+      },
+      {
+        "id": "stj_rhc_158580",
+        "authority": "Superior Tribunal de Justica",
+        "kind": "precedente",
+        "title": "RHC 158.580/BA e jurisprudencia correlata",
+        "reference": "Sexta Turma, DJe 25/04/2022",
+        "url": "https://processo.stj.jus.br/SCON/pesquisar.jsp?O=JT&b=ACOR&livre=%40CDOC%3D%272479187%27",
+        "summary": "A busca pessoal sem mandado exige fundada suspeita objetiva de posse de corpo de delito; intuicao ou denuncia anonima isolada nao bastam."
+      }
+    ],
+    "requirements": [
+      {
+        "id": "diligencia_invasiva_localizada",
+        "category": "aplicabilidade",
+        "label": "Realizacao da busca",
+        "question": "Houve busca pessoal, veicular equiparada ou ingresso em domicilio relacionado as provas do caso?",
+        "condition": "A analise exige a localizacao do ato e de suas circunstancias.",
+        "legal_source_ids": ["cpp_arts_240_245", "cf_art_5_xi"]
+      },
+      {
+        "id": "fundada_suspeita_pessoal",
+        "category": "validade",
+        "label": "Fundada suspeita para busca pessoal",
+        "question": "A busca pessoal foi antecedida por elementos objetivos e descritos de posse de arma ou corpo de delito?",
+        "condition": "Aplicavel somente a busca pessoal ou veicular de natureza processual penal sem mandado.",
+        "legal_source_ids": ["cpp_arts_240_245", "stj_rhc_158580"]
+      },
+      {
+        "id": "mandado_ou_excecao_domiciliar",
+        "category": "validade",
+        "label": "Mandado ou excecao constitucional",
+        "question": "O ingresso domiciliar decorreu de mandado diurno, consentimento do morador ou flagrante amparado em fundadas razoes?",
+        "condition": "Aplicavel somente a busca domiciliar.",
+        "legal_source_ids": ["cf_art_5_xi", "cpp_arts_240_245", "stf_tema_280"]
+      },
+      {
+        "id": "razoes_anteriores_diligencia",
+        "category": "validade",
+        "label": "Justificativa anterior a descoberta",
+        "question": "As razoes da busca existiam antes do ingresso ou revista, sem justificacao baseada apenas no que foi encontrado depois?",
+        "condition": "Aplicavel a diligencia sem mandado.",
+        "legal_source_ids": ["stf_tema_280", "stj_rhc_158580"]
+      },
+      {
+        "id": "consentimento_livre_comprovado",
+        "category": "validade",
+        "label": "Consentimento livre e comprovado",
+        "question": "Quando invocado, o consentimento do morador foi livre, anterior ao ingresso e demonstrado nos autos?",
+        "condition": "Aplicavel apenas quando a acusacao sustenta que o morador autorizou a entrada.",
+        "legal_source_ids": ["cf_art_5_xi", "stf_tema_280"]
+      },
+      {
+        "id": "prova_resultante_busca",
+        "category": "prejuizo",
+        "label": "Influencia da busca na acusacao",
+        "question": "A busca produziu prova usada para flagrante, denuncia, cautelar, pronuncia ou condenacao?",
+        "condition": "Relaciona a irregularidade ao prejuizo defensivo concreto.",
+        "legal_source_ids": ["stf_tema_280", "cpp_arts_240_245"]
+      },
+      {
+        "id": "prova_independente_busca",
+        "category": "contrapeso",
+        "label": "Prova independente da busca",
+        "question": "Ha prova relevante obtida por fonte realmente independente da diligencia questionada?",
+        "condition": "A independencia precisa ser demonstrada, nao apenas afirmada.",
+        "legal_source_ids": ["stf_tema_280"]
+      }
+    ]
+  }
+}

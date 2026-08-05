@@ -10,6 +10,7 @@
       "source": "STJ, REsp 1.481.531/SP, inteiro teor do acordao",
       "source_url": "https://www.stj.jus.br/websecstj/cgi/revista/REJ.cgi/ITA?dt=20170307&formato=PDF&nreg=201401869064&salvar=false&seq=1568697&tipo=0",
       "sha256": "23e1ba3c2b613471077ffbb98475242fba143cb13642905167b5643a7ed291d9",
+      "text_sha256": "9da51fb06126add77f63b1fdb9e3ca1cc5d7bcaefa602f0917e1a3149302593b",
       "cases": [
         {
           "id": "identificacao-julgado",
@@ -19,6 +20,13 @@
             "RECURSO ESPECIAL Nº 1.481.531",
             "MINISTRO MOURA RIBEIRO",
             "DIREITO DE VISITAÇÃO"
+          ],
+          "response_relevant_pages": [1, 3, 5, 7, 15, 16, 18],
+          "response_expected_terms": [
+            "Recurso Especial || REsp",
+            "1.481.531",
+            "Moura Ribeiro",
+            "regime de visitas || direito de visitação || convivência familiar"
           ],
           "review_status": "pending",
           "reviewer": null,
@@ -33,6 +41,11 @@
             "descumprimento do regime de visitação",
             "R$ 500,00"
           ],
+          "response_expected_terms": [
+            "fixação preventiva || multa preventiva",
+            "descumprimento",
+            "R$ 500,00 || 500 reais"
+          ],
           "review_status": "pending",
           "reviewer": null,
           "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
@@ -45,6 +58,11 @@
             "Terceira Turma",
             "negar provimento",
             "16 de fevereiro de 2017"
+          ],
+          "response_expected_terms": [
+            "Terceira Turma",
+            "negar provimento || negado provimento || não provido",
+            "16 de fevereiro de 2017 || 16/02/2017"
           ],
           "review_status": "pending",
           "reviewer": null,
@@ -59,6 +77,7 @@
       "source": "STJ, HC 477.723/SP, inteiro teor do acordao",
       "source_url": "https://www.stj.jus.br/websecstj/cgi/revista/REJ.cgi/ITA?dt=20190307&formato=PDF&nreg=201802942955&salvar=false&seq=1791608&tipo=0",
       "sha256": "6eeecf66d9bfdafb6a487ecc5b9ef9985c08ceac97b4d9e827324e4fe825d4bd",
+      "text_sha256": "a2a99ef0b3c06190699c827fb448d56cf390defe8f808c92bd54b424d6605725",
       "cases": [
         {
           "id": "medidas-protetivas-aplicadas",
@@ -67,6 +86,12 @@
           "expected_terms": [
             "29/05/2018",
             "200m",
+            "proibição de contato"
+          ],
+          "response_expected_terms": [
+            "29/05/2018 || 29 de maio de 2018",
+            "200m || 200 metros || duzentos metros",
+            "proibição de aproximação",
             "proibição de contato"
           ],
           "review_status": "pending",
@@ -82,6 +107,11 @@
             "independentemente de coabitação",
             "Súmula n.º 600"
           ],
+          "response_expected_terms": [
+            "relação íntima de afeto",
+            "independentemente de coabitação || coabitação não é exigida || desnecessidade de coabitação",
+            "Súmula n.º 600 || Súmula nº 600 || Súmula 600"
+          ],
           "review_status": "pending",
           "reviewer": null,
           "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
@@ -94,6 +124,11 @@
             "unanimidade",
             "denegar a ordem",
             "12 de fevereiro de 2019"
+          ],
+          "response_expected_terms": [
+            "unanimidade || unânime",
+            "denegar a ordem || ordem denegada",
+            "12 de fevereiro de 2019 || 12/02/2019"
           ],
           "review_status": "pending",
           "reviewer": null,
@@ -108,6 +143,7 @@
       "source": "STJ, REsp 1.876.047/SP, inteiro teor do acordao",
       "source_url": "https://www.stj.jus.br/websecstj/cgi/revista/REJ.cgi/ITA?dt=20230420&formato=PDF&nreg=202000415389&salvar=false&seq=2288246&tipo=0",
       "sha256": "bef6d305d2edb25bb5a2c42b89bdbed7976bbeba6e012ceec7bbed31980f66c8",
+      "text_sha256": "8113b2680eac21d7dfc4dc3aa2eb88e82336e4ec1d2f1d318a72324e9960deed",
       "cases": [
         {
           "id": "identificacao-e-defensoria",
@@ -118,6 +154,13 @@
             "MINISTRA NANCY ANDRIGHI",
             "DEFENSORIA PÚBLICA DO ESTADO DE SÃO PAULO"
           ],
+          "response_relevant_pages": [1, 4, 7, 10, 22],
+          "response_expected_terms": [
+            "Recurso Especial || REsp",
+            "1.876.047",
+            "Nancy Andrighi",
+            "Defensoria Pública do Estado de São Paulo || DPE-SP"
+          ],
           "review_status": "pending",
           "reviewer": null,
           "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
@@ -127,6 +170,11 @@
           "pergunta": "Qual era a condicao de saude da beneficiaria e qual tratamento domiciliar era necessario?",
           "expected_pages": [13],
           "expected_terms": [
+            "esquisenfalia cerebral bilateral",
+            "paralisia cerebral",
+            "síndrome de Lennox-Gastaut"
+          ],
+          "response_expected_terms": [
             "esquisenfalia cerebral bilateral",
             "paralisia cerebral",
             "síndrome de Lennox-Gastaut"
@@ -144,6 +192,11 @@
             "plano individual",
             "home care em duas cidades distintas"
           ],
+          "response_expected_terms": [
+            "excluir da condenação || excluída da condenação",
+            "plano individual",
+            "home care em duas cidades distintas || atendimento domiciliar em duas cidades"
+          ],
           "review_status": "pending",
           "reviewer": null,
           "review_notes": "Pagina e termos conferidos tecnicamente no PDF oficial."
@@ -156,6 +209,11 @@
             "parcial provimento",
             "Terceira Turma",
             "18/04/2023"
+          ],
+          "response_expected_terms": [
+            "parcial provimento || parcialmente provido",
+            "Terceira Turma",
+            "18/04/2023 || 18 de abril de 2023"
           ],
           "review_status": "pending",
           "reviewer": null,

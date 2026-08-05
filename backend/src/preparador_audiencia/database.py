@@ -184,6 +184,21 @@ def initialize_database(connection: sqlite3.Connection) -> None:
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS nullity_analyses (
+            processo_id TEXT NOT NULL REFERENCES processos(id) ON DELETE CASCADE,
+            topic_id TEXT NOT NULL,
+            schema_version TEXT NOT NULL,
+            catalog_version TEXT NOT NULL,
+            conclusion TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            model TEXT NOT NULL,
+            fallback_used INTEGER NOT NULL DEFAULT 0,
+            search_mode TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (processo_id, topic_id)
+        );
         """
     )
     _ensure_process_columns(connection)
@@ -208,6 +223,10 @@ def initialize_database(connection: sqlite3.Connection) -> None:
     connection.execute(
         "CREATE INDEX IF NOT EXISTS idx_prescription_calculations_process "
         "ON prescription_calculations (processo_id, created_at DESC)"
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_nullity_analyses_process "
+        "ON nullity_analyses (processo_id, updated_at DESC)"
     )
     connection.execute(
         """

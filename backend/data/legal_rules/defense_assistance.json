@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "topic": {
+    "id": "ausencia_deficiencia_defesa",
+    "title": "Ausencia ou deficiencia de defesa",
+    "version": "2026.08.04",
+    "verified_at": "2026-08-04",
+    "scope": "Presenca e efetividade minima da defesa tecnica durante atos relevantes do processo penal.",
+    "search_queries": [
+      "reu sem defensor advogado ausente defensor dativo defensoria publica",
+      "abandono processo renuncia advogado intimacao constituir novo defensor",
+      "defesa previa resposta acusacao alegacoes finais recurso nao apresentado",
+      "audiencia interrogatorio sem defensor defesa tecnica",
+      "defesa deficiente prejuizo reu nulidade absoluta"
+    ],
+    "evidence_terms": [
+      "sem defensor",
+      "defensor ausente",
+      "abandono da causa",
+      "defensor dativo",
+      "defensoria publica",
+      "renuncia do advogado",
+      "defesa previa",
+      "alegacoes finais",
+      "defensor",
+      "advogado"
+    ],
+    "sources": [
+      {
+        "id": "cf_art_5_lv",
+        "authority": "Presidencia da Republica",
+        "kind": "constituicao",
+        "title": "Constituicao Federal, artigo 5, inciso LV",
+        "reference": "Constituicao Federal de 1988, art. 5, LV",
+        "url": "https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm",
+        "summary": "Assegura contraditorio e ampla defesa, com os meios e recursos inerentes."
+      },
+      {
+        "id": "cpp_arts_261_265_563",
+        "authority": "Presidencia da Republica",
+        "kind": "legislacao",
+        "title": "Codigo de Processo Penal, artigos 261 a 265 e 563",
+        "reference": "Decreto-Lei 3.689/1941, arts. 261 a 265 e 563",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm",
+        "summary": "Nenhum acusado sera processado ou julgado sem defensor; disciplina nomeacao, abandono e a necessidade de prejuizo."
+      },
+      {
+        "id": "stf_sumula_523",
+        "authority": "Supremo Tribunal Federal",
+        "kind": "sumula",
+        "title": "Sumula 523 do STF",
+        "reference": "Sumula 523",
+        "url": "https://portal.stf.jus.br/jurisprudencia/sumariosumulas.asp?base=30&sumula=2729",
+        "summary": "A falta de defesa constitui nulidade absoluta; a deficiencia depende de prova de prejuizo para o reu."
+      }
+    ],
+    "requirements": [
+      {
+        "id": "ato_exigia_defesa",
+        "category": "aplicabilidade",
+        "label": "Ato processual relevante",
+        "question": "O processo registra audiencia, interrogatorio, resposta, alegacoes, recurso ou outro ato que exigia defesa tecnica?",
+        "condition": "A analise deve identificar o ato e o acusado afetado.",
+        "legal_source_ids": ["cf_art_5_lv", "cpp_arts_261_265_563"]
+      },
+      {
+        "id": "defesa_tecnica_presente",
+        "category": "validade",
+        "label": "Presenca de defesa tecnica",
+        "question": "O acusado esteve assistido por defensor constituido, publico ou nomeado no ato relevante?",
+        "condition": "A falta total de defesa recebe tratamento distinto da mera deficiencia.",
+        "legal_source_ids": ["cpp_arts_261_265_563", "stf_sumula_523"],
+        "decisive_without_prejudice": true
+      },
+      {
+        "id": "oportunidade_atuacao_defesa",
+        "category": "validade",
+        "label": "Oportunidade real de atuacao",
+        "question": "A defesa teve acesso ao ato e oportunidade para orientar o acusado, requerer prova, perguntar e se manifestar?",
+        "condition": "Aplicavel mesmo quando um defensor aparece formalmente no processo.",
+        "legal_source_ids": ["cf_art_5_lv", "cpp_arts_261_265_563"]
+      },
+      {
+        "id": "abandono_regularizado",
+        "category": "validade",
+        "label": "Regularizacao do abandono ou ausencia",
+        "question": "Diante de abandono, renuncia ou ausencia, houve intimacao do acusado e nomeacao de substituto antes da continuidade dos atos?",
+        "condition": "Aplicavel quando o defensor deixou de atuar ou comparecer.",
+        "legal_source_ids": ["cpp_arts_261_265_563"]
+      },
+      {
+        "id": "prejuizo_defesa_deficiente",
+        "category": "prejuizo",
+        "label": "Prejuizo da atuacao deficiente",
+        "question": "A deficiencia impediu contraditar prova, produzir elemento relevante, formular pedido ou recorrer em momento util?",
+        "condition": "Necessario para anular por mera deficiencia, sem falta total de defesa.",
+        "legal_source_ids": ["cpp_arts_261_265_563", "stf_sumula_523"]
+      },
+      {
+        "id": "reparacao_posterior_defesa",
+        "category": "contrapeso",
+        "label": "Reparacao posterior efetiva",
+        "question": "O ato foi renovado ou a defesa recebeu oportunidade posterior equivalente e util para afastar o prejuizo?",
+        "condition": "A mera atuacao posterior nao basta se a oportunidade perdida era irrepetivel.",
+        "legal_source_ids": ["cf_art_5_lv", "cpp_arts_261_265_563"]
+      }
+    ]
+  }
+}

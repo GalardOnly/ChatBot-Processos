@@ -8,7 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, BackgroundTasks, File, UploadFile
 from fastapi.responses import JSONResponse
 
-from preparador_audiencia.chat import answer_process_question, sources_to_schema
+from preparador_audiencia.chat import ChatTimings, answer_process_question, sources_to_schema
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.ingestion import (
     create_processo_from_staged_pdf,
@@ -29,6 +29,7 @@ from preparador_audiencia.retrieval import search_process_configured
 from preparador_audiencia.schemas import (
     ChatRequest,
     ChatResponse,
+    ChatTimingResponse,
     ErrorResponse,
     LegalSourceResponse,
     NullityAnalysisRequest,
@@ -410,6 +411,7 @@ def chat_with_process(
         fallback_usado=result.fallback_usado,
         modo_busca=search_mode,
         fontes=sources_to_schema(result.fontes),
+        tempos=_chat_timings_to_schema(result.tempos),
         avaliacao=_quality_to_schema(result.avaliacao),
     )
 
@@ -520,4 +522,17 @@ def _quality_to_schema(evaluation) -> QualityEvaluationResponse | None:
         faltou=evaluation.faltou,
         veredito=evaluation.veredito,
         erro=evaluation.error,
+    )
+
+
+def _chat_timings_to_schema(timings: ChatTimings | None) -> ChatTimingResponse | None:
+    if timings is None:
+        return None
+    return ChatTimingResponse(
+        triagem_ms=timings.triagem_ms,
+        recuperacao_ms=timings.recuperacao_ms,
+        validacao_fontes_ms=timings.validacao_fontes_ms,
+        geracao_ms=timings.geracao_ms,
+        avaliacao_ms=timings.avaliacao_ms,
+        total_ms=timings.total_ms,
     )

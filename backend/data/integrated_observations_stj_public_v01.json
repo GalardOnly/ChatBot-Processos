@@ -1,0 +1,203 @@
+{
+  "schema_version": "1.0",
+  "suite_id": "stj-multidominio-v1-integrado-v1",
+  "run_id": "stj-publico-legal-ensemble-2026-07-26",
+  "producer": "routing_benchmark:legal-ensemble:top_k=5:routed",
+  "generated_at": "2026-08-05T01:53:10.647670+00:00",
+  "observations": [
+    {
+      "case_id": "stj-resp-1481531-familia.identificacao-julgado",
+      "label": "fontes_relevantes_localizadas",
+      "source_pages": [
+        2,
+        13,
+        9,
+        7,
+        3
+      ],
+      "cited_pages": null,
+      "items": null,
+      "abstained": null,
+      "latency_ms": 140,
+      "llm_calls": 0,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    },
+    {
+      "case_id": "stj-resp-1481531-familia.astreintes-visitas",
+      "label": "fontes_relevantes_localizadas",
+      "source_pages": [
+        14,
+        8,
+        9,
+        4
+      ],
+      "cited_pages": null,
+      "items": null,
+      "abstained": null,
+      "latency_ms": 150,
+      "llm_calls": 0,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    },
+    {
+      "case_id": "stj-resp-1481531-familia.resultado-julgamento",
+      "label": "fontes_relevantes_localizadas",
+      "source_pages": [
+        2,
+        13,
+        8,
+        18
+      ],
+      "cited_pages": null,
+      "items": null,
+      "abstained": null,
+      "latency_ms": 416,
+      "llm_calls": 0,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    },
+    {
+      "case_id": "stj-hc-477723-violencia-domestica.medidas-protetivas-aplicadas",
+      "label": "fontes_relevantes_localizadas",
+      "source_pages": [
+        3,
+        6,
+        7
+      ],
+      "cited_pages": null,
+      "items": null,
+      "abstained": null,
+      "latency_ms": 390,
+      "llm_calls": 0,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    },
+    {
+      "case_id": "stj-hc-477723-violencia-domestica.coabitacao-lei-maria-penha",
+      "label": "fontes_relevantes_localizadas",
+      "source_pages": [
+        9,
+        7,
+        1,
+        5,
+        10
+      ],
+      "cited_pages": null,
+      "items": null,
+      "abstained": null,
+      "latency_ms": 159,
+      "llm_calls": 0,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    },
+    {
+      "case_id": "stj-hc-477723-violencia-domestica.resultado-habeas-corpus",
+      "label": "fontes_relevantes_localizadas",
+      "source_pages": [
+        2,
+        8,
+        7,
+        11
+      ],
+      "cited_pages": null,
+      "items": null,
+      "abstained": null,
+      "latency_ms": 394,
+      "llm_calls": 0,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    },
+    {
+      "case_id": "stj-resp-1876047-saude.identificacao-e-defensoria",
+      "label": "fontes_relevantes_localizadas",
+      "source_pages": [
+        7,
+        2,
+        14,
+        9,
+        22
+      ],
+      "cited_pages": null,
+      "items": null,
+      "abstained": null,
+      "latency_ms": 135,
+      "llm_calls": 0,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    },
+    {
+      "case_id": "stj-resp-1876047-saude.condicao-e-tratamento",
+      "label": "fontes_relevantes_localizadas",
+      "source_pages": [
+        14,
+        17,
+        13,
+        20,
+        1
+      ],
+      "cited_pages": null,
+      "items": null,
+      "abstained": null,
+      "latency_ms": 347,
+      "llm_calls": 0,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    },
+    {
+      "case_id": "stj-resp-1876047-saude.cobertura-sem-plano-individual",
+      "label": "fontes_relevantes_localizadas",
+      "source_pages": [
+        5,
+        16,
+        13,
+        14
+      ],
+      "cited_pages": null,
+      "items": null,
+      "abstained": null,
+      "latency_ms": 136,
+      "llm_calls": 0,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    },
+    {
+      "case_id": "stj-resp-1876047-saude.resultado-recursos",
+      "label": "fontes_relevantes_localizadas",
+      "source_pages": [
+        18,
+        2,
+        13,
+        7,
+        22
+      ],
+      "cited_pages": null,
+      "items": null,
+      "abstained": null,
+      "latency_ms": 329,
+      "llm_calls": 0,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    }
+  ]
+}

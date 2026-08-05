@@ -7,7 +7,21 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 DEFAULT_LEGAL_RULES_DIR = Path(__file__).resolve().parents[2] / "data/legal_rules"
-ALLOWED_OFFICIAL_DOMAINS = ("cnj.jus.br", "planalto.gov.br", "stj.jus.br")
+ALLOWED_OFFICIAL_DOMAINS = (
+    "cnj.jus.br",
+    "planalto.gov.br",
+    "stf.jus.br",
+    "stj.jus.br",
+)
+
+PROCEDURAL_NULLITY_TOPIC_IDS = (
+    "cadeia_custodia",
+    "busca_pessoal_domiciliar",
+    "ausencia_deficiencia_defesa",
+    "prova_ilicita_derivada",
+    "citacao_intimacao_interrogatorio",
+    "cerceamento_defesa",
+)
 
 
 @dataclass(frozen=True)
@@ -29,6 +43,7 @@ class LegalRequirement:
     question: str
     condition: str
     legal_source_ids: tuple[str, ...]
+    decisive_without_prejudice: bool = False
 
 
 @dataclass(frozen=True)
@@ -39,6 +54,7 @@ class LegalTopic:
     verified_at: str
     scope: str
     search_queries: tuple[str, ...]
+    evidence_terms: tuple[str, ...]
     sources: tuple[LegalSource, ...]
     requirements: tuple[LegalRequirement, ...]
 
@@ -61,6 +77,7 @@ def load_legal_topic(
         verified_at=str(raw_topic["verified_at"]),
         scope=str(raw_topic["scope"]),
         search_queries=tuple(str(query) for query in raw_topic["search_queries"]),
+        evidence_terms=tuple(str(term) for term in raw_topic.get("evidence_terms", [])),
         sources=tuple(_source_from_dict(item) for item in raw_topic["sources"]),
         requirements=tuple(
             _requirement_from_dict(item) for item in raw_topic["requirements"]
@@ -71,7 +88,15 @@ def load_legal_topic(
 
 
 def _topic_filename(topic_id: str) -> str:
-    filenames = {"reconhecimento_pessoas": "recognition_person.json"}
+    filenames = {
+        "reconhecimento_pessoas": "recognition_person.json",
+        "cadeia_custodia": "chain_of_custody.json",
+        "busca_pessoal_domiciliar": "personal_home_search.json",
+        "ausencia_deficiencia_defesa": "defense_assistance.json",
+        "prova_ilicita_derivada": "illegal_evidence.json",
+        "citacao_intimacao_interrogatorio": "notice_interrogation.json",
+        "cerceamento_defesa": "restriction_of_defense.json",
+    }
     try:
         return filenames[topic_id]
     except KeyError as exc:
@@ -98,6 +123,7 @@ def _requirement_from_dict(item: dict[str, object]) -> LegalRequirement:
         question=str(item["question"]),
         condition=str(item["condition"]),
         legal_source_ids=tuple(str(source_id) for source_id in item["legal_source_ids"]),
+        decisive_without_prejudice=bool(item.get("decisive_without_prejudice", False)),
     )
 
 
@@ -120,7 +146,13 @@ def _validate_topic(topic: LegalTopic, *, expected_id: str) -> None:
         if not _is_official_url(source.url):
             raise ValueError(f"Fonte juridica nao oficial: {source.url}")
     for requirement in topic.requirements:
-        if requirement.category not in {"aplicabilidade", "validade", "impacto"}:
+        if requirement.category not in {
+            "aplicabilidade",
+            "validade",
+            "impacto",
+            "prejuizo",
+            "contrapeso",
+        }:
             raise ValueError(f"Categoria juridica invalida: {requirement.category}")
         unknown_ids = set(requirement.legal_source_ids) - known_source_ids
         if unknown_ids:

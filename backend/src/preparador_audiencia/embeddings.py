@@ -47,6 +47,11 @@ def embedding_provider_from_spec(spec: str) -> EmbeddingProvider:
     return _embedding_provider_from_spec(spec, embedding_device_from_environment())
 
 
+def clear_embedding_provider_cache() -> None:
+    """Limpa apenas o cache em memoria usado por diagnosticos de carga fria."""
+    _embedding_provider_from_spec.cache_clear()
+
+
 @lru_cache(maxsize=16)
 def _embedding_provider_from_spec(spec: str, requested_device: str) -> EmbeddingProvider:
     resolved = resolve_embedding_spec(spec)

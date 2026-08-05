@@ -30,6 +30,7 @@ def test_route_question_does_not_enrich_search_with_weak_generic_match() -> None
     assert route.area is None
     assert route.audiencia is None
     assert route.search_query() == pergunta
+    assert route.guide_query() == ""
     assert route.llm_question() == pergunta
 
 
@@ -64,11 +65,18 @@ def test_route_question_ignores_generic_word_aparece() -> None:
 
 
 def test_route_question_requires_result_intent_for_judgment_guide() -> None:
-    route = route_question(
+    pergunta = (
         "Qual e o recurso, quem foi o relator e qual tema familiar aparece no julgamento?"
     )
+    route = route_question(pergunta)
 
-    assert "geral_resultado_julgamento" not in [guide.id for guide in route.guides]
+    guide_ids = [guide.id for guide in route.guides]
+
+    assert "geral_resultado_julgamento" not in guide_ids
+    assert guide_ids[0] == "geral_identificacao_julgamento"
+    assert "numero" in route.search_query()
+    assert "relator" in route.search_query()
+    assert pergunta not in route.guide_query()
 
 
 def test_route_question_rejects_single_weak_overlap_in_multi_topic_question() -> None:

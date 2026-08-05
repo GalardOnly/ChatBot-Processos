@@ -50,6 +50,10 @@ Rotas implementadas:
 - `GET /processo/{id}/estrutura-sentenca`
 - `POST /processo/{id}/teses-defensivas`
 - `GET /processo/{id}/teses-defensivas`
+- `POST /processo/{id}/analise-nulidades`
+- `GET /processo/{id}/analise-nulidades`
+- `POST /processo/{id}/analise-nulidades/{tema}`
+- `GET /processo/{id}/analise-nulidades/{tema}`
 
 ## Rodar interface Streamlit
 
@@ -158,6 +162,12 @@ gate juridico controlado. O padrao desse endpoint e:
 ```powershell
 $env:PREPARADOR_NULLITY_FALLBACK_LLM="groq:llama-3.3-70b-versatile"
 ```
+
+O motor geral cobre cadeia de custodia, busca pessoal ou domiciliar, ausencia
+ou deficiencia de defesa, prova ilicita e derivada, citacao, intimacao,
+interrogatorio e cerceamento de defesa. Cada tema e salvo separadamente. A LLM
+classifica requisitos, mas a conclusao e calculada pelo servidor e depende de
+trechos literais validados com suas paginas.
 
 ## Embeddings e busca vetorial
 
@@ -280,6 +290,85 @@ Markdown resumido com fidelidade as fontes, completude juridica, utilidade para
 audiencia e risco de alucinacao. O relatorio tambem mostra sinais objetivos por
 regra, como paginas citadas, paginas citadas fora das fontes e proporcao de
 linhas afirmativas com citacao.
+
+## Benchmark integrado
+
+Os benchmarks especializados continuam responsaveis por produzir resultados.
+O consolidador integrado compara essas observacoes com um gabarito versionado e
+gera uma visao comum de rotulos, hit e cobertura de paginas, citacoes, itens obrigatorios, falsos
+positivos, abstencao, latencia e uso de LLM.
+
+Para conferir a calibracao sem gravar um relatorio:
+
+```powershell
+benchmark-integrado --split development --dry-run
+```
+
+Para gerar os arquivos JSON e Markdown:
+
+```powershell
+benchmark-integrado `
+  --split development `
+  --output reports/benchmark-integrado-calibracao.json
+```
+
+O arquivo de observacoes inicial e sintetico e serve apenas para validar o
+contrato do avaliador. O gate juridico so e calculado para casos do split
+`test` com revisao `legal_approved`. O consolidador nao faz chamadas externas e
+nao calcula custo por uma tabela interna; chamadas, tokens e custo precisam vir
+da execucao observada.
+
+A decisao completa esta em `../docs/45-benchmark-integrado-qualidade.md`.
+
+Um relatorio de referencia existente pode ser convertido sem reexecutar modelos
+ou chamar provedores externos:
+
+```powershell
+adaptar-benchmark-publico `
+  --reference-report "reports/benchmark-referencia.json" `
+  --test-process stj-resp-1876047-saude
+```
+
+O adaptador valida a identidade das perguntas e paginas, preserva URL e hash da
+fonte e separa os splits por processo inteiro. Na primeira medicao publica, o
+hit foi 100%, mas o recall de todas as paginas esperadas ficou em 80,5% no
+desenvolvimento e 68,8% no teste. Os casos ainda aguardam revisao juridica.
+
+O chat pode ser medido separadamente com respostas reais. O comando faz uma
+copia do SQLite, nao grava historico no banco ativo, bloqueia o split de teste
+sem autorizacao explicita e interrompe antes de executar se o pior caso exceder
+o limite de chamadas:
+
+```powershell
+benchmark-chat-publico `
+  --test-process stj-resp-1876047-saude `
+  --process-map stj-resp-1481531-familia=proc_xxxxx `
+                stj-hc-477723-violencia-domestica=proc_yyyyy `
+  --limit-cases 3 `
+  --top-k 5 `
+  --max-llm-calls 6
+```
+
+Os termos de resposta aceitam alternativas declaradas no gabarito, como
+`200m || 200 metros`, e sao conferidos somente depois da geracao. Respostas e
+fontes salvas podem ser reavaliadas offline sem nova chamada ao provedor.
+
+Para descobrir onde o chat esta demorando, o perfilador mede separadamente a
+inicializacao do PyTorch/CUDA, a carga de cada modelo de embedding, a
+recuperacao fria e quente e, quando autorizada, uma unica chamada ao Gemini:
+
+```powershell
+perfil-latencia-chat `
+  --processo-id proc_xxxxx `
+  --pergunta "Qual foi o resultado do julgamento?" `
+  --repeticoes 5 `
+  --with-gemini `
+  --max-llm-calls 1
+```
+
+Sem `--with-gemini`, nenhuma API generativa e chamada. Mesmo com a opcao, o
+comando exige `--max-llm-calls 1` e nao aciona o fallback. O diagnostico e as
+medicoes atuais estao em `../docs/46-latencia-chat.md`.
 
 ## Banco de perguntas para audiencia
 
@@ -488,7 +577,10 @@ revisao. A ausencia de nome nunca e preenchida por inferencia de LLM.
 ## Suite de referencia multidominio
 
 A suite versionada em `data/reference_suite_multidomain.json` descreve tres
-acordaos publicos do STJ, seus hashes e dez casos de recuperacao. Os PDFs ficam
+acordaos publicos do STJ, seus hashes e dez casos de recuperacao. Cada fonte
+possui o SHA-256 binario historico e um `text_sha256` estavel por pagina. Isso
+permite aceitar PDFs oficiais regenerados com metadados diferentes sem aceitar
+mudanca de conteudo. Os PDFs ficam
 fora do Git e podem ser baixados das URLs oficiais registradas no manifesto.
 
 Para validar apenas o schema e os gabaritos:

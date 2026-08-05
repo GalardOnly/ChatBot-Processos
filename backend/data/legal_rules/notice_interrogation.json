@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "topic": {
+    "id": "citacao_intimacao_interrogatorio",
+    "title": "Citacao, intimacao e interrogatorio",
+    "version": "2026.08.04",
+    "verified_at": "2026-08-04",
+    "scope": "Ciencia valida da acusacao e dos atos, assistencia defensiva e garantias do interrogatorio.",
+    "search_queries": [
+      "citacao mandado edital hora certa reu preso contrafe recebimento",
+      "intimacao defensor defensoria publica pessoal audiencia prazo",
+      "interrogatorio acusado defensor direito silencio acusacao",
+      "revelia ausencia reu nao localizado suspensao processo artigo 366",
+      "nulidade citacao intimacao interrogatorio prejuizo"
+    ],
+    "evidence_terms": [
+      "citacao",
+      "citado por edital",
+      "citado pessoalmente",
+      "intimacao",
+      "interrogatorio",
+      "direito ao silencio",
+      "revelia",
+      "artigo 366",
+      "mandado de citacao",
+      "certidao do oficial",
+      "defensoria intimada"
+    ],
+    "sources": [
+      {
+        "id": "cpp_arts_185_196_351_372",
+        "authority": "Presidencia da Republica",
+        "kind": "legislacao",
+        "title": "Codigo de Processo Penal, artigos 185 a 196 e 351 a 372",
+        "reference": "Decreto-Lei 3.689/1941, arts. 185 a 196 e 351 a 372",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm",
+        "summary": "Disciplina interrogatorio, direito ao silencio, citacoes, intimacoes e formas de comunicacao processual."
+      },
+      {
+        "id": "cpp_arts_563_570",
+        "authority": "Presidencia da Republica",
+        "kind": "legislacao",
+        "title": "Codigo de Processo Penal, artigos 563 a 570",
+        "reference": "Decreto-Lei 3.689/1941, arts. 563 a 570",
+        "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm",
+        "summary": "Regula nulidades, prejuizo, momento de arguicao e hipoteses de saneamento pela finalidade do ato."
+      },
+      {
+        "id": "lc_80_intimacao_pessoal",
+        "authority": "Presidencia da Republica",
+        "kind": "legislacao_complementar",
+        "title": "Lei Complementar 80/1994",
+        "reference": "Prerrogativas de intimacao pessoal da Defensoria Publica",
+        "url": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp80.htm",
+        "summary": "Assegura intimacao pessoal ao membro da Defensoria Publica, com entrega dos autos quando necessaria."
+      },
+      {
+        "id": "stj_informativo_560",
+        "authority": "Superior Tribunal de Justica",
+        "kind": "informativo_jurisprudencia",
+        "title": "Informativo de Jurisprudencia 560 do STJ",
+        "reference": "Sexta Turma, abril de 2015",
+        "url": "https://processo.stj.jus.br/jurisprudencia/externo/informativo/?acao=pesquisarumaedicao&livre=%270560%27.cod.",
+        "summary": "Registra a regra de intimacao pessoal da Defensoria e do defensor dativo e ressalva a renuncia expressa a modalidade no caso examinado."
+      }
+    ],
+    "requirements": [
+      {
+        "id": "ato_comunicacao_localizado",
+        "category": "aplicabilidade",
+        "label": "Ato de comunicacao ou interrogatorio",
+        "question": "O processo registra citacao, intimacao ou interrogatorio relevante para a defesa?",
+        "condition": "A pessoa, o ato e a data precisam ser identificaveis.",
+        "legal_source_ids": ["cpp_arts_185_196_351_372"]
+      },
+      {
+        "id": "citacao_valida",
+        "category": "validade",
+        "label": "Citacao valida",
+        "question": "A citacao observou a forma adequada a situacao e permitiu ciencia da acusacao e comparecimento?",
+        "condition": "Aplicavel a citacao inicial do acusado.",
+        "legal_source_ids": ["cpp_arts_185_196_351_372", "cpp_arts_563_570"]
+      },
+      {
+        "id": "ciencia_integral_acusacao",
+        "category": "validade",
+        "label": "Ciencia da acusacao antes do interrogatorio",
+        "question": "Antes de ser interrogado, o acusado foi cientificado do inteiro teor da acusacao?",
+        "condition": "Aplicavel ao interrogatorio judicial.",
+        "legal_source_ids": ["cpp_arts_185_196_351_372"]
+      },
+      {
+        "id": "defensor_presente_interrogatorio",
+        "category": "validade",
+        "label": "Defensor presente no interrogatorio",
+        "question": "O interrogatorio ocorreu com defensor constituido ou nomeado e oportunidade de orientacao?",
+        "condition": "Aplicavel ao interrogatorio judicial.",
+        "legal_source_ids": ["cpp_arts_185_196_351_372"]
+      },
+      {
+        "id": "direito_silencio_respeitado",
+        "category": "validade",
+        "label": "Direito ao silencio",
+        "question": "O acusado foi informado do direito de permanecer calado e seu silencio nao foi usado contra a defesa?",
+        "condition": "Aplicavel ao interrogatorio.",
+        "legal_source_ids": ["cpp_arts_185_196_351_372"]
+      },
+      {
+        "id": "intimacao_defensoria_pessoal",
+        "category": "validade",
+        "label": "Intimacao pessoal da Defensoria",
+        "question": "Quando atuava a Defensoria Publica, houve intimacao pessoal na forma legal antes do ato ou prazo?",
+        "condition": "Aplicavel somente quando a Defensoria representava o acusado.",
+        "legal_source_ids": ["lc_80_intimacao_pessoal", "stj_informativo_560"]
+      },
+      {
+        "id": "perda_oportunidade_processual",
+        "category": "prejuizo",
+        "label": "Perda de oportunidade defensiva",
+        "question": "O vicio levou a ausencia, revelia, perda de prazo, falta de resposta, interrogatorio desassistido ou impossibilidade de participar do ato?",
+        "condition": "Relaciona o defeito de comunicacao ao prejuizo concreto.",
+        "legal_source_ids": ["cpp_arts_563_570"]
+      },
+      {
+        "id": "finalidade_atingida_sem_prejuizo",
+        "category": "contrapeso",
+        "label": "Finalidade atingida em tempo util",
+        "question": "Apesar do defeito formal, acusado e defesa tiveram ciencia efetiva e exerceram integralmente o ato no momento util?",
+        "condition": "O comparecimento ou a ciencia so afastam o vicio quando nao resta prejuizo.",
+        "legal_source_ids": ["cpp_arts_563_570"]
+      }
+    ]
+  }
+}

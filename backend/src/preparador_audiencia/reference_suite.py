@@ -19,6 +19,8 @@ class ReferenceCase:
     pergunta: str
     expected_pages: list[int]
     expected_terms: list[str]
+    response_relevant_pages: list[int] | None = None
+    response_expected_terms: list[str] | None = None
     review_status: str = "pending"
     reviewer: str | None = None
     review_notes: str = ""
@@ -27,7 +29,13 @@ class ReferenceCase:
         {"id", "pergunta", "expected_pages", "expected_terms"}
     )
     OPTIONAL_FIELDS: ClassVar[frozenset[str]] = frozenset(
-        {"review_status", "reviewer", "review_notes"}
+        {
+            "response_relevant_pages",
+            "response_expected_terms",
+            "review_status",
+            "reviewer",
+            "review_notes",
+        }
     )
 
     def __post_init__(self) -> None:
@@ -35,6 +43,16 @@ class ReferenceCase:
         _validate_non_empty_string(self.pergunta, "pergunta")
         _validate_pages(self.expected_pages)
         _validate_terms(self.expected_terms)
+        if self.response_relevant_pages is not None:
+            _validate_pages(
+                self.response_relevant_pages,
+                field="response_relevant_pages",
+            )
+        if self.response_expected_terms is not None:
+            _validate_terms(
+                self.response_expected_terms,
+                field="response_expected_terms",
+            )
         _validate_review(self.review_status, self.reviewer, self.review_notes)
 
     def to_dict(self) -> dict[str, object]:
@@ -44,6 +62,16 @@ class ReferenceCase:
             "pergunta": self.pergunta,
             "expected_pages": list(self.expected_pages),
             "expected_terms": list(self.expected_terms),
+            "response_relevant_pages": (
+                list(self.response_relevant_pages)
+                if self.response_relevant_pages is not None
+                else None
+            ),
+            "response_expected_terms": (
+                list(self.response_expected_terms)
+                if self.response_expected_terms is not None
+                else None
+            ),
             "review_status": self.review_status,
             "reviewer": self.reviewer,
             "review_notes": self.review_notes,
@@ -65,6 +93,12 @@ class ReferenceCase:
             pergunta=_require_string(payload, "pergunta", "caso"),
             expected_pages=_require_int_list(payload, "expected_pages", "caso"),
             expected_terms=_require_string_list(payload, "expected_terms", "caso"),
+            response_relevant_pages=_optional_int_list(
+                payload, "response_relevant_pages", "caso"
+            ),
+            response_expected_terms=_optional_string_list(
+                payload, "response_expected_terms", "caso"
+            ),
             review_status=_optional_string(payload, "review_status", "pending", "caso"),
             reviewer=_optional_nullable_string(payload, "reviewer", "caso"),
             review_notes=_optional_string(payload, "review_notes", "", "caso"),
@@ -80,12 +114,13 @@ class ReferenceProcess:
     source: str | None = None
     source_url: str | None = None
     sha256: str | None = None
+    text_sha256: str | None = None
 
     REQUIRED_FIELDS: ClassVar[frozenset[str]] = frozenset(
         {"id", "domain", "document", "cases"}
     )
     OPTIONAL_FIELDS: ClassVar[frozenset[str]] = frozenset(
-        {"source", "source_url", "sha256"}
+        {"source", "source_url", "sha256", "text_sha256"}
     )
 
     def __post_init__(self) -> None:
@@ -95,6 +130,7 @@ class ReferenceProcess:
         _validate_optional_string(self.source, "source")
         _validate_optional_string(self.source_url, "source_url")
         _validate_sha256(self.sha256)
+        _validate_sha256(self.text_sha256, field="text_sha256")
         if not isinstance(self.cases, list) or not self.cases:
             raise ValueError("processo.cases deve ser uma lista nao vazia")
         if not all(isinstance(case, ReferenceCase) for case in self.cases):
@@ -110,6 +146,7 @@ class ReferenceProcess:
             "source": self.source,
             "source_url": self.source_url,
             "sha256": self.sha256,
+            "text_sha256": self.text_sha256,
             "cases": [case.to_dict() for case in self.cases],
         }
 
@@ -134,6 +171,9 @@ class ReferenceProcess:
             source=_optional_nullable_string(payload, "source", "processo"),
             source_url=_optional_nullable_string(payload, "source_url", "processo"),
             sha256=_optional_nullable_string(payload, "sha256", "processo"),
+            text_sha256=_optional_nullable_string(
+                payload, "text_sha256", "processo"
+            ),
             cases=[
                 ReferenceCase.from_dict(_require_mapping(item, f"processo.cases[{index}]"))
                 for index, item in enumerate(cases_payload)
@@ -243,11 +283,13 @@ def _validate_document(value: object) -> None:
         raise ValueError("processo.document deve ser apenas o nome de um arquivo PDF")
 
 
-def _validate_sha256(value: object) -> None:
+def _validate_sha256(value: object, *, field: str = "sha256") -> None:
     if value is None:
         return
     if not isinstance(value, str) or not re.fullmatch(r"[a-f0-9]{64}", value):
-        raise ValueError("processo.sha256 deve ser um hash hexadecimal de 64 caracteres")
+        raise ValueError(
+            f"processo.{field} deve ser um hash hexadecimal de 64 caracteres"
+        )
 
 
 def _validate_non_empty_string(value: object, field: str) -> None:
@@ -260,23 +302,23 @@ def _validate_optional_string(value: object, field: str) -> None:
         raise ValueError(f"{field} deve ser nulo ou texto nao vazio")
 
 
-def _validate_pages(pages: object) -> None:
+def _validate_pages(pages: object, *, field: str = "expected_pages") -> None:
     if not isinstance(pages, list) or not pages:
-        raise ValueError("expected_pages deve ser uma lista nao vazia")
+        raise ValueError(f"{field} deve ser uma lista nao vazia")
     if any(isinstance(page, bool) or not isinstance(page, int) or page <= 0 for page in pages):
-        raise ValueError("expected_pages deve conter apenas inteiros positivos")
+        raise ValueError(f"{field} deve conter apenas inteiros positivos")
     if pages != sorted(set(pages)):
-        raise ValueError("expected_pages deve estar em ordem crescente e sem duplicatas")
+        raise ValueError(f"{field} deve estar em ordem crescente e sem duplicatas")
 
 
-def _validate_terms(terms: object) -> None:
+def _validate_terms(terms: object, *, field: str = "expected_terms") -> None:
     if not isinstance(terms, list) or not terms:
-        raise ValueError("expected_terms deve ser uma lista nao vazia")
+        raise ValueError(f"{field} deve ser uma lista nao vazia")
     if any(not isinstance(term, str) or not term.strip() for term in terms):
-        raise ValueError("expected_terms deve conter apenas textos nao vazios")
+        raise ValueError(f"{field} deve conter apenas textos nao vazios")
     normalized = [term.strip().casefold() for term in terms]
     if len(normalized) != len(set(normalized)):
-        raise ValueError("expected_terms nao pode conter duplicatas")
+        raise ValueError(f"{field} nao pode conter duplicatas")
 
 
 def _validate_review(status: object, reviewer: object, notes: object) -> None:
@@ -363,8 +405,28 @@ def _require_int_list(payload: dict[str, Any], field: str, context: str) -> list
     return values
 
 
+def _optional_int_list(
+    payload: dict[str, Any],
+    field: str,
+    context: str,
+) -> list[int] | None:
+    if payload.get(field) is None:
+        return None
+    return _require_int_list(payload, field, context)
+
+
 def _require_string_list(payload: dict[str, Any], field: str, context: str) -> list[str]:
     values = _require_list(payload, field, context)
     if any(not isinstance(value, str) for value in values):
         raise ValueError(f"{context}.{field} deve conter apenas textos")
     return values
+
+
+def _optional_string_list(
+    payload: dict[str, Any],
+    field: str,
+    context: str,
+) -> list[str] | None:
+    if payload.get(field) is None:
+        return None
+    return _require_string_list(payload, field, context)

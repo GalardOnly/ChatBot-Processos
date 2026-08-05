@@ -22,6 +22,12 @@ TOKEN_ALIASES = {
     "recursos": "recurso",
 }
 GUIDE_REQUIRED_ANY = {
+    "geral_identificacao_julgamento": {
+        "identificacao",
+        "numero",
+        "recurso",
+        "relator",
+    },
     "geral_resultado_julgamento": {
         "decidiu",
         "decisao",
@@ -105,8 +111,8 @@ class QuestionRoute:
     audiencia: str | None
     guides: list[QuestionGuide]
 
-    def search_query(self) -> str:
-        guide_terms = " ".join(
+    def guide_query(self) -> str:
+        return " ".join(
             " ".join(
                 [
                     guide.titulo,
@@ -116,6 +122,9 @@ class QuestionRoute:
             )
             for guide in self.guides[:2]
         )
+
+    def search_query(self) -> str:
+        guide_terms = self.guide_query()
         return f"{self.pergunta_original} {guide_terms}".strip()
 
     def llm_question(self) -> str:

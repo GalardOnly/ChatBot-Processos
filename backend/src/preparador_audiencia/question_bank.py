@@ -82,6 +82,35 @@ DEFAULT_QUESTION_TEMPLATES = [
         prioridade=1,
     ),
     QuestionTemplate(
+        id="geral_identificacao_julgamento",
+        titulo="Identificacao do julgamento",
+        area="geral",
+        audiencia="qualquer",
+        objetivo=(
+            "Localizar tipo e numero do processo ou recurso, relator, orgao julgador "
+            "e tema principal."
+        ),
+        pergunta=(
+            "Qual e o processo ou recurso, qual o numero, quem foi o relator, qual "
+            "orgao julgou e qual e o tema principal? Cite as paginas."
+        ),
+        quando_usar=(
+            "Quando o defensor precisa identificar rapidamente o documento ou julgado."
+        ),
+        tags=[
+            "identificacao",
+            "julgamento",
+            "processo",
+            "recurso",
+            "numero",
+            "relator",
+            "ementa",
+            "tema",
+            "orgao_julgador",
+        ],
+        prioridade=1,
+    ),
+    QuestionTemplate(
         id="saude_condicao_tratamento",
         titulo="Condicao de saude e tratamento",
         area="saude",

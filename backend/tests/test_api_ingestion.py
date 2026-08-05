@@ -3,7 +3,7 @@ from inspect import iscoroutinefunction
 import fitz
 from fastapi.testclient import TestClient
 
-from preparador_audiencia.chat import ChatResult
+from preparador_audiencia.chat import ChatResult, ChatTimings
 from preparador_audiencia.database import connect_database, initialize_database
 from preparador_audiencia.ingestion import resolve_process_file_path
 from preparador_audiencia.main import app
@@ -320,6 +320,14 @@ def test_chat_endpoint_returns_answer_with_sources(tmp_path, monkeypatch) -> Non
             modelo="gemini:gemini-3-flash-preview",
             fallback_usado=False,
             fontes=[source],
+            tempos=ChatTimings(
+                triagem_ms=1,
+                recuperacao_ms=20,
+                validacao_fontes_ms=1,
+                geracao_ms=100,
+                avaliacao_ms=0,
+                total_ms=125,
+            ),
             avaliacao=LegalQualityEvaluation(
                 evaluator_model="groq:judge",
                 fidelidade_fontes=5,
@@ -352,6 +360,9 @@ def test_chat_endpoint_returns_answer_with_sources(tmp_path, monkeypatch) -> Non
     assert payload["fallback_usado"] is False
     assert payload["modo_busca"] == "hibrida"
     assert payload["fontes"][0]["pagina"] == 1
+    assert payload["tempos"]["recuperacao_ms"] == 20
+    assert payload["tempos"]["geracao_ms"] == 100
+    assert payload["tempos"]["total_ms"] == 125
     assert payload["avaliacao"]["modelo_avaliador"] == "groq:judge"
     assert payload["avaliacao"]["fidelidade_fontes"] == 5
 

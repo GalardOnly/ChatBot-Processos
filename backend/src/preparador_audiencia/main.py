@@ -10,6 +10,9 @@ from preparador_audiencia.routes.judgment_structure import (
     router as judgment_structure_router,
 )
 from preparador_audiencia.routes.prescription import router as prescription_router
+from preparador_audiencia.routes.procedural_nullities import (
+    router as procedural_nullities_router,
+)
 from preparador_audiencia.routes.structured_transcription import (
     router as structured_transcription_router,
 )
@@ -28,6 +31,7 @@ app.include_router(defense_theses_router)
 app.include_router(hearing_dossier_router)
 app.include_router(judgment_structure_router)
 app.include_router(prescription_router)
+app.include_router(procedural_nullities_router)
 app.include_router(structured_transcription_router)
 app.include_router(testimony_comparison_router)
 app.include_router(testimony_questions_router)

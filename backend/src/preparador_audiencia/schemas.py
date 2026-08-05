@@ -116,6 +116,15 @@ class QualityEvaluationResponse(BaseModel):
     erro: str | None
 
 
+class ChatTimingResponse(BaseModel):
+    triagem_ms: int
+    recuperacao_ms: int
+    validacao_fontes_ms: int
+    geracao_ms: int
+    avaliacao_ms: int
+    total_ms: int
+
+
 class ChatResponse(BaseModel):
     processo_id: str
     pergunta: str
@@ -124,6 +133,7 @@ class ChatResponse(BaseModel):
     fallback_usado: bool
     modo_busca: SearchMode
     fontes: list[SearchSource]
+    tempos: ChatTimingResponse | None = None
     avaliacao: QualityEvaluationResponse | None = None
 
 
@@ -748,6 +758,114 @@ class DefenseThesesResponse(BaseModel):
     avisos: list[str] = Field(default_factory=list)
     gerado_em: str
     atualizado_em: str
+
+
+class ProceduralNullityGenerateRequest(BaseModel):
+    top_k: int = 24
+    regenerar: bool = False
+
+
+class ProceduralNullityBatchRequest(BaseModel):
+    temas: list[str] = Field(default_factory=list)
+    top_k: int = 24
+    regenerar: bool = False
+
+
+class ProceduralNullityEvidenceResponse(BaseModel):
+    fonte_id: str
+    trecho: str
+    pagina: int
+    chunk_index: int
+    tipo_documento: str | None
+    confianca_fonte: str
+
+
+class ProceduralNullityRequirementResponse(BaseModel):
+    id: str
+    categoria: Literal[
+        "aplicabilidade",
+        "validade",
+        "impacto",
+        "prejuizo",
+        "contrapeso",
+    ]
+    rotulo: str
+    condicao: str
+    resultado: Literal[
+        "observado",
+        "nao_observado",
+        "nao_localizado",
+        "nao_aplicavel",
+    ]
+    justificativa: str
+    evidencias: list[ProceduralNullityEvidenceResponse] = Field(default_factory=list)
+    fontes_juridicas: list[str] = Field(default_factory=list)
+    decisivo_sem_prejuizo: bool = False
+
+
+class ProceduralNullityProcessSourceResponse(BaseModel):
+    id: str
+    texto: str
+    pagina: int
+    chunk_index: int
+    tipo_documento: str | None
+    confianca_fonte: str
+
+
+class ProceduralNullityLegalSourceResponse(BaseModel):
+    id: str
+    autoridade: str
+    tipo: str
+    titulo: str
+    referencia: str
+    url: str
+    resumo: str
+
+
+class ProceduralNullityResponse(BaseModel):
+    processo_id: str
+    tema: str
+    titulo: str
+    escopo: str
+    conclusao: Literal[
+        "configurada",
+        "indicios_suficientes",
+        "nao_configurada",
+        "inconclusiva",
+    ]
+    conclusao_rotulo: str
+    confianca: Literal["alta", "media", "baixa"]
+    versao: str
+    versao_catalogo: str
+    modelo: str
+    fallback_usado: bool
+    modo_busca: Literal["hibrida", "lexical"]
+    resumo: str
+    requisitos: list[ProceduralNullityRequirementResponse] = Field(default_factory=list)
+    providencias: list[str] = Field(default_factory=list)
+    lacunas: list[str] = Field(default_factory=list)
+    fontes_processuais: list[ProceduralNullityProcessSourceResponse] = Field(
+        default_factory=list
+    )
+    fontes_juridicas: list[ProceduralNullityLegalSourceResponse] = Field(
+        default_factory=list
+    )
+    avisos: list[str] = Field(default_factory=list)
+    gerado_em: str
+    atualizado_em: str
+
+
+class ProceduralNullityBatchErrorResponse(BaseModel):
+    tema: str
+    erro: str
+    detalhe: str
+
+
+class ProceduralNullityBatchResponse(BaseModel):
+    processo_id: str
+    status: Literal["concluido", "parcial", "erro"]
+    analises: list[ProceduralNullityResponse] = Field(default_factory=list)
+    erros: list[ProceduralNullityBatchErrorResponse] = Field(default_factory=list)
 
 
 class ErrorResponse(BaseModel):

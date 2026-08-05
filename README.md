@@ -6,7 +6,7 @@ Nesta versao inicial, o defensor envia o PDF completo do processo, o sistema ext
 
 ## Status
 
-O projeto esta em fase de Prova de Conceito. A intencao neste momento nao e entregar um produto final, mas validar se a ideia principal funciona na pratica: receber um processo real, extrair o texto com referencias de pagina, recuperar os trechos mais importantes e responder perguntas de forma util para a preparacao de audiencia.
+O projeto esta em fase de Prova de Conceito. A intencao neste momento nao e entregar um produto final, mas validar se a ideia principal funciona na pratica: receber um processo real, extrair o texto com referencias de pagina, recuperar os trechos mais importantes e responder perguntas de forma util para a preparacao de audiencia. Um benchmark integrado agora acompanha conclusoes, paginas, citacoes, falsos positivos, latencia e chamadas de LLM dos motores sob o mesmo contrato.
 
 A PoC ja funciona localmente com upload de PDF, extracao de texto por pagina usando PyMuPDF, OCR para paginas escaneadas ou com pouco texto, divisao do conteudo em chunks, armazenamento local em SQLite, indexacao vetorial com ChromaDB, recuperacao semantica com ensemble juridico, chat com Gemini como modelo principal, Groq como fallback, triagem juridica interna das perguntas, transcricao literal estruturada, comparacao de depoimentos, perguntas por depoente, memoria deterministica de prescricao, estrutura de sentenca e pena, teses defensivas fundamentadas, dossie persistente de preparacao da audiencia, interface simples em Streamlit e testes automatizados.
 
@@ -52,6 +52,10 @@ O roteamento interno foi comparado com a pergunta bruta em 50 consultas determin
 
 Uma nova suite multidominio usa tres acordaos publicos do STJ, nas areas de familia, violencia domestica e saude suplementar, com dez perguntas e paginas esperadas. Nela, o hit rate passou de `0,90` para `1,00`, o MRR passou de `0,6450` para `0,6733` e nenhum caso piorou. Os dez casos ainda aguardam revisao profissional, portanto o resultado valida a recuperacao tecnica, nao a qualidade juridica final.
 
+O novo benchmark integrado aplicou uma medida mais exigente ao mesmo resultado. Embora o hit tenha sido `1,00`, o recall de todas as paginas esperadas ficou em `0,805` no desenvolvimento e `0,688` no teste. Isso revelou perguntas compostas em que o recuperador encontra uma fonte correta, mas nao cobre todas as paginas necessarias. Aumentar `top_k` para 8 melhorou o recall de desenvolvimento, mas reduziu a precisao; por isso o valor padrao ainda nao foi alterado.
+
+Uma primeira amostra real do chat executou tres perguntas do conjunto de desenvolvimento com Gemini e teto de seis chamadas. Foram feitas tres chamadas, sem uso do Groq. Ao reavaliar as respostas por conceitos equivalentes, o hit de paginas e a fidelidade das citacoes ficaram em `1,00`, e a cobertura dos pontos pedidos ficou em `0,917`. O principal problema encontrado foi a latencia: uma resposta levou `65,9` segundos. Esses numeros ainda sao tecnicos, pois os casos aguardam revisao profissional.
+
 ## Estrutura
 
 ```text
@@ -69,6 +73,8 @@ backend/
     hearing_dossier.py
     hearing_dossier_repository.py
     ingestion.py
+    integrated_benchmark.py
+    integrated_benchmark_cli.py
     lexical_search.py
     llm.py
     ocr.py
@@ -139,10 +145,12 @@ python -m ruff check .
 
 ## Limitacoes atuais
 
-Esta PoC ainda nao e um produto pronto para producao. A interface ainda e simples, a primeira busca com modelos BERT pode ser lenta e ainda faltam pontos importantes como autenticacao, controle de usuarios, politica de dados e LGPD, logging estruturado, deploy e validacao com defensores em uso real. Os casos automaticos do benchmark usam as paginas e os termos do proprio processo como referencia, portanto nao substituem um conjunto de perguntas e respostas revisado por profissionais.
+Esta PoC ainda nao e um produto pronto para producao. A interface ainda e simples, a primeira busca com modelos BERT pode ser lenta e ainda faltam pontos importantes como autenticacao, controle de usuarios, politica de dados e LGPD, logging estruturado, deploy e validacao com defensores em uso real. Os casos automaticos do benchmark usam paginas e conceitos conferidos tecnicamente, mas nao substituem perguntas e respostas revisadas por profissionais.
+
+O [benchmark integrado de qualidade](docs/45-benchmark-integrado-qualidade.md) possui uma suite inicial com doze casos sinteticos. Ela valida a infraestrutura de avaliacao, mas nao aprova a qualidade juridica. Somente casos do conjunto de teste revisados e marcados como `legal_approved` podem participar do gate juridico.
 
 ## Proximo passo
 
-O proximo passo recomendado e ampliar a analise de possiveis nulidades para outros temas, sempre vinculada a legislacao e precedentes verificaveis. Reconhecimento de pessoas ja possui um modulo especifico; os proximos temas devem ser escolhidos por impacto e frequencia nos processos reais.
+O proximo passo recomendado e reduzir a latencia do chat e ampliar a amostra de desenvolvimento antes de abrir o conjunto de teste. Em paralelo, o gabarito dos seis temas de nulidade deve receber casos positivos, negativos e inconclusivos, com ato processual, requisito, resultado, prejuizo, contrapeso e trecho literal revisados por profissional.
 
-O calculo de prescricao permanece separado das LLMs. A extracao sugere datas e artigos, o profissional confirma os dados e um motor deterministico produz uma memoria por delito. O escopo atual e a prescricao da pretensao punitiva pela pena maxima em abstrato; modalidades dependentes de pena aplicada e transito em julgado ainda nao sao calculadas.
+Depois desse benchmark, a prescricao pode ser ampliada para modalidades que usam pena aplicada e transito em julgado, aproveitando a estrutura de sentenca implementada nesta fase.

@@ -310,6 +310,10 @@ class ChunkRepository:
     def replace_for_processo(self, processo_id: str, chunks: list[TextChunk]) -> None:
         now = utc_now_text()
         self.connection.execute(
+            "DELETE FROM nullity_analyses WHERE processo_id = ?",
+            (processo_id,),
+        )
+        self.connection.execute(
             "DELETE FROM defense_theses WHERE processo_id = ?",
             (processo_id,),
         )

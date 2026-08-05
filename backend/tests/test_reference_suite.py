@@ -17,6 +17,11 @@ def _case(**overrides: object) -> ReferenceCase:
         "pergunta": "Quais fundamentos sustentam a prisao preventiva?",
         "expected_pages": [3, 8],
         "expected_terms": ["garantia da ordem publica", "prisao preventiva"],
+        "response_relevant_pages": [3, 8, 12],
+        "response_expected_terms": [
+            "garantia da ordem publica || ordem publica",
+            "prisao preventiva",
+        ],
         "review_status": "approved",
         "reviewer": "Defensor revisor",
         "review_notes": "Conferido diretamente no processo.",
@@ -33,6 +38,7 @@ def _process(**overrides: object) -> ReferenceProcess:
         "source": "HC publico anonimizado",
         "source_url": "https://example.test/hc-publico.pdf",
         "sha256": "a" * 64,
+        "text_sha256": "b" * 64,
         "cases": [_case()],
     }
     values.update(overrides)
@@ -72,9 +78,19 @@ def test_write_and_load_reference_suite_round_trip(tmp_path) -> None:
         ("expected_pages", [0], "inteiros positivos"),
         ("expected_pages", [3, 2], "ordem crescente"),
         ("expected_pages", [2, 2], "sem duplicatas"),
+        (
+            "response_relevant_pages",
+            [8, 3],
+            "response_relevant_pages deve estar em ordem crescente",
+        ),
         ("expected_terms", [], "expected_terms deve ser uma lista nao vazia"),
         ("expected_terms", ["prisao", "  "], "textos nao vazios"),
         ("expected_terms", ["Prisao", "prisao"], "nao pode conter duplicatas"),
+        (
+            "response_expected_terms",
+            ["resposta", "  "],
+            "response_expected_terms deve conter apenas textos nao vazios",
+        ),
         ("review_status", "done", "review_status invalido"),
     ],
 )
@@ -113,6 +129,7 @@ def test_process_validates_domain_and_duplicate_case_ids() -> None:
         ("document", "processo.txt", "nome de um arquivo PDF"),
         ("source_url", "", "source_url"),
         ("sha256", "abc", "hash hexadecimal"),
+        ("text_sha256", "abc", "hash hexadecimal"),
     ],
 )
 def test_process_rejects_invalid_document_metadata(

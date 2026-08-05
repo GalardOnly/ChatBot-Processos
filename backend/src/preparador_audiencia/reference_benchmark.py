@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass
+from hashlib import sha256
 from pathlib import Path
 from statistics import mean
 
+import fitz
 import httpx
 
 from preparador_audiencia.database import connect_database, initialize_database
@@ -98,16 +100,31 @@ def ensure_reference_document(
     content = target.read_bytes()
     if not content.startswith(b"%PDF"):
         raise ValueError(f"Arquivo de {process.id} nao e um PDF valido: {target}")
-    if process.sha256:
-        from hashlib import sha256
-
-        digest = sha256(content).hexdigest()
-        if digest != process.sha256:
+    binary_digest = sha256(content).hexdigest()
+    binary_matches = process.sha256 is None or binary_digest == process.sha256
+    if process.text_sha256:
+        text_digest = pdf_text_sha256(content)
+        if text_digest != process.text_sha256:
             raise ValueError(
-                f"SHA-256 divergente para {process.id}: esperado "
-                f"{process.sha256}, obtido {digest}"
+                f"SHA-256 textual divergente para {process.id}: esperado "
+                f"{process.text_sha256}, obtido {text_digest}"
             )
+    elif not binary_matches:
+        raise ValueError(
+            f"SHA-256 divergente para {process.id}: esperado "
+            f"{process.sha256}, obtido {binary_digest}"
+        )
     return target
+
+
+def pdf_text_sha256(content: bytes) -> str:
+    with fitz.open(stream=content, filetype="pdf") as document:
+        pages = [
+            " ".join(document.load_page(index).get_text("text").split())
+            for index in range(document.page_count)
+        ]
+    canonical_text = "\n\f\n".join(pages).encode("utf-8")
+    return sha256(canonical_text).hexdigest()
 
 
 def prepare_reference_process(

@@ -1,10 +1,12 @@
 from dataclasses import replace
 
+import fitz
 import pytest
 
 from preparador_audiencia.reference_benchmark import (
     PreparedReferenceProcess,
     ensure_reference_document,
+    pdf_text_sha256,
     render_reference_benchmark_markdown,
     run_reference_benchmark,
 )
@@ -93,6 +95,46 @@ def test_ensure_reference_document_checks_sha256(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="SHA-256 divergente"):
         ensure_reference_document(process, tmp_path)
+
+
+def test_ensure_reference_document_accepts_changed_pdf_metadata(tmp_path) -> None:
+    original = _pdf_bytes("mesmo conteudo", metadata={"producer": "versao 1"})
+    regenerated = _pdf_bytes("mesmo conteudo", metadata={"producer": "versao 2"})
+    process = replace(
+        _process(),
+        sha256="0" * 64,
+        text_sha256=pdf_text_sha256(original),
+    )
+    (tmp_path / process.document).write_bytes(regenerated)
+
+    path = ensure_reference_document(process, tmp_path)
+
+    assert path.read_bytes() == regenerated
+
+
+def test_ensure_reference_document_rejects_changed_text(tmp_path) -> None:
+    original = _pdf_bytes("conteudo original")
+    changed = _pdf_bytes("conteudo alterado")
+    process = replace(
+        _process(),
+        sha256="0" * 64,
+        text_sha256=pdf_text_sha256(original),
+    )
+    (tmp_path / process.document).write_bytes(changed)
+
+    with pytest.raises(ValueError, match="SHA-256 textual divergente"):
+        ensure_reference_document(process, tmp_path)
+
+
+def _pdf_bytes(text: str, *, metadata: dict[str, str] | None = None) -> bytes:
+    document = fitz.open()
+    page = document.new_page()
+    page.insert_text((72, 72), text)
+    if metadata:
+        document.set_metadata(metadata)
+    content = document.tobytes()
+    document.close()
+    return content
 
 
 def test_run_reference_benchmark_aggregates_processes(monkeypatch, tmp_path) -> None:
