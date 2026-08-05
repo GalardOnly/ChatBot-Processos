@@ -18,6 +18,8 @@ samples/benchmark/
 samples/anonimizados/
 backend/samples/benchmark/
 backend/cache/
+*.anonimizacao.local.json
+*.revisao-juridica.local.json
 ~$*.docx
 .audiencia*.sqlite3
 .tmp-*.log*

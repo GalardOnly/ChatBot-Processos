@@ -53,6 +53,7 @@ benchmark-integrado = "preparador_audiencia.integrated_benchmark_cli:main"
 adaptar-benchmark-publico = "preparador_audiencia.integrated_reference_cli:main"
 benchmark-chat-publico = "preparador_audiencia.integrated_chat_cli:main"
 perfil-latencia-chat = "preparador_audiencia.chat_latency_cli:main"
+amostra-validacao = "preparador_audiencia.legal_validation_sample_cli:main"
 
 [build-system]
 requires = ["setuptools>=69"]

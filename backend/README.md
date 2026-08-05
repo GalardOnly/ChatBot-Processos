@@ -521,6 +521,21 @@ PDFs reais anonimizados devem ficar em `samples/anonimizados/` e usar
 `benchmark_cases.anonimizado.example.json` como ponto de partida para perguntas
 e paginas esperadas.
 
+O fluxo atual nao aceita que uma substituicao automatica seja chamada de
+anonimizacao concluida. O comando `amostra-validacao` cria um candidato local,
+procura residuos, exige revisao visual das paginas com imagens e so gera uma
+suite juridica depois de duas revisoes independentes por pergunta:
+
+```powershell
+amostra-validacao preparar `
+  --pdf "C:\caminho\processo-autorizado.pdf" `
+  --config "C:\caminho\amostra.anonimizacao.local.json"
+```
+
+O PDF, a configuracao com os nomes originais, o manifesto e a ficha ficam em
+`samples/anonimizados/`, fora do Git. O procedimento completo esta em
+`../docs/47-amostra-validacao-juridica.md`.
+
 ## Benchmark de OCR em depoimentos
 
 O comparador de OCR avalia paginas especificas contra frases curtas verificaveis

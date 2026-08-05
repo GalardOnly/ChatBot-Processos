@@ -72,15 +72,14 @@ Objetivo: medir utilidade real para audiencia.
 
 Os PDFs dessa familia devem ficar apenas em `samples/anonimizados/`, pasta ignorada pelo Git. O arquivo de casos pode partir de `backend/benchmark_cases.anonimizado.example.json`.
 
-O fluxo recomendado e:
+O fluxo manual anterior foi substituido pelo comando `amostra-validacao`. Ele
+gera um PDF candidato, remove metadados e identificadores textuais conhecidos,
+procura residuos e impede aprovacao automatica. Paginas com imagens exigem
+revisao visual explicita. A ficha juridica so vira suite de referencia quando
+cada pergunta possui paginas, termos e aprovacao independente de dois
+revisores.
 
-1. Anonimizar ou usar um processo autorizado.
-2. Colocar o PDF em `samples/anonimizados/`.
-3. Rodar extracao com OCR limitado para conferir qualidade.
-4. Subir o PDF pela API ou Streamlit.
-5. Preencher paginas esperadas e termos esperados no arquivo de casos.
-6. Rodar `avaliar-poc-modelos` com `legal-ensemble`.
-7. Rodar algumas perguntas com `avaliar: true` para testar a LLM avaliadora.
+O procedimento completo esta em `47-amostra-validacao-juridica.md`.
 
 Essa familia e a mais importante para decidir produto, mas so deve entrar quando houver seguranca de dados e autorizacao.
 

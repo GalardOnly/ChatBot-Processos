@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "case_id": "criminal-001",
+  "domain": "penal.instrucao",
+  "authorization": {
+    "confirmed": false,
+    "reference": "preencher-referencia-interna"
+  },
+  "aliases": [
+    {
+      "id": "reu-01",
+      "replacement": "PESSOA A",
+      "values": [
+        "PREENCHER NOME COMPLETO",
+        "PREENCHER OUTRO IDENTIFICADOR"
+      ]
+    },
+    {
+      "id": "vitima-01",
+      "replacement": "PESSOA B",
+      "values": [
+        "PREENCHER NOME COMPLETO DA VITIMA"
+      ]
+    }
+  ]
+}
